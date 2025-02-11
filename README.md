@@ -10,7 +10,7 @@ Steal a Meal allows users to publicize their meal availability amongst their fri
 
 TODO:  descriptions of code organization and tools and libraries used
 
-We'll be using React Native to build the mobile version of our app. We're currently looking for libraries we find helpful for buttons, calendar setup, and a 
+We'll be using React Native to build the mobile version of our app. We're currently looking for libraries we find helpful for buttons, calendar setup, and pinging ability. 
 
 We're currently drafting figma pages for basic functionality and user flows. 
 
