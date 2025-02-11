@@ -1,7 +1,6 @@
 # Steal a Meal
 
-![Team Photo](Insert a Team Photo URL here)
-[*how?*](https://help.github.com/articles/about-readmes/#relative-links-and-image-paths-in-readme-files)
+![Team Photo](https://camo.githubusercontent.com/e42ce4a9ed70483775a0732e7ab50648921a942d67946765c0297c08753d0ad6/68747470733a2f2f6861636b6d642e696f2f5f75706c6f6164732f726b5f4d674b497579652e6a7067)
 
 Steal a Meal allows users to publicize their meal availability amongst their friends and propose meal dates. It will also have a location-based functionality in which users can see which of their friends are currently within campus's various dining halls. We are also considering a blind (platonic)"date" option, where users can opt in to a shared meal with a friendly stranger.
 
@@ -16,9 +15,13 @@ We're currently drafting figma pages for basic functionality and user flows.
 
 ## Setup
 
-TODO: how to get the project dev environment up and running, npm install etc
-
-Not established yet
+1. Clone repository
+2. Set repository as working directory and run `npm install`
+3. [Set up Expo](https://docs.expo.dev/get-started/set-up-your-environment/)
+    * Choose "iOS Simulator" and "Expo Go" and follow instructions
+    * Additional useful set up instructions can be found [here](https://reactnative.dev/docs/set-up-your-environment)
+4. Start development server with `npx expo start`
+    * Press `i` on your keyboard once the server is started to open the iOS simulator
 
 ## Deployment
 
