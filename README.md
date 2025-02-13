@@ -4,24 +4,27 @@
 
 Steal a Meal allows users to publicize their meal availability amongst their friends and propose meal dates. It will also have a location-based functionality in which users can see which of their friends are currently within campus's various dining halls. We are also considering a blind (platonic)"date" option, where users can opt in to a shared meal with a friendly stranger.
 
-
 ## Architecture
 
-TODO:  descriptions of code organization and tools and libraries used
+We'll be using React Native to build the mobile version of our app. We're currently looking for libraries we find helpful for buttons, calendar setup, and pinging ability.
 
-We'll be using React Native to build the mobile version of our app. We're currently looking for libraries we find helpful for buttons, calendar setup, and pinging ability. 
+We're currently drafting figma pages for basic functionality and user flows.
 
-We're currently drafting figma pages for basic functionality and user flows. 
+We will be using a micro services architecture to split up servers by functionality.
+
+Mirco services architecture explanation: https://dzone.com/articles/microservice-architecture-learn-build-and-deploy-a
+
+Get started with installation: https://flask.palletsprojects.com/en/stable/
 
 ## Setup
 
 1. Clone repository
 2. Set repository as working directory and run `npm install`
 3. [Set up Expo](https://docs.expo.dev/get-started/set-up-your-environment/)
-    * Choose "iOS Simulator" and "Expo Go" and follow instructions
-    * Additional useful set up instructions can be found [here](https://reactnative.dev/docs/set-up-your-environment)
+   - Choose "iOS Simulator" and "Expo Go" and follow instructions
+   - Additional useful set up instructions can be found [here](https://reactnative.dev/docs/set-up-your-environment)
 4. Start development server with `npx expo start`
-    * Press `i` on your keyboard once the server is started to open the iOS simulator
+   - Press `i` on your keyboard once the server is started to open the iOS simulator
 
 ## Deployment
 
@@ -29,8 +32,8 @@ TODO: how to deploy the project
 
 Not established yet
 
-
 ## Authors
+
 A collaboration between:
 Jason Gonzales
 Nicole Ward
@@ -40,4 +43,5 @@ Cha Krupka
 Elliot Krewson
 
 ## Acknowledgments
+
 Shoutout to Logo.com for our logo design drafts
