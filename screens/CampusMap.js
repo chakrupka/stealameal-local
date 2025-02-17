@@ -1,7 +1,7 @@
 import React from 'react';
-import MapView, { Marker } from 'react-native-maps';
-import { StyleSheet, View } from 'react-native';
-import {Button, IconButton, Text} from "react-native-paper";
+import MapView from 'react-native-maps';
+import { View } from 'react-native';
+import {IconButton, Text} from "react-native-paper";
 import styles from "../styles";
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 

@@ -88,11 +88,6 @@ export default StyleSheet.create({
     fontFamily: "DMSans_400Regular",
   },
 
-  listItem: {
-    marginVertical: 5,
-    borderRadius: 5,
-  },
-
   imageContainer: {
     alignSelf: "center",
     marginTop: 20,
@@ -181,7 +176,10 @@ export default StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: "#000",
+    marginVertical: 5,
+    borderRadius: 5,
   },
+
   // contact icon
   listItemAvatar: {
     width: 40,
