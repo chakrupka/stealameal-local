@@ -20,6 +20,9 @@ export default function WhatNow({ navigation, route }) {
         <Button mode="contained" style={styles.button} onPress={() => navigation.navigate("ScheduleMeal", { profilePic })}>
           Schedule in Advance
         </Button>
+          <Button mode="contained" style={styles.button} onPress={() => navigation.navigate("CampusMap", { profilePic })}>
+              Campus Map
+          </Button>
       </View>
     </View>
   );

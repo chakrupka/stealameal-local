@@ -241,4 +241,18 @@ export default StyleSheet.create({
     letterSpacing: 0.1,
     color: "#3D2200",
   },
+  mapContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  map: {
+    flex: 0.9,
+    width: "90%",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  mapText: {
+    color: "#000000"
+  }
 });
