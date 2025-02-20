@@ -20,6 +20,9 @@ export default function ScheduleMeal({ navigation, route }) {
         <Button mode="contained" style={styles.button} onPress={() => navigation.navigate("BuildSquad", { profilePic })}>
           Build a Squad
         </Button>
+        <Button mode="contained" style={styles.button} onPress={() => navigation.navigate("EnterAvailability", { profilePic })}>
+          Enter Availability
+        </Button>
       </View>
     </View>
   );
