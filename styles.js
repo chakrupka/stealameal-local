@@ -88,11 +88,6 @@ export default StyleSheet.create({
     fontFamily: "DMSans_400Regular",
   },
 
-  listItem: {
-    marginVertical: 5,
-    borderRadius: 5,
-  },
-
   imageContainer: {
     alignSelf: "center",
     marginTop: 20,
@@ -181,7 +176,10 @@ export default StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: "#000",
+    marginVertical: 5,
+    borderRadius: 5,
   },
+
   // contact icon
   listItemAvatar: {
     width: 40,
@@ -241,4 +239,18 @@ export default StyleSheet.create({
     letterSpacing: 0.1,
     color: "#3D2200",
   },
+  mapContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  map: {
+    flex: 0.9,
+    width: "90%",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  mapText: {
+    color: "#000000"
+  }
 });
