@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
   userID: { type: String, required: true, unique: true },
@@ -6,13 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  location: {
-    type: {
-      latitude: Number,
-      longitude: Number
-    },
-    required: false
-  },
+  location: { type: String },
   friendList: [
     {
       friendID: String,
@@ -20,34 +14,14 @@ const userSchema = new mongoose.Schema({
     }
   ],
   timesAvailable: {
-    type: Map,
-    of: [Boolean],
-    default: () => {
-      const defaultAvailability = Array(58).fill(true);
-      return {
-        "Monday": defaultAvailability,
-        "Tuesday": defaultAvailability,
-        "Wednesday": defaultAvailability,
-        "Thursday": defaultAvailability,
-        "Friday": defaultAvailability,
-        "Saturday": defaultAvailability,
-        "Sunday": defaultAvailability
-      };
-    }
+    type: [Date], 
+    default: []
   },
   mealsScheduled: {
-    type: Map,
-    of: [Number],
-    default: () => ({
-      "Monday": [],
-      "Tuesday": [],
-      "Wednesday": [],
-      "Thursday": [],
-      "Friday": [],
-      "Saturday": [],
-      "Sunday": []
-    })
+    type: [Date], 
+    default: []
   }
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+export default User;
