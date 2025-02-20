@@ -12,6 +12,8 @@ import ScheduleMeal from "./screens/ScheduleMeal";
 import PingFriends from "./screens/PingFriends";
 import PickFriend from "./screens/PickFriend";
 import BuildSquad from "./screens/BuildSquad";
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, View } } from "expo-status-bar";
 import EnterAvailability from "./screens/EnterAvailability";
 
 const Stack = createStackNavigator();
