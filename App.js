@@ -14,6 +14,7 @@ import PickFriend from "./screens/PickFriend";
 import BuildSquad from "./screens/BuildSquad";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } } from "expo-status-bar";
+import EnterAvailability from "./screens/EnterAvailability";
 
 const Stack = createStackNavigator();
 
@@ -44,6 +45,7 @@ export default function App() {
         <Stack.Screen name="PingFriends" component={PingFriends} />
         <Stack.Screen name="PickFriend" component={PickFriend} />
         <Stack.Screen name="BuildSquad" component={BuildSquad} />
+        <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
       </Stack.Navigator>
     </NavigationContainer>
   );
