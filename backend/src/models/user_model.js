@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
     default: []
   },
   mealsScheduled: {
-    type: [Date], 
+    type: [mongoose.Schema.Types.ObjectId], 
+    ref: 'Meal',
     default: []
   }
 });
