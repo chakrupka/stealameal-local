@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Checkbox, Text, IconButton, Avatar } from "react-native-paper";
+import { Checkbox, Text, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import styles from "../styles";
+import TopNav from "../components/TopNav";
 
 const dummyFriends = [
   {
@@ -24,21 +25,84 @@ const dummyFriends = [
   { id: "9", name: "Person 5" },
 ];
 
+// Constants
+const BUTTON_STYLES = {
+  dateTime: {
+    width: 200,
+    height: 34,
+    borderRadius: 6,
+    backgroundColor: "rgba(174,207,117,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  send: {
+    width: 100,
+    height: 52,
+    backgroundColor: "rgba(174,207,117,0.75)",
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  sendText: {
+    color: "#096A2E",
+    marginRight: 3,
+  },
+};
+
+const LAYOUT = {
+  buttonRow: {
+    position: "absolute",
+    top: 290,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    paddingVertical: 5,
+    backgroundColor: "white",
+    zIndex: 1,
+  },
+  listAdjustment: {
+    top: 350,
+    height: 520,
+  },
+  bottomContainer: {
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  memberStyle: {
+    paddingLeft: 50,
+  },
+  selectedItem: {
+    backgroundColor: "#74C69D",
+  },
+};
+
 export default function PickFriend({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
   const [selectedFriends, setSelectedFriends] = useState([]);
 
+  // Toggle friend selection
   const toggleSelection = (id) => {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
   };
 
+  // Render individual friend or group item
   const renderFriend = ({ item }) => (
     <View>
+      {/* Friend item */}
       <TouchableOpacity onPress={() => toggleSelection(item.id)}>
-        <View style={styles.listItem}>
-          {/* Contact Avator */}
+        <View
+          style={[
+            styles.listItem,
+            selectedFriends.includes(item.id) ? LAYOUT.selectedItem : {},
+          ]}
+        >
+          {/* Avatar */}
           <View style={styles.listItemAvatar}>
             <Avatar.Text
               size={40}
@@ -47,10 +111,12 @@ export default function PickFriend({ navigation, route }) {
               labelStyle={{ color: "#000" }}
             />
           </View>
-          {/* Contact name */}
+
+          {/* Name */}
           <View style={styles.listItemContent}>
             <Text>{item.name}</Text>
           </View>
+
           {/* Checkbox */}
           <View style={styles.listItemCheckbox}>
             <Checkbox
@@ -65,12 +131,13 @@ export default function PickFriend({ navigation, route }) {
           </View>
         </View>
       </TouchableOpacity>
-      {/* For group items, list members underneath */}
+
+      {/* Group members if this is a group */}
       {item.group &&
         item.members.map((member, index) => (
           <View
             key={`${item.id}-member-${index}`}
-            style={[styles.listItem, { paddingLeft: 50 }]}
+            style={[styles.listItem, LAYOUT.memberStyle]}
           >
             <View style={styles.listItemAvatar}>
               <Avatar.Text
@@ -90,49 +157,49 @@ export default function PickFriend({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {/* Top navigation bar */}
+      <TopNav
+        navigation={navigation}
+        title="Ping Friends"
+        profilePic={profilePic}
+      />
+
+      {/* Main header */}
       <Text style={styles.header}>PING YOUR FRIENDS</Text>
 
-      {/* SUBHEADER */}
+      {/* Subheader */}
       <Text style={styles.subheader}>Select friends and schedule a ping.</Text>
 
-      {/* Date/Time area */}
-      <View style={styles.dateTimeContainer}>
-        <Text>Date/Time</Text>
+      {/* Date/Time and Send button row */}
+      <View style={LAYOUT.buttonRow}>
+        {/* Date/Time button */}
+        <View style={BUTTON_STYLES.dateTime}>
+          <Text>Date/Time</Text>
+        </View>
+
+        {/* Send button */}
+        <TouchableOpacity
+          style={BUTTON_STYLES.send}
+          onPress={() => console.log("Send pressed")}
+        >
+          <Text style={BUTTON_STYLES.sendText}>Send</Text>
+          <MaterialCommunityIcons name="send" size={24} color="#096A2E" />
+        </TouchableOpacity>
       </View>
 
-      {/* Send button */}
-      <TouchableOpacity
-        style={styles.sendButton}
-        onPress={() => console.log("Send pressed")}
-      >
-        <Text style={{ color: "#096A2E", marginRight: 3 }}>Send</Text>
-        <MaterialCommunityIcons
-          name="send"
-          size={24}
-          color="#096A2E"
-          style={styles.sendIcon}
-        />
-      </TouchableOpacity>
-
-      {/* List container */}
-      <View style={styles.listContainer}>
+      {/* Friends list */}
+      <View style={[styles.listContainer, LAYOUT.listAdjustment]}>
         <FlatList
           data={dummyFriends}
           keyExtractor={(item) => item.id}
           renderItem={renderFriend}
+          showsVerticalScrollIndicator={true}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       </View>
 
-      {/* Back arrow and “Ping Friends Now” button */}
-      <View style={styles.bottomContainer}>
-        <IconButton
-          icon={() => (
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#000" />
-          )}
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        />
+      {/* Bottom button */}
+      <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
         <TouchableOpacity
           style={styles.pingButton}
           onPress={() => console.log("Ping Friends Now pressed")}
