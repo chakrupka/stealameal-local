@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  userID: { type: String, required: true, unique: true },
+  //userID: { type: String, required: true, unique: true }, I'm not sure we need this since Mongo assigns
   profilePic: { type: String },
   email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
