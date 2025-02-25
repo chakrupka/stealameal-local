@@ -320,8 +320,8 @@ export default StyleSheet.create({
   },
 
   map: {
-    flex: 0.9,
-    width: "90%",
+    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -329,4 +329,20 @@ export default StyleSheet.create({
   mapText: {
     color: COLORS.black,
   },
+  marker: {
+    width: 30,
+    height: 30,
+    borderRadius: 25,
+    backgroundColor: '#007AFF', // Custom background color
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  initials: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
 });
