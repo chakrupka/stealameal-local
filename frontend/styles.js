@@ -1,54 +1,148 @@
 import { StyleSheet, Platform, StatusBar } from "react-native";
 
+const COLORS = {
+  primary: "#096A2E",
+  secondary: "rgba(174,207,117,0.75)", // Light green
+  white: "#FFFFFF",
+  black: "#000000",
+  purple: "#5D4E8E",
+  red: "red",
+  selectedItem: "#74C69D",
+  textDark: "#3D2200",
+};
+
+const SPACING = {
+  xs: 5,
+  sm: 10,
+  md: 15,
+  lg: 20,
+  xl: 25,
+  xxl: 30,
+  xxxl: 40,
+};
+
+const SIZES = {
+  avatar: 40,
+  buttonWidth: {
+    standard: 165,
+    large: 250,
+  },
+  buttonHeight: {
+    standard: 40,
+    large: 52,
+  },
+  iconSize: {
+    small: 24,
+    medium: 40,
+  },
+  headerWidth: 373,
+  container: {
+    standard: 380,
+    small: 215,
+    medium: 360,
+  },
+  listHeight: 525,
+  borderRadius: {
+    small: 5,
+    medium: 6,
+    large: 8,
+    pill: 30,
+    circle: 50,
+    fullCircle: 100,
+  },
+};
+
+const TYPOGRAPHY = {
+  header: {
+    fontFamily: "Inter",
+    fontStyle: "italic",
+    fontWeight: "100",
+    fontSize: 50,
+    lineHeight: 61,
+  },
+  subheader: {
+    fontFamily: "Inter",
+    fontStyle: "italic",
+    fontWeight: "100",
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  button: {
+    fontFamily: "Roboto",
+    fontStyle: "normal",
+    fontWeight: "500",
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0.1,
+  },
+  title: {
+    fontSize: 26,
+    fontFamily: "HammersmithOne_400Regular",
+  },
+  body: {
+    fontSize: 16,
+    fontFamily: "DMSans_400Regular",
+  },
+  input: {
+    fontSize: 18,
+    fontFamily: "DMSans_400Regular",
+  },
+};
+
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.white,
     alignItems: "center",
   },
 
   content: {
     flex: 1,
-    marginTop: Platform.OS === "ios" ? 80 : StatusBar.currentHeight + 50,
+    marginTop:
+      Platform.OS === "ios" ? 80 : StatusBar.currentHeight + SPACING.xl,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.lg,
   },
 
+  // Navigation
   topNav: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#096A2E",
+    backgroundColor: COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight + 10,
-    paddingBottom: 10,
-    paddingHorizontal: 15,
+    paddingTop:
+      Platform.OS === "ios" ? SPACING.xl : StatusBar.currentHeight + SPACING.sm,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     zIndex: 1000,
   },
 
   avatar: {
-    marginLeft: -10,
-    marginRight: 25,
+    marginLeft: -SPACING.sm,
+    marginRight: SPACING.xl,
   },
 
+  // Images and logos
   largeLogo: {
-    width: 350,
-    height: 350,
+    width: SIZES.container.standard - 30,
+    height: SIZES.container.standard - 30,
     resizeMode: "contain",
-    marginBottom: 40,
+    marginBottom: SPACING.xl,
   },
 
+  // Text styles
   title: {
-    fontSize: 26,
-    color: "#fff",
-    marginBottom: 30,
-    fontFamily: "HammersmithOne_400Regular",
+    ...TYPOGRAPHY.title,
+    color: COLORS.white,
+    marginBottom: SPACING.xxl,
     textAlign: "center",
   },
 
+  // Button styles
   buttonContainer: {
     width: "100%",
     alignItems: "center",
@@ -56,146 +150,125 @@ export default StyleSheet.create({
   },
 
   button: {
-    width: 250,
-    marginVertical: 10,
-    paddingVertical: 12,
-    borderRadius: 30,
-    backgroundColor: "#5D4E8E",
+    width: SIZES.buttonWidth.large,
+    marginVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: SIZES.borderRadius.pill,
+    backgroundColor: COLORS.purple,
   },
 
+  // Form elements
   inputLarge: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: 250,
-    fontSize: 18,
-    fontFamily: "DMSans_400Regular",
+    backgroundColor: COLORS.white,
+    padding: SPACING.md,
+    borderRadius: SIZES.borderRadius.large,
+    marginBottom: SPACING.lg,
+    width: SIZES.buttonWidth.large,
+    ...TYPOGRAPHY.input,
   },
 
   errorText: {
-    color: "red",
+    color: COLORS.red,
     fontSize: 14,
     fontFamily: "DMSans_400Regular",
   },
 
+  // Section headers
   sectionHeader: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "white",
-    marginVertical: 10,
-    paddingLeft: 10,
+    color: COLORS.white,
+    marginVertical: SPACING.sm,
+    paddingLeft: SPACING.sm,
     fontFamily: "DMSans_400Regular",
   },
 
+  // Profile elements
   imageContainer: {
     alignSelf: "center",
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
+
   profilePic: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: SIZES.container.small - 115,
+    height: SIZES.container.small - 115,
+    borderRadius: SIZES.borderRadius.circle,
   },
+
   uploadText: {
-    color: "white",
-    fontSize: 16,
+    color: COLORS.white,
+    ...TYPOGRAPHY.body,
   },
+
+  // Main page elements
   header: {
     position: "absolute",
-    width: 373,
+    width: SIZES.headerWidth,
     height: 163,
-    left: 25,
-    top: 70,
-    fontFamily: "Inter",
-    fontStyle: "italic",
-    fontWeight: "100",
-    fontSize: 50,
-    lineHeight: 61,
+    left: SPACING.xl,
+    top: 120,
+    ...TYPOGRAPHY.header,
     textAlign: "center",
-    color: "#000000",
+    color: COLORS.black,
     borderWidth: 0.5,
-    borderColor: "#000000",
+    borderColor: COLORS.black,
   },
+
   // SUBHEADER
   subheader: {
     position: "absolute",
-    width: 373,
+    width: SIZES.headerWidth,
     height: 35,
-    left: 25,
-    top: 203,
-    fontFamily: "Inter",
-    fontStyle: "italic",
-    fontWeight: "100",
-    fontSize: 20,
-    lineHeight: 24,
-    textAlign: "center",
-    color: "#000000",
-  },
-  // DATE/TIME
-  dateTimeContainer: {
-    position: "absolute",
-    left: 40,
+    left: SPACING.xl,
     top: 250,
-    width: 215,
-    height: 34,
-    borderRadius: 6,
-    backgroundColor: "rgba(174,207,117,0.75)",
-    justifyContent: "center",
-    alignItems: "center",
+    ...TYPOGRAPHY.subheader,
+    textAlign: "center",
+    color: COLORS.black,
   },
-  // SEND BUTTON
-  sendButton: {
-    position: "absolute",
-    left: 290,
-    top: 240,
-    width: 100,
-    height: 52,
-    backgroundColor: "rgba(174,207,117,0.75)",
-    borderRadius: 100,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   // LIST container
   listContainer: {
     position: "absolute",
     top: 300,
     alignSelf: "center",
-    width: 360,
-    height: 500,
-    backgroundColor: "rgba(174,207,117,0.75)",
+    width: SIZES.container.standard,
+    height: SIZES.listHeight,
+    backgroundColor: COLORS.secondary,
   },
+
   // list item
   listItem: {
-    width: 360,
+    width: SIZES.container.medium + 10,
     height: 56,
     minHeight: 56,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: SPACING.sm,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#000",
-    marginVertical: 5,
-    borderRadius: 5,
+    borderBottomColor: COLORS.black,
+    marginVertical: SPACING.xs,
+    borderRadius: SIZES.borderRadius.small,
   },
 
   // contact icon
   listItemAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: SIZES.avatar,
+    height: SIZES.avatar,
+    borderRadius: SIZES.avatar / 2,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
-    marginRight: 10,
+    backgroundColor: COLORS.white,
+    marginRight: SPACING.sm,
   },
+
   // contact name
   listItemContent: {
     width: 212,
-    height: 40,
+    height: SIZES.avatar,
     justifyContent: "center",
   },
+
   // checkbox
   listItemCheckbox: {
     width: 44,
@@ -203,55 +276,58 @@ export default StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // BOTTOM container – for back arrow and the “Ping Friends Now” button
+
+  // BOTTOM container
   bottomContainer: {
     position: "absolute",
-    bottom: 30,
-    left: 10,
-    right: 30,
+    bottom: SPACING.md,
+    left: 250,
+    right: SPACING.xxl,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   backButton: {
     width: 70,
     height: 80,
     justifyContent: "center",
     alignItems: "center",
   },
+
   pingButton: {
-    width: 165,
-    height: 40,
-    backgroundColor: "rgba(174,207,117,0.75)",
-    borderRadius: 100,
+    width: SIZES.buttonWidth.standard,
+    height: SIZES.buttonHeight.standard,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.fullCircle,
     justifyContent: "center",
     alignItems: "center",
   },
+
   pingButtonLabel: {
     width: 117,
-    height: 20,
-    fontFamily: "Roboto",
-    fontStyle: "normal",
-    fontWeight: "500",
-    fontSize: 14,
-    lineHeight: 20,
+    height: SPACING.lg,
+    ...TYPOGRAPHY.button,
     textAlign: "center",
-    letterSpacing: 0.1,
-    color: "#3D2200",
+    color: COLORS.textDark,
   },
+
+  // Map styles
   mapContainer: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
+
   map: {
     flex: 1,
     width: "100%",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
+
   mapText: {
-    color: "#000000"
+    color: COLORS.black,
   },
   marker: {
     width: 30,
@@ -267,5 +343,6 @@ export default StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
-  }
+  },
+
 });
