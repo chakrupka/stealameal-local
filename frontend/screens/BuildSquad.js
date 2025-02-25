@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Button, Checkbox, Text, Avatar, TextInput } from "react-native-paper";
+import { Checkbox, Text, Avatar, TextInput } from "react-native-paper";
 import styles from "../styles";
 import TopNav from "../components/TopNav";
 
+// Sample data for friends list
 const dummyFriends = [
   { id: "1", name: "Cha Krupka" },
   { id: "2", name: "Nicole Ward" },
@@ -20,27 +21,57 @@ const dummyFriends = [
   { id: "13", name: "Person 9" },
 ];
 
+// Constants
+const LAYOUT = {
+  listAdjustment: {
+    top: 300,
+  },
+  bottomContainer: {
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    width: "100%",
+    left: 0,
+    right: 30,
+    bottom: 30,
+  },
+  selectedItem: {
+    backgroundColor: "#74C69D",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
+  },
+  inputContainer: {
+    flex: 1,
+    marginRight: 15,
+    width: "60%",
+  },
+  inputStyle: {
+    backgroundColor: "white",
+  },
+};
+
 export default function BuildSquad({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [squadName, setSquadName] = useState("");
 
+  // Toggle friend selection
   const toggleSelection = (id) => {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
   };
 
+  // Render individual friend item
   const renderFriend = ({ item }) => (
     <TouchableOpacity onPress={() => toggleSelection(item.id)}>
       <View
         style={[
           styles.listItem,
-          selectedFriends.includes(item.id)
-            ? { backgroundColor: "#74C69D" }
-            : {},
+          selectedFriends.includes(item.id) ? LAYOUT.selectedItem : {},
         ]}
       >
+        {/* Avatar */}
         <View style={styles.listItemAvatar}>
           <Avatar.Text
             size={40}
@@ -49,9 +80,13 @@ export default function BuildSquad({ navigation, route }) {
             labelStyle={{ color: "#000" }}
           />
         </View>
+
+        {/* Name */}
         <View style={styles.listItemContent}>
           <Text>{item.name}</Text>
         </View>
+
+        {/* Checkbox */}
         <View style={styles.listItemCheckbox}>
           <Checkbox
             status={selectedFriends.includes(item.id) ? "checked" : "unchecked"}
@@ -64,75 +99,65 @@ export default function BuildSquad({ navigation, route }) {
     </TouchableOpacity>
   );
 
-  // Enable/disable button
+  // Determine if squad is valid (has name and at least one friend)
   const isSquadValid = selectedFriends.length > 0 && squadName.trim() !== "";
 
   return (
-    <View style={[styles.container, { flex: 1 }]}>
+    <View style={styles.container}>
+      {/* Top navigation bar */}
       <TopNav
         navigation={navigation}
         title="Build a Squad"
         profilePic={profilePic}
       />
 
-      {/* Header */}
-      <Text
-        style={[
-          styles.header,
-          {
-            marginTop: 50,
-            textAlign: "center",
-          },
-        ]}
-      >
-        Build Your Squad
+      {/* Main header */}
+      <Text style={styles.header}>BUILD YOUR SQUAD</Text>
+
+      {/* Subheader */}
+      <Text style={styles.subheader}>
+        Click on friends to make a new group.
       </Text>
 
-      {/* Friend Selection List */}
-      <View style={{ flex: 1, marginTop: 20 }}>
+      {/* Friends list */}
+      <View style={[styles.listContainer, LAYOUT.listAdjustment]}>
         <FlatList
           data={dummyFriends}
           keyExtractor={(item) => item.id}
           renderItem={renderFriend}
-          ListHeaderComponent={<View style={{ height: 150 }} />}
-          contentContainerStyle={{ paddingBottom: 150 }}
           showsVerticalScrollIndicator={true}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       </View>
 
-      {/* Bottom Fixed Input & Confirm Button */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          width: "100%",
-          padding: 40,
-          backgroundColor: "#fff",
-          borderTopWidth: 1,
-          borderColor: "#ddd",
-        }}
-      >
-        <TextInput
-          mode="outlined"
-          placeholder="Enter squad name"
-          value={squadName}
-          onChangeText={setSquadName}
-          style={{ width: "100%", marginBottom: 10 }}
-        />
-        <Button
-          mode="contained"
+      {/* Bottom input and button area */}
+      <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
+        {/* Squad name input */}
+        <View style={LAYOUT.inputContainer}>
+          <TextInput
+            mode="outlined"
+            placeholder="Enter squad name"
+            value={squadName}
+            onChangeText={setSquadName}
+            style={LAYOUT.inputStyle}
+          />
+        </View>
+
+        {/* Create squad button */}
+        <TouchableOpacity
+          style={[
+            styles.pingButton,
+            !isSquadValid ? LAYOUT.disabledButton : {},
+          ]}
           disabled={!isSquadValid}
-          style={{
-            backgroundColor: isSquadValid ? "#74C69D" : "#ccc",
-          }}
           onPress={() =>
             console.log(
               `Squad "${squadName}" created with friends: ${selectedFriends}`
             )
           }
         >
-          Confirm Squad
-        </Button>
+          <Text style={styles.pingButtonLabel}>Create Squad</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
