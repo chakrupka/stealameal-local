@@ -252,5 +252,20 @@ export default StyleSheet.create({
   },
   mapText: {
     color: "#000000"
+  },
+  marker: {
+    width: 30,
+    height: 30,
+    borderRadius: 25,
+    backgroundColor: '#007AFF', // Custom background color
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  initials: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   }
 });

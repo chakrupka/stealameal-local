@@ -1,5 +1,5 @@
 import React from 'react';
-import MapView from 'react-native-maps';
+import MapView, {Marker} from 'react-native-maps';
 import { View } from 'react-native';
 import {IconButton, Text} from "react-native-paper";
 import styles from "../styles";
@@ -26,6 +26,11 @@ export default function CampusMap({ navigation }) {
                 }}
                 mapType={"hybrid"}
             >
+                <Marker coordinate={{ latitude: 43.7057, longitude: -72.2887 }}>
+                    <View style={styles.marker}>
+                        <Text style={styles.initials}>EK</Text>
+                    </View>
+                </Marker>
             </MapView>
         </View>
 
