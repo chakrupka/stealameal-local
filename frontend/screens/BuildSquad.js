@@ -4,7 +4,6 @@ import { Checkbox, Text, Avatar, TextInput } from "react-native-paper";
 import styles from "../styles";
 import TopNav from "../components/TopNav";
 
-// Sample data for friends list
 const dummyFriends = [
   { id: "1", name: "Cha Krupka" },
   { id: "2", name: "Nicole Ward" },
