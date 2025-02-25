@@ -245,8 +245,8 @@ export default StyleSheet.create({
     alignItems: "center"
   },
   map: {
-    flex: 0.9,
-    width: "90%",
+    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center"
   },
