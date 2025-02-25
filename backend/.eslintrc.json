@@ -18,8 +18,9 @@
     ],
     "no-console": 0,
     "import/no-unresolved": [
-      2,
+      "error",
       {
+        "ignore": ["^firebase-admin/.+"],
         "commonjs": true,
         "caseSensitive": false
       }
