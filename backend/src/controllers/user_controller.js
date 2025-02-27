@@ -15,7 +15,7 @@ const handleCreateUser = async (req, res) => {
 const handleGetUsers = async (req, res) => {
   try {
     const users = await User.find().populate('mealsScheduled');
-    return res.status(200).json(users);
+    return res.json(users);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -28,20 +28,21 @@ const handleGetOwnedUser = async (req, res) => {
       'mealsScheduled',
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.status(200).json(user);
+    return res.json(user);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
 
 // Get user by ID
+// Check here? Is requesting user on requested user's friend list?
 const handleGetUserId = async (req, res) => {
   try {
     const user = await User.findOne(req.params.userID).populate(
       'mealsScheduled',
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.status(200).json(user);
+    return res.json(user);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -58,18 +59,19 @@ const handleUpdate = async (req, res) => {
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
     }
-    return res.status(200).json(updatedUser);
+    return res.json(updatedUser);
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
 };
 
 // Delete user using their ID
+// Probably would have
 const handleDelete = async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.userID);
     if (!deletedUser) return res.status(404).json({ error: 'User not found' });
-    return res.status(200).json({ message: 'User deleted successfully' });
+    return res.json({ message: 'User deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
