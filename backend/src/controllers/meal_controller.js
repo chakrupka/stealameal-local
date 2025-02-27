@@ -18,7 +18,7 @@ const getAllMeals = async (req, res) => {
       'host participants._id',
       'firstName lastName',
     );
-    return res.status(200).json(meals);
+    return res.json(meals);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -32,7 +32,7 @@ const getMealById = async (req, res) => {
       'firstName lastName',
     );
     if (!meal) return res.status(404).json({ error: 'Meal not found' });
-    return res.status(200).json(meal);
+    return res.json(meal);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -47,7 +47,7 @@ const updateMeal = async (req, res) => {
       { new: true },
     );
     if (!updatedMeal) return res.status(404).json({ error: 'Meal not found' });
-    return res.status(200).json(updatedMeal);
+    return res.json(updatedMeal);
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
@@ -57,7 +57,7 @@ const updateMeal = async (req, res) => {
 const deleteMeal = async (req, res) => {
   try {
     await Meal.findByIdAndDelete(req.params.mealID);
-    return res.status(200).json({ message: 'Meal deleted successfully' });
+    return res.json({ message: 'Meal deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

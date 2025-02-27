@@ -20,7 +20,7 @@ const createSquad = async (req, res) => {
 const getAllSquads = async (req, res) => {
   try {
     const squads = await Squad.find().populate('members', 'firstName lastName');
-    return res.status(200).json(squads);
+    return res.json(squads);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -34,7 +34,7 @@ const getSquadById = async (req, res) => {
       'firstName lastName',
     );
     if (!squad) return res.status(404).json({ error: 'Squad not found' });
-    return res.status(200).json(squad);
+    return res.json(squad);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -52,7 +52,7 @@ const addMemberToSquad = async (req, res) => {
 
     squad.members.push(req.body.userID);
     await squad.save();
-    return res.status(200).json(squad);
+    return res.json(squad);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -68,7 +68,7 @@ const removeMemberFromSquad = async (req, res) => {
       return member.toString() !== req.params.userID;
     });
     await squad.save();
-    return res.status(200).json(squad);
+    return res.json(squad);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -78,7 +78,7 @@ const removeMemberFromSquad = async (req, res) => {
 const deleteSquad = async (req, res) => {
   try {
     await Squad.findByIdAndDelete(req.params.squadID);
-    return res.status(200).json({ message: 'Squad deleted successfully' });
+    return res.json({ message: 'Squad deleted successfully' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
