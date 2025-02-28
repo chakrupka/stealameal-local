@@ -3,6 +3,8 @@ import { View, SectionList } from "react-native";
 import { Button, List, Checkbox, Text } from "react-native-paper";
 import styles from "../styles"; 
 import TopNav from "../components/TopNav";
+import { scheduleNotificationAsync, registerForPushNotifications} from "../components/Notify";
+import { sendLocalNotification } from "../services/localNotification";
 
 const friendsByLocation = [
   {
@@ -79,7 +81,14 @@ export default function PingFriends({ navigation, route }) {
       />
 
       {selectedFriends.length > 0 && (
-        <Button mode="contained" style={styles.button} onPress={() => console.log(`Pinging: ${selectedFriends}`)}>
+        <Button 
+          mode="contained" 
+          style={styles.button}
+          onPress={async () => {
+            console.log(`Pinging: ${selectedFriends}`);
+            sendLocalNotification();
+          }}
+        >
           Ping Now
         </Button>
       )}

@@ -14,6 +14,7 @@ import PickFriend from './screens/PickFriend';
 import BuildSquad from './screens/BuildSquad';
 import CampusMap from './screens/CampusMap';
 import EnterAvailability from './screens/EnterAvailability';
+import Notify from './components/Notify';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +47,7 @@ export default function App() {
         <Stack.Screen name="BuildSquad" component={BuildSquad} />
         <Stack.Screen name="CampusMap" component={CampusMap} />
         <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
+        <Stack.Screen name="NotifyFriends" component={Notify} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -10,16 +10,33 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "plugins": [
+        [
+          "expo-notifications",
+          {
+            "icon": "/assets/logo-notification.png",
+            "color": "#ffffff",
+            "defaultChannel": "default",
+            "sounds": [
+              "/assets/effect1.wav"
+            ],
+            "enableBackgroundRemoteNotifications": true
+          }
+        ]
+      ]
+      
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.projectstealameal"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.projectstealameal"
     },
     "web": {
       "favicon": "./assets/favicon.png"
