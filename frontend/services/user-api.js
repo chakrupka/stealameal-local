@@ -22,17 +22,20 @@ export const fetchOwnUser = async (idToken) => {
       },
     });
 
-    // Log the raw response 
-    console.log('Raw user data from server:', JSON.stringify(response.data, null, 2));
-    
+    // Log the raw response
+    console.log(
+      'Raw user data from server:',
+      JSON.stringify(response.data, null, 2),
+    );
+
     // Ensure userID exists
     if (response.data && !response.data.userID) {
       console.warn('Warning: User data missing userID field!');
-      
+
       // Ask your backend developer to fix this issue
       // As a temporary workaround, you can try to get the userID from the token
       // But this is not a recommended long-term solution
-      
+
       // DO NOT use MongoDB _id as userID - they're completely different
     }
 
@@ -149,13 +152,13 @@ export const acceptFriendRequest = async (idToken, receiverID, senderID) => {
     receiverID,
     senderID,
   });
-  
+
   try {
     const response = await axios.post(
       `${BASE_URL}/users/accept-friend-request`,
-      { 
-        receiverID, 
-        senderID 
+      {
+        receiverID,
+        senderID,
       },
       {
         headers: {
@@ -169,7 +172,34 @@ export const acceptFriendRequest = async (idToken, receiverID, senderID) => {
   } catch (error) {
     console.error(
       'API: Error accepting friend request:',
-      error.response ? error.response.data : error.message
+      error.response ? error.response.data : error.message,
+    );
+    throw error;
+  }
+};
+export const fetchFriendDetails = async (idToken, friendID) => {
+  console.log(
+    `API: Fetching details for friend with Firebase UID: ${friendID}`,
+  );
+
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/users/by-firebase-uid/${friendID}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        timeout: 10000,
+      },
+    );
+
+    console.log('API: Friend details response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'API: Error fetching friend details:',
+      error.response ? error.response.data : error.message,
     );
     throw error;
   }

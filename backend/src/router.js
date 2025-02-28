@@ -30,6 +30,10 @@ router.post('/users/send-friend-request', UserHandlers.sendFriendRequest);
 router.get('/users/:userID/friend-requests', UserHandlers.getFriendRequests);
 router.post('/users/accept-friend-request', UserHandlers.acceptFriendRequest);
 router.post('/users/decline-friend-request', UserHandlers.declineFriendRequest);
+router.get(
+  '/users/by-firebase-uid/:firebaseUID',
+  UserHandlers.handleGetByFirebaseUid,
+);
 
 // Squad Routes
 router.post('/squads', SquadHandlers.createSquad);
