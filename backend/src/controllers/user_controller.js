@@ -240,6 +240,7 @@ const handleGetByFirebaseUid = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
 const acceptFriendRequest = async (req, res) => {
   try {
     const { receiverID, senderID } = req.body;

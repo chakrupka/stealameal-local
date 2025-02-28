@@ -12,6 +12,8 @@ import { Button, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
+import { createUser, signInUser, signOutUser } from '../services/firebase-auth'; // Import Firebase auth services
+import useStore from '../store'; // Import Zustand store
 
 export default function CreateAccount({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -21,6 +23,10 @@ export default function CreateAccount({ navigation }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [profilePic, setProfilePic] = useState(null);
+
+  // Get login and logout functions from the store
+  const login = useStore((state) => state.userSlice.login);
+  const logout = useStore((state) => state.userSlice.logout);
 
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,7 +71,11 @@ export default function CreateAccount({ navigation }) {
       setLoading(true);
       setError('');
 
-      // Prepare the request payload
+      // 1. First, if there's a current user, log them out
+      await logout();
+      console.log('Logged out any existing user');
+
+      // 2. Prepare the request payload
       const userData = {
         email,
         password,
@@ -74,7 +84,7 @@ export default function CreateAccount({ navigation }) {
         profilePic,
       };
 
-      // POST to /api/auth to create the user
+      // 3. POST to /api/auth to create the user
       const response = await fetch('http://localhost:9090/api/auth', {
         method: 'POST',
         headers: {
@@ -88,12 +98,30 @@ export default function CreateAccount({ navigation }) {
         throw new Error(errorData.error || 'Failed to create account');
       }
 
-      // On success
-      const data = await response.json();
-      console.log('Account created successfully:', data);
+      const newUserData = await response.json();
+      console.log('Account created successfully:', newUserData);
 
-      // Navigate to home screen or next step
-      navigation.navigate('WhatNow');
+      // 4. Now log in with the newly created account
+      console.log('Attempting to log in with new account');
+
+      // Sign in with Firebase to get the ID token
+      const idToken = await signInUser(email, password);
+      console.log('Obtained ID Token for new user:', idToken);
+
+      // 5. Use the store's login function to set up the user state
+      const loginResult = await login({
+        email,
+        password,
+        idToken,
+      });
+
+      if (loginResult.success) {
+        console.log('Successfully logged in as new user');
+        // Navigate to home screen
+        navigation.navigate('WhatNow', { profilePic });
+      } else {
+        setError(loginResult.error || 'Login after account creation failed');
+      }
     } catch (err) {
       console.error('Error creating account:', err.message);
       setError(err.message || 'Failed to create account. Please try again.');

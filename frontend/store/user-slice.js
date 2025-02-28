@@ -153,7 +153,7 @@ const createUserSlice = (set, get) => ({
 
     try {
       // Call the API with all required parameters
-      await sendFriendRequest(
+      const response = await sendFriendRequest(
         idToken,
         senderID,
         senderName,
@@ -165,24 +165,36 @@ const createUserSlice = (set, get) => ({
         state.userSlice.status = 'succeeded';
       });
 
-      return { success: true };
+      return {
+        success: true,
+        message:
+          response.userFriendlyMessage ||
+          response.message ||
+          'Friend request sent!',
+      };
     } catch (error) {
       console.error('Failed to send friend request:', error);
 
+      // Get user-friendly message from error if available
+      const userFriendlyMessage =
+        error.response?.data?.userFriendlyMessage ||
+        error.response?.data?.message ||
+        error.userFriendlyMessage ||
+        'Failed to send friend request';
+
       set((state) => {
         state.userSlice.status = 'failed';
-        state.userSlice.error =
-          error.response?.data?.error || 'Failed to send friend request';
+        state.userSlice.error = userFriendlyMessage;
       });
 
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to send friend request',
+        error: userFriendlyMessage,
+        errorDetails: error.response?.data || error.message,
       };
     }
   },
 
-  // ==============================
   // Fetch Friend Requests
   // ==============================
   // user-slice.js

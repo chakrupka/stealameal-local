@@ -182,7 +182,7 @@ const AddFriendsScreen = ({ navigation, route }) => {
       });
 
       // Call the API with all required parameters
-      await sendFriendRequest(
+      const response = await sendFriendRequest(
         currentUser.idToken,
         senderID,
         senderName,
@@ -190,15 +190,27 @@ const AddFriendsScreen = ({ navigation, route }) => {
         selectedUserID,
       );
 
-      Alert.alert('Friend request sent!');
+      // Display the user-friendly message if available, otherwise use a default message
+      const message = response.userFriendlyMessage || 'Friend request sent!';
+      Alert.alert('Success', message);
+
       setSelectedUserID(null); // Reset selection
       setEmail(''); // Clear search
     } catch (error) {
       console.error('Failed to send friend request:', error);
-      Alert.alert(
-        'Failed to send friend request',
-        error.message || 'Please try again.',
-      );
+
+      // Extract the user-friendly message from the error response if available
+      let errorMessage = 'Please try again.';
+
+      if (error.response && error.response.data) {
+        errorMessage =
+          error.response.data.userFriendlyMessage ||
+          error.response.data.message ||
+          error.message ||
+          errorMessage;
+      }
+
+      Alert.alert('Friend Request Status', errorMessage);
     }
   };
 
