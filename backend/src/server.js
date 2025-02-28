@@ -5,8 +5,9 @@ import cors from 'cors';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import router from './router'; // Import the actual Express Router
+import router from './router';
 import requireAuth from './middleware/require-auth';
+import UserHandlers from './controllers/user_controller';
 
 const app = express();
 
@@ -35,17 +36,23 @@ app.get('/', (req, res) => {
 // ================================
 // PUBLIC ROUTES
 // ================================
-// Because router.js contains POST /auth and GET /auth, we can
-// just mount the router on /api for everything.
-// We do want to let "POST /api/auth" happen without token => see requireAuth logic
-app.use('/api', router);
+// Only these specific routes should be accessible without authentication
+app.post('/api/auth', UserHandlers.handleCreateUser); // Creating a user doesn't require auth
 
 // ================================
 // PROTECTED ROUTES
 // ================================
-// All other /api/... routes require authentication
-// If you prefer to separate them, do:
-app.use(requireAuth);
+// Apply authentication middleware to all other routes
+// This ensures auth is checked before accessing protected routes
+app.use('/api', requireAuth, (req, res, next) => {
+  // Skip auth check again for user creation since we already defined that route
+  if (req.path === '/auth' && req.method === 'POST') {
+    return next('route'); // Skip to the next route handler
+  }
+  next(); // Continue to the router
+});
+
+// Mount the router after the auth middleware
 app.use('/api', router);
 
 // ================================

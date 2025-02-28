@@ -109,9 +109,17 @@ export default function Login({ navigation, route }) {
       setLoading(false);
     }
   };
+  const handleBackPress = () => {
+    navigation.navigate('Starter'); // Navigate back to the "Starter" screen
+  };
   return (
     <View style={styles.container}>
-      <TopNav navigation={navigation} title="Log In" profilePic={profilePic} />
+      <TopNav
+        navigation={navigation}
+        title="Log In"
+        profilePic={profilePic}
+        onBackPress={handleBackPress}
+      />
       <View style={styles.content}>
         <Text style={styles.title}>Enter Your Details</Text>
 

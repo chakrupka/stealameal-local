@@ -20,6 +20,7 @@ const createUserSlice = (set, get) => ({
   error: null,
 
   // Login Functionality
+  // Fixed login function in user-slice.js
   login: async ({ email, password }) => {
     // Reset status and error
     set((state) => {
@@ -30,9 +31,20 @@ const createUserSlice = (set, get) => ({
     try {
       // 1. Authenticate with Firebase
       const idToken = await signInUser(email, password);
+      console.log('Login - Got idToken from Firebase');
 
       // 2. Fetch the user's data from our backend
       const userData = await fetchOwnUser(idToken);
+      console.log(
+        'Login - Got user data from backend:',
+        JSON.stringify(userData, null, 2),
+      );
+
+      // Log the userID specifically
+      console.log(
+        'Login - User ID is:',
+        userData.userID || userData._id || userData.id,
+      );
 
       // 3. Update the store with user data
       set((state) => {
@@ -132,7 +144,7 @@ const createUserSlice = (set, get) => ({
     senderID,
     senderName,
     senderEmail,
-    receiverEmail,
+    receiverID,
   }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -140,26 +152,32 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
+      // Call the API with all required parameters
       await sendFriendRequest(
-        currentUser.idToken,
-        currentUser.userID, // senderID
-        currentUser.firstName + ' ' + currentUser.lastName, // senderName
-        currentUser.email, // senderEmail
-        selectedUserID, // receiverID
+        idToken,
+        senderID,
+        senderName,
+        senderEmail,
+        receiverID,
       );
+
       set((state) => {
         state.userSlice.status = 'succeeded';
       });
+
       return { success: true };
     } catch (error) {
+      console.error('Failed to send friend request:', error);
+
       set((state) => {
         state.userSlice.status = 'failed';
         state.userSlice.error =
-          error.response?.data || 'Failed to send friend request';
+          error.response?.data?.error || 'Failed to send friend request';
       });
+
       return {
         success: false,
-        error: error.response?.data || 'Failed to send friend request',
+        error: error.response?.data?.error || 'Failed to send friend request',
       };
     }
   },
@@ -175,37 +193,36 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      // returns an array of docs
-      const requests = await getFriendRequests(idToken, userID);
+      console.log('Fetching friend requests for userID:', userID);
+      console.log('Using idToken:', idToken ? 'Valid token' : 'Invalid token');
 
-      // REMOVE this transform code
-      // const transformed = requests.map((u) => ({
-      //   senderID: u._id,
-      //   senderName: `${u.firstName} ${u.lastName}`,
-      //   senderEmail: u.email,
-      // }));
+      // Call the API to get friend requests
+      const requests = await getFriendRequests(idToken, userID);
+      console.log('Friend requests response:', JSON.stringify(requests));
 
       set((state) => {
         state.userSlice.status = 'succeeded';
-        // Store the subdocuments exactly as returned
-        state.userSlice.friendRequests = requests;
+        // Store the requests as returned by the API
+        state.userSlice.friendRequests = requests || [];
       });
 
       return { success: true, requests };
     } catch (error) {
+      console.error('Error fetching friend requests:', error);
+
       set((state) => {
         state.userSlice.status = 'failed';
         state.userSlice.error =
-          error.response?.data || 'Failed to fetch friend requests';
+          error.response?.data?.error || 'Failed to fetch friend requests';
       });
+
       return {
         success: false,
-        error: error.response?.data || 'Failed to fetch friend requests',
+        error: error.response?.data?.error || 'Failed to fetch friend requests',
       };
     }
   },
-
-  // ==============================
+  // ==fetchFriendRequests============================
   // Accept Friend Request
   // ==============================
   acceptRequest: async ({ idToken, userID, senderID }) => {

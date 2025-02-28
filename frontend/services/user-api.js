@@ -14,8 +14,6 @@ export const createUser = async (userData) => {
 };
 
 export const fetchOwnUser = async (idToken) => {
-  console.log('Fetching own user with token:', idToken);
-
   try {
     const response = await axios.get(`${BASE_URL}/auth`, {
       headers: {
@@ -24,13 +22,23 @@ export const fetchOwnUser = async (idToken) => {
       },
     });
 
-    console.log('Fetch user response:', response.data);
+    // Log the raw response 
+    console.log('Raw user data from server:', JSON.stringify(response.data, null, 2));
+    
+    // Ensure userID exists
+    if (response.data && !response.data.userID) {
+      console.warn('Warning: User data missing userID field!');
+      
+      // Ask your backend developer to fix this issue
+      // As a temporary workaround, you can try to get the userID from the token
+      // But this is not a recommended long-term solution
+      
+      // DO NOT use MongoDB _id as userID - they're completely different
+    }
+
     return response.data;
   } catch (error) {
-    console.error(
-      'Fetch user error:',
-      error.response ? error.response.data : error,
-    );
+    console.error('Fetch user error:', error);
     throw error;
   }
 };
@@ -96,18 +104,45 @@ export const deleteUser = async (idToken, userID) => {
   return response.data;
 };
 
-export const sendFriendRequest = async (idToken, senderID, receiverID) => {
-  const response = await axios.post(
-    `${BASE_URL}/users/send-friend-request`,
-    { senderID, receiverID },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
+export const sendFriendRequest = async (
+  idToken,
+  senderID,
+  senderName,
+  senderEmail,
+  receiverID,
+) => {
+  console.log('API: Sending friend request with params:', {
+    senderID,
+    senderName,
+    senderEmail,
+    receiverID,
+  });
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/send-friend-request`,
+      {
+        senderID,
+        senderName,
+        senderEmail,
+        receiverID,
       },
-    },
-  );
-  return response.data;
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    console.log('API: Friend request response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'API: Error sending friend request:',
+      error.response ? error.response.data : error.message,
+    );
+    throw error;
+  }
 };
 export const getFriendRequests = async (idToken, userID) => {
   const response = await axios.get(

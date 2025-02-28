@@ -16,6 +16,40 @@ import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { searchUsersByEmail, sendFriendRequest } from '../services/user-api';
 
+// Function to extract Firebase UID from JWT token
+const extractUserIdFromToken = (token) => {
+  try {
+    console.log('Attempting to extract UID from token');
+    // Split the token into parts
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.log('Invalid token format, not a JWT');
+      return null;
+    }
+
+    // Decode the payload (middle part)
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    console.log('Token payload:', JSON.stringify(payload, null, 2));
+
+    // Return the user_id from the payload
+    const uid = payload.user_id || payload.sub;
+    console.log('Extracted UID from token:', uid);
+    return uid;
+  } catch (error) {
+    console.error('Error extracting user ID from token:', error);
+    return null;
+  }
+};
+
 const AddFriendsScreen = ({ navigation, route }) => {
   const profilePic = route.params?.profilePic || null;
 
@@ -32,6 +66,18 @@ const AddFriendsScreen = ({ navigation, route }) => {
 
   // Track which user is selected
   const [selectedUserID, setSelectedUserID] = useState(null);
+
+  // Extract Firebase UID from token if needed
+  const [firebaseUid, setFirebaseUid] = useState(null);
+
+  useEffect(() => {
+    // Try to extract Firebase UID from token when component mounts or currentUser changes
+    if (currentUser?.idToken && !currentUser.userID) {
+      const extractedUid = extractUserIdFromToken(currentUser.idToken);
+      setFirebaseUid(extractedUid);
+      console.log('Extracted Firebase UID from token:', extractedUid);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser || !isLoggedIn) {
@@ -69,36 +115,92 @@ const AddFriendsScreen = ({ navigation, route }) => {
       return () => clearTimeout(delayDebounceFn);
     }
   }, [currentUser, email, searchUsers]);
+
   const handleSelectUser = (userID) => {
     setSelectedUserID(userID === selectedUserID ? null : userID);
   };
 
+  const logUserInfo = () => {
+    console.log('===== Current User Info =====');
+    console.log('currentUser object:', JSON.stringify(currentUser, null, 2));
+    console.log('MongoDB _id:', currentUser._id);
+    console.log('userID (from currentUser):', currentUser.userID);
+    console.log('Firebase UID (extracted from token):', firebaseUid);
+    console.log('============================');
+  };
+
+  // Fixed handleAddFriend function
   const handleAddFriend = async () => {
     if (!selectedUserID) {
       Alert.alert('Please select a user first.');
       return;
     }
 
+    // Log user information for debugging
+    logUserInfo();
+
     try {
+      // Get the selected user from search results
+      const selectedUser = searchResults.find(
+        (user) => user.userID === selectedUserID,
+      );
+
+      if (!selectedUser) {
+        Alert.alert('Selected user not found in search results.');
+        return;
+      }
+
+      console.log('Selected user:', JSON.stringify(selectedUser, null, 2));
+
+      // IMPORTANT: Get Firebase UID from different sources in order of preference
+      const senderID =
+        currentUser.userID ||
+        firebaseUid ||
+        (currentUser.idToken
+          ? extractUserIdFromToken(currentUser.idToken)
+          : null);
+
+      if (!senderID) {
+        console.error(
+          'No valid senderID available. Cannot send friend request.',
+        );
+        Alert.alert(
+          'Error',
+          'Could not determine your user ID. Please log out and log back in.',
+        );
+        return;
+      }
+
+      const senderName = `${currentUser.firstName} ${currentUser.lastName}`;
+      const senderEmail = currentUser.email;
+
+      console.log('Sending friend request with:', {
+        senderID,
+        senderName,
+        senderEmail,
+        receiverID: selectedUserID,
+      });
+
+      // Call the API with all required parameters
       await sendFriendRequest(
         currentUser.idToken,
-        currentUser.userID,
+        senderID,
+        senderName,
+        senderEmail,
         selectedUserID,
       );
+
       Alert.alert('Friend request sent!');
+      setSelectedUserID(null); // Reset selection
+      setEmail(''); // Clear search
     } catch (error) {
       console.error('Failed to send friend request:', error);
-      Alert.alert('Failed to send friend request. Please try again.');
+      Alert.alert(
+        'Failed to send friend request',
+        error.message || 'Please try again.',
+      );
     }
   };
-
-  if (!currentUser || !isLoggedIn) {
-    return null;
-  }
-
-  if (!currentUser || !isLoggedIn) {
-    return null;
-  }
 
   if (!currentUser || !isLoggedIn) {
     return null;
