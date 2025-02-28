@@ -23,7 +23,6 @@ export default function WhatNow({ navigation, route }) {
     return location.charAt(0).toUpperCase() + location.slice(1);
   };
 
-  // Hide success message after a timeout
   useEffect(() => {
     if (message) {
       setShowMessage(true);

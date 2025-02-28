@@ -296,7 +296,7 @@ const declineFriendRequest = async (req, res) => {
       return res.status(400).json({ error: 'No friend request found' });
     }
 
-    // Decline the request - remove from friendRequests
+    // Decline the request + remove from friendRequests
     receiver.friendRequests.splice(requestIndex, 1);
     await receiver.save();
 
@@ -305,14 +305,12 @@ const declineFriendRequest = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-// Controller function for GET /users/:userID/friend-requests
 const getFriendRequests = async (req, res) => {
   try {
     const { userID } = req.params;
     console.log('Getting friend requests for userID:', userID);
 
     // First check if this is a valid Firebase UID format
-    // Firebase UIDs typically have a consistent format, around 28 characters
     if (!userID || typeof userID !== 'string' || userID.length < 20) {
       console.warn('Suspicious userID format (might be MongoDB _id?):', userID);
     }
@@ -331,7 +329,7 @@ const getFriendRequests = async (req, res) => {
     if (!user) {
       console.error(`User not found with userID: ${userID}`);
 
-      // Check if the provided ID might be a MongoDB _id
+      // Check IF ACTUALLY a MongoDB _id
       if (userID.length === 24) {
         try {
           const userByMongoId = await User.findById(userID);
@@ -339,7 +337,7 @@ const getFriendRequests = async (req, res) => {
             console.error(
               `Found user by MongoDB _id instead of Firebase UID. This is incorrect usage.`,
             );
-            // Don't automatically return this user - just log for debugging
+            // just log for debugging
           }
         } catch (e) {
           // Invalid ObjectId format - ignore
@@ -358,7 +356,6 @@ const getFriendRequests = async (req, res) => {
     console.log('Friend requests count:', user.friendRequests.length);
     console.log('Friend requests:', JSON.stringify(user.friendRequests));
 
-    // Return the friendRequests array from the user document
     return res.status(200).json(user.friendRequests);
   } catch (error) {
     console.error('Error in getFriendRequests:', error);
@@ -367,7 +364,6 @@ const getFriendRequests = async (req, res) => {
 };
 const searchByEmail = async (req, res) => {
   try {
-    // Grab the 'email' from the query string: /users/search?email=...
     const { email } = req.query;
     if (!email) {
       return res.status(400).json({ error: 'Missing email query parameter' });
@@ -376,11 +372,10 @@ const searchByEmail = async (req, res) => {
     // Case-insensitive match on the email substring
     const users = await User.find(
       { email: { $regex: new RegExp(email, 'i') } },
-      // Only return the fields needed by AddFriendsScreen
+      // Only return the fields needed by addfriends
       { firstName: 1, lastName: 1, email: 1, userID: 1 },
     );
 
-    // Format results for the frontend
     const results = users.map((u) => ({
       userID: u.userID,
       name: `${u.firstName} ${u.lastName}`.trim(),

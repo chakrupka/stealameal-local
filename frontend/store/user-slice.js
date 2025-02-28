@@ -9,20 +9,16 @@ import {
 import { signInUser, signOutUser } from '../services/firebase-auth';
 
 const createUserSlice = (set, get) => ({
-  // Authentication State
   currentUser: null,
   isLoggedIn: false,
 
-  // Friend Functionality State
   friendRequests: [],
   searchResults: [],
   status: 'idle',
   error: null,
 
-  // Login Functionality
-  // Fixed login function in user-slice.js
+  // Login
   login: async ({ email, password }) => {
-    // Reset status and error
     set((state) => {
       state.userSlice.status = 'loading';
       state.userSlice.error = null;
@@ -40,13 +36,11 @@ const createUserSlice = (set, get) => ({
         JSON.stringify(userData, null, 2),
       );
 
-      // Log the userID specifically
       console.log(
         'Login - User ID is:',
         userData.userID || userData._id || userData.id,
       );
 
-      // 3. Update the store with user data
       set((state) => {
         state.userSlice.status = 'succeeded';
         state.userSlice.currentUser = {
@@ -73,9 +67,7 @@ const createUserSlice = (set, get) => ({
       };
     }
   },
-  // ==============================
-  // Logout Functionality
-  // ==============================
+
   logout: async () => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -101,9 +93,6 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // ==============================
-  // Refresh User Profile
-  // ==============================
   refreshUserProfile: async () => {
     const { currentUser } = get().userSlice;
 
@@ -136,9 +125,6 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // ==============================
-  // Send Friend Request
-  // ==============================
   sendRequest: async ({
     idToken,
     senderID,
@@ -152,7 +138,6 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      // Call the API with all required parameters
       const response = await sendFriendRequest(
         idToken,
         senderID,
@@ -175,7 +160,6 @@ const createUserSlice = (set, get) => ({
     } catch (error) {
       console.error('Failed to send friend request:', error);
 
-      // Get user-friendly message from error if available
       const userFriendlyMessage =
         error.response?.data?.userFriendlyMessage ||
         error.response?.data?.message ||
@@ -195,9 +179,6 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // Fetch Friend Requests
-  // ==============================
-  // user-slice.js
   fetchFriendRequests: async ({ idToken, userID }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -300,9 +281,6 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // ==============================
-  // Search Users by Email
-  // ==============================
   searchUsers: async ({ idToken, email }) => {
     set((state) => {
       state.userSlice.status = 'loading';

@@ -13,7 +13,6 @@ export default function Login({ navigation, route }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Use the login method from the store
   const login = useStore((state) => state.userSlice.login);
 
   const handleLogin = async () => {

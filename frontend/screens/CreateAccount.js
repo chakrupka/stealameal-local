@@ -101,14 +101,13 @@ export default function CreateAccount({ navigation }) {
       const newUserData = await response.json();
       console.log('Account created successfully:', newUserData);
 
-      // 4. Now log in with the newly created account
       console.log('Attempting to log in with new account');
 
       // Sign in with Firebase to get the ID token
       const idToken = await signInUser(email, password);
       console.log('Obtained ID Token for new user:', idToken);
 
-      // 5. Use the store's login function to set up the user state
+      // 5. Use store's login function to set up the user state
       const loginResult = await login({
         email,
         password,
@@ -117,7 +116,6 @@ export default function CreateAccount({ navigation }) {
 
       if (loginResult.success) {
         console.log('Successfully logged in as new user');
-        // Navigate to home screen
         navigation.navigate('WhatNow', { profilePic });
       } else {
         setError(loginResult.error || 'Login after account creation failed');

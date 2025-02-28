@@ -161,7 +161,6 @@ const updateSquad = async (req, res) => {
       });
     }
 
-    // Check if the current user is the creator of the squad
     if (squad.createdBy !== currentUserId) {
       return res.status(403).json({
         error: 'Access denied',
@@ -169,15 +168,12 @@ const updateSquad = async (req, res) => {
       });
     }
 
-    // Update the squad details
     if (squadName) squad.squadName = squadName;
     if (description !== undefined) squad.description = description;
     if (squadImage !== undefined) squad.squadImage = squadImage;
 
-    // Update the lastActive timestamp
     squad.lastActive = new Date();
 
-    // Save the updated squad
     await squad.save();
 
     return res.json(squad);
@@ -190,16 +186,13 @@ const updateSquad = async (req, res) => {
   }
 };
 
-// Add member to squad
 const addMemberToSquad = async (req, res) => {
   try {
     const { squadID } = req.params;
     const { userID } = req.body;
 
-    // Get the current user's Firebase UID from the auth middleware
     const currentUserId = req.verifiedAuthId;
 
-    // Find the squad
     const squad = await Squad.findById(squadID);
 
     if (!squad) {
@@ -209,7 +202,6 @@ const addMemberToSquad = async (req, res) => {
       });
     }
 
-    // Check if the current user is a member of the squad
     if (!squad.members.includes(currentUserId)) {
       return res.status(403).json({
         error: 'Access denied',
@@ -217,7 +209,6 @@ const addMemberToSquad = async (req, res) => {
       });
     }
 
-    // Check if the user to add exists
     const userToAdd = await User.findOne({ userID });
     if (!userToAdd) {
       return res.status(404).json({
@@ -226,7 +217,6 @@ const addMemberToSquad = async (req, res) => {
       });
     }
 
-    // Check if the user is already a member
     if (squad.members.includes(userID)) {
       return res.status(400).json({
         error: 'Already a member',
@@ -234,13 +224,10 @@ const addMemberToSquad = async (req, res) => {
       });
     }
 
-    // Add the user to the squad
     squad.members.push(userID);
 
-    // Update the lastActive timestamp
     squad.lastActive = new Date();
 
-    // Save the updated squad
     await squad.save();
 
     return res.json(squad);
@@ -253,7 +240,6 @@ const addMemberToSquad = async (req, res) => {
   }
 };
 
-// Remove member from squad
 const removeMemberFromSquad = async (req, res) => {
   try {
     const { squadID, userID } = req.params;
@@ -282,7 +268,6 @@ const removeMemberFromSquad = async (req, res) => {
       });
     }
 
-    // Check if the user is the creator and trying to leave the squad
     if (isSelfRemoval && isCreator) {
       if (squad.members.length > 1) {
         return res.status(400).json({
@@ -302,10 +287,8 @@ const removeMemberFromSquad = async (req, res) => {
     // Remove the user from the squad
     squad.members = squad.members.filter((member) => member !== userID);
 
-    // Update the lastActive timestamp
     squad.lastActive = new Date();
 
-    // Save the updated squad
     await squad.save();
 
     return res.json(squad);
@@ -318,7 +301,6 @@ const removeMemberFromSquad = async (req, res) => {
   }
 };
 
-// Delete a squad
 const deleteSquad = async (req, res) => {
   try {
     const { squadID } = req.params;
@@ -344,7 +326,6 @@ const deleteSquad = async (req, res) => {
       });
     }
 
-    // Delete the squad
     await Squad.findByIdAndDelete(squadID);
 
     return res.json({

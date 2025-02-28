@@ -19,7 +19,7 @@ import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { fetchFriendDetails } from '../services/user-api';
 
-// Constants
+// constants for local styling. we might wanna move this to styles page.
 const BUTTON_STYLES = {
   dateTime: {
     width: 200,
@@ -172,12 +172,9 @@ export default function PickFriend({ navigation, route }) {
         processedData = [...processedData, ...processedFriends];
       }
 
-      // Process squads if available
       if (squads && squads.length > 0) {
-        // Create a processed list of squads with member details
         const processedSquads = await Promise.all(
           squads.map(async (squad) => {
-            // Fetch details for each member in the squad
             const memberDetails = await Promise.all(
               squad.members.map(async (memberId) => {
                 try {
@@ -223,7 +220,7 @@ export default function PickFriend({ navigation, route }) {
               }),
             );
 
-            // Create the squad entry
+            // Create ssquad entry
             return {
               id: squad._id,
               name: squad.squadName,
@@ -247,14 +244,12 @@ export default function PickFriend({ navigation, route }) {
     }
   }, [currentUser, squads, getUserSquads, dataFetched]);
 
-  // Load data on component mount
   useEffect(() => {
     if (currentUser?.userID && !dataFetched) {
       loadData();
     }
   }, [currentUser, loadData, dataFetched]);
 
-  // Toggle item selection (friend or squad)
   const toggleSelection = (id, type) => {
     setSelectedItems((prev) => {
       // If already selected, remove it
@@ -267,7 +262,6 @@ export default function PickFriend({ navigation, route }) {
     });
   };
 
-  // Toggle squad expansion
   const toggleSquadExpansion = (squadId) => {
     setExpandedSquads((prev) => ({
       ...prev,
@@ -275,7 +269,6 @@ export default function PickFriend({ navigation, route }) {
     }));
   };
 
-  // Get all selected IDs (including squad members if a squad is selected)
   const getAllSelectedMembers = () => {
     const selectedFriendIds = selectedItems
       .filter((item) => item.type === 'friend')
@@ -285,18 +278,15 @@ export default function PickFriend({ navigation, route }) {
       .filter((item) => item.type === 'squad')
       .map((item) => item.id);
 
-    // Get all members from selected squads
     const squadMembers = combinedData
       .filter(
         (item) => item.type === 'squad' && selectedSquads.includes(item.id),
       )
       .flatMap((squad) => squad.members.map((member) => member.id));
 
-    // Combine individual friends and squad members (removing duplicates)
     return [...new Set([...selectedFriendIds, ...squadMembers])];
   };
 
-  // Generate flat list data with expanded squads
   const getFlatListData = () => {
     let data = [];
 
@@ -324,9 +314,7 @@ export default function PickFriend({ navigation, route }) {
     return data;
   };
 
-  // Render list item (friend, squad, or squad member)
   const renderItem = ({ item }) => {
-    // Handle squad header
     if (item.type === 'squad') {
       const isSelected = selectedItems.some(
         (selected) => selected.id === item.id && selected.type === 'squad',
@@ -339,7 +327,7 @@ export default function PickFriend({ navigation, route }) {
       );
       // Get first 4 other members
       const firstFourMembers = otherMembers.slice(0, 4);
-      // How many additional members beyond the first 4
+      // calc number of additional members beyond the first 4 for ui
       const additionalMembersCount = otherMembers.length - 4;
 
       return (
@@ -403,7 +391,6 @@ export default function PickFriend({ navigation, route }) {
       );
     }
 
-    // Handle individual friend
     const isSelected = selectedItems.some(
       (selected) => selected.id === item.id && selected.type === 'friend',
     );
@@ -411,7 +398,6 @@ export default function PickFriend({ navigation, route }) {
     return (
       <TouchableOpacity onPress={() => toggleSelection(item.id, 'friend')}>
         <View style={[styles.listItem, isSelected ? LAYOUT.selectedItem : {}]}>
-          {/* Avatar */}
           <View style={styles.listItemAvatar}>
             <Avatar.Text
               size={40}
@@ -421,13 +407,11 @@ export default function PickFriend({ navigation, route }) {
             />
           </View>
 
-          {/* Name and Email */}
           <View style={styles.listItemContent}>
             <Text>{item.name}</Text>
             <Text style={{ fontSize: 12, color: '#666' }}>{item.email}</Text>
           </View>
 
-          {/* Checkbox */}
           <View style={styles.listItemCheckbox}>
             <Checkbox
               status={isSelected ? 'checked' : 'unchecked'}
@@ -441,7 +425,6 @@ export default function PickFriend({ navigation, route }) {
     );
   };
 
-  // Loading state
   if (loading) {
     return (
       <View style={styles.container}>
@@ -463,7 +446,6 @@ export default function PickFriend({ navigation, route }) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <View style={styles.container}>
@@ -544,24 +526,19 @@ export default function PickFriend({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* Top navigation bar */}
       <TopNav
         navigation={navigation}
         title="Schedule Meal"
         profilePic={profilePic}
       />
 
-      {/* Main header */}
       <Text style={styles.header}>SCHEDULE A MEAL</Text>
 
-      {/* Subheader */}
       <Text style={styles.subheader}>
         Select friends or squads to schedule a meal with.
       </Text>
 
-      {/* Date/Time and Send button row */}
       <View style={LAYOUT.buttonRow}>
-        {/* Date/Time button */}
         <TouchableOpacity
           style={BUTTON_STYLES.dateTime}
           onPress={() => console.log('Date/Time pressed')}
@@ -569,7 +546,6 @@ export default function PickFriend({ navigation, route }) {
           <Text>Date/Time</Text>
         </TouchableOpacity>
 
-        {/* Send button */}
         <TouchableOpacity
           style={[
             BUTTON_STYLES.send,
@@ -593,7 +569,6 @@ export default function PickFriend({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      {/* Friends and Squads list */}
       <View style={[styles.listContainer, LAYOUT.listAdjustment]}>
         <FlatList
           data={getFlatListData()}
@@ -610,7 +585,6 @@ export default function PickFriend({ navigation, route }) {
         />
       </View>
 
-      {/* Bottom button */}
       <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
         <TouchableOpacity
           style={[

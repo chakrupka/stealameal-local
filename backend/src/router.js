@@ -1,5 +1,3 @@
-// src/router.js
-
 import { Router } from 'express';
 import UserHandlers from './controllers/user_controller';
 import SquadHandlers from './controllers/squad_controller';
@@ -7,24 +5,18 @@ import MealHandlers from './controllers/meal_controller';
 
 const router = Router();
 
-// ================================
-// PUBLIC ROUTES
-// ================================
-// For creating a user
+//public routes
 router.post('/auth', UserHandlers.handleCreateUser);
 router.get('/auth', UserHandlers.handleGetOwnedUser);
 
-// ================================
-// PROTECTED ROUTES
-// ================================
-
-// User Routes
+//protected routes
+// User
 router.get('/users', UserHandlers.handleGetUsers);
 router.get('/users/:userID', UserHandlers.handleGetUserId);
 router.patch('/users/:userID', UserHandlers.handleUpdate);
 router.delete('/users/:userID', UserHandlers.handleDelete);
 
-// Friend Request Routes
+// Friend Requests
 router.get('/search-users', UserHandlers.searchByEmail);
 router.post('/users/send-friend-request', UserHandlers.sendFriendRequest);
 router.get('/users/:userID/friend-requests', UserHandlers.getFriendRequests);
@@ -35,7 +27,7 @@ router.get(
   UserHandlers.handleGetByFirebaseUid,
 );
 
-// Squad Routes
+// Squads
 router.post('/squads', SquadHandlers.createSquad);
 router.get('/squads', SquadHandlers.getAllSquads);
 router.get('/squads/user/:userID', SquadHandlers.getUserSquads);
@@ -48,12 +40,11 @@ router.delete(
   SquadHandlers.removeMemberFromSquad,
 );
 
-// Meal Routes
+// Meals
 router.post('/meals', MealHandlers.createMeal);
 router.get('/meals', MealHandlers.getAllMeals);
 router.get('/meals/:mealID', MealHandlers.getMealById);
 router.patch('/meals/:mealID', MealHandlers.updateMeal);
 router.delete('/meals/:mealID', MealHandlers.deleteMeal);
 
-// Export a proper Express Router object
 export default router;

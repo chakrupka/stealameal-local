@@ -29,7 +29,7 @@ const extractUserIdFromToken = (token) => {
     const payload = JSON.parse(jsonPayload);
     console.log('Token payload:', JSON.stringify(payload, null, 2));
 
-    // Return the user_id from the payload
+    // Return the user_id
     const uid = payload.user_id || payload.sub;
     console.log('Extracted UID from token:', uid);
     return uid;
@@ -180,12 +180,10 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     console.log('Accepting request from:', senderID);
     console.log('Using userID for acceptance:', userID);
 
-    // Make sure we're passing parameters in the right order
-    // The user viewing their requests is the receiver
     acceptRequest({
       idToken,
-      userID, // This is the receiverID (user viewing their requests)
-      senderID, // This is the user who sent the request
+      userID, // user viewing their requests
+      senderID, // user who sent the request
     });
   };
   const handleDecline = (senderID) => {

@@ -5,7 +5,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import TopNav from "../components/TopNav";
 import WeeklyCalendar from "../components/WeeklyCalendar";
 
-// Format Time function
 function formatTime(date) {
   if (!date) return "";
   const hours = date.getHours();
@@ -19,7 +18,6 @@ function formatTime(date) {
 export default function EnterAvailability({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
 
-  // Input items falling under different schedule categories, each item has a `name`, `startTime`, and `endTime`
   const [classes, setClasses] = useState([]);
   const [sporting, setSporting] = useState([]);
   const [extracurricular, setExtracurricular] = useState([]);

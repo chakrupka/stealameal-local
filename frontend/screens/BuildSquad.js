@@ -168,20 +168,16 @@ export default function BuildSquad({ navigation, route }) {
 
     setLoading(true);
     try {
-      // Prepare data for squad creation
       const squadData = {
         squadName: squadName.trim(),
         members: [...selectedFriends, currentUser.userID], // Include current user in squad
         createdBy: currentUser.userID,
       };
 
-      // Create the squad
       const newSquad = await createSquad(squadData);
 
-      // Refresh user profile to get updated squads
       await refreshUserProfile();
 
-      // Success message
       Alert.alert('Success', `Squad "${squadName}" created successfully!`, [
         {
           text: 'OK',

@@ -3,7 +3,7 @@ import axios from 'axios';
 const BASE_URL = `http://localhost:9090/api`;
 
 export const createUser = async (userData) => {
-  // For user creation, no token is needed as it's a public route
+  // no token is needed as it's a public route
   const response = await axios.post(`${BASE_URL}/auth`, userData, {
     headers: {
       'Content-Type': 'application/json',
@@ -22,7 +22,6 @@ export const fetchOwnUser = async (idToken) => {
       },
     });
 
-    // Log the raw response
     console.log(
       'Raw user data from server:',
       JSON.stringify(response.data, null, 2),
@@ -31,12 +30,6 @@ export const fetchOwnUser = async (idToken) => {
     // Ensure userID exists
     if (response.data && !response.data.userID) {
       console.warn('Warning: User data missing userID field!');
-
-      // Ask your backend developer to fix this issue
-      // As a temporary workaround, you can try to get the userID from the token
-      // But this is not a recommended long-term solution
-
-      // DO NOT use MongoDB _id as userID - they're completely different
     }
 
     return response.data;

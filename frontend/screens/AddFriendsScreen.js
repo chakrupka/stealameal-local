@@ -129,18 +129,15 @@ const AddFriendsScreen = ({ navigation, route }) => {
     console.log('============================');
   };
 
-  // Fixed handleAddFriend function
   const handleAddFriend = async () => {
     if (!selectedUserID) {
       Alert.alert('Please select a user first.');
       return;
     }
 
-    // Log user information for debugging
     logUserInfo();
 
     try {
-      // Get the selected user from search results
       const selectedUser = searchResults.find(
         (user) => user.userID === selectedUserID,
       );
@@ -152,7 +149,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
 
       console.log('Selected user:', JSON.stringify(selectedUser, null, 2));
 
-      // IMPORTANT: Get Firebase UID from different sources in order of preference
       const senderID =
         currentUser.userID ||
         firebaseUid ||
@@ -181,7 +177,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
         receiverID: selectedUserID,
       });
 
-      // Call the API with all required parameters
       const response = await sendFriendRequest(
         currentUser.idToken,
         senderID,

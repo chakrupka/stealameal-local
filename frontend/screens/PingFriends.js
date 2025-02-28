@@ -1,10 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { View, SectionList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  SectionList,
+  ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
+} from 'react-native';
 import { Button, List, Checkbox, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { fetchFriendDetails } from '../services/user-api';
+
+const localStyles = StyleSheet.create({
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 5,
+  },
+  headerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  subheaderText: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    paddingVertical: 5,
+    backgroundColor: 'white',
+    zIndex: 1,
+    marginBottom: 10,
+  },
+  listContainer: {
+    flex: 1,
+    width: '100%',
+  },
+  sendButton: {
+    width: 100,
+    height: 52,
+    backgroundColor: 'rgba(174,207,117,0.75)',
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  sendText: {
+    color: '#096A2E',
+    marginRight: 3,
+  },
+  sectionHeader: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: '#f0f0f0',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: 'white',
+  },
+  selectedItem: {
+    backgroundColor: '#74C69D',
+  },
+  bottomContainer: {
+    width: '100%',
+    padding: 15,
+    backgroundColor: '#CBDBA7',
+    alignItems: 'center',
+  },
+  pingButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#5C4D7D',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pingButtonLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+});
 
 export default function PingFriends({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
@@ -35,17 +142,14 @@ export default function PingFriends({ navigation, route }) {
           return;
         }
 
-        // Log the friends list for debugging
         console.log(
           'Friends list:',
           JSON.stringify(currentUser.friendsList, null, 2),
         );
 
-        // Fetch additional details for each friend
         const friendsWithDetails = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
-              // Fetch the friend's details from your API
               const details = await fetchFriendDetails(
                 idToken,
                 friend.friendID,
@@ -63,7 +167,7 @@ export default function PingFriends({ navigation, route }) {
                 `Error fetching details for friend ${friend.friendID}:`,
                 error,
               );
-              // Return a fallback object if we can't get the details
+              // if we can't get their details
               return {
                 friendID: friend.friendID,
                 name: `Friend ${friend.friendID.substring(0, 5)}`,
@@ -75,7 +179,6 @@ export default function PingFriends({ navigation, route }) {
           }),
         );
 
-        // Group friends by location
         const friendsByLocation = {};
         friendsWithDetails.forEach((friend) => {
           if (!friendsByLocation[friend.location]) {
@@ -84,7 +187,6 @@ export default function PingFriends({ navigation, route }) {
           friendsByLocation[friend.location].push(friend);
         });
 
-        // Convert to sections format
         const sections = Object.keys(friendsByLocation).map((location) => ({
           title: location,
           data: friendsByLocation[location],
@@ -110,9 +212,28 @@ export default function PingFriends({ navigation, route }) {
     );
   };
 
+  const handleSendPing = () => {
+    if (selectedFriends.length > 0) {
+      console.log('Pinging friends:', selectedFriends);
+      // Get names of selected friends for the message
+      const selectedNames = selectedFriends.map((friendID) => {
+        const friend = groupedFriends
+          .flatMap((section) => section.data)
+          .find((f) => f.friendID === friendID);
+        return friend ? friend.name : 'Friend';
+      });
+
+      navigation.navigate('WhatNow', {
+        message: `Ping sent to ${selectedNames.join(', ')}!`,
+      });
+    } else {
+      console.log('Please select at least one friend');
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <TopNav
           navigation={navigation}
           title="Ping Friends"
@@ -127,13 +248,13 @@ export default function PingFriends({ navigation, route }) {
           <ActivityIndicator size="large" color="#096A2E" />
           <Text style={{ marginTop: 20 }}>Loading friends...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <TopNav
           navigation={navigation}
           title="Ping Friends"
@@ -150,105 +271,113 @@ export default function PingFriends({ navigation, route }) {
             Go Back
           </Button>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  // If no friends are available
+  // If no friends available  :(
   if (!currentUser?.friendsList || currentUser.friendsList.length === 0) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <TopNav
           navigation={navigation}
           title="Ping Friends"
           profilePic={profilePic}
         />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ fontSize: 16, marginBottom: 20 }}>
-            You don't have any friends yet.
+        <View style={localStyles.contentContainer}>
+          <View style={localStyles.headerContainer}>
+            <Text style={localStyles.headerText}>PING FRIENDS</Text>
+          </View>
+          <Text style={localStyles.subheaderText}>
+            Select friends to ping based on location.
           </Text>
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate('AddFriends')}
-          >
-            Add Friends
-          </Button>
+
+          <View style={localStyles.emptyContainer}>
+            <Text style={localStyles.emptyText}>
+              You don't have any friends yet. Add some friends first!
+            </Text>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate('AddFriendsScreen')}
+              style={{ marginTop: 10 }}
+            >
+              Add Friends
+            </Button>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TopNav
         navigation={navigation}
         title="Ping Friends"
         profilePic={profilePic}
       />
 
-      <SectionList
-        sections={groupedFriends}
-        keyExtractor={(item, index) => item.friendID || `friend-${index}`}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.sectionHeader}>{title}</Text>
-        )}
-        renderItem={({ item }) => (
-          <List.Item
-            title={item.name}
-            description={item.email}
-            left={() => <List.Icon icon="account-circle" />}
-            right={() => (
-              <Checkbox
-                status={
-                  selectedFriends.includes(item.friendID)
-                    ? 'checked'
-                    : 'unchecked'
-                }
+      <View style={localStyles.contentContainer}>
+        <View style={localStyles.headerContainer}>
+          <Text style={localStyles.headerText}>PING FRIENDS</Text>
+        </View>
+
+        <Text style={localStyles.subheaderText}>
+          Select friends to ping based on location.
+        </Text>
+
+        <View style={localStyles.listContainer}>
+          <SectionList
+            sections={groupedFriends}
+            keyExtractor={(item, index) => item.friendID || `friend-${index}`}
+            renderSectionHeader={({ section: { title } }) => (
+              <Text style={localStyles.sectionHeader}>{title}</Text>
+            )}
+            renderItem={({ item }) => (
+              <List.Item
+                title={item.name}
+                description={item.email}
+                left={() => <List.Icon icon="account-circle" />}
+                right={() => (
+                  <Checkbox
+                    status={
+                      selectedFriends.includes(item.friendID)
+                        ? 'checked'
+                        : 'unchecked'
+                    }
+                    onPress={() => toggleSelection(item.friendID)}
+                  />
+                )}
                 onPress={() => toggleSelection(item.friendID)}
+                style={[
+                  localStyles.listItem,
+                  selectedFriends.includes(item.friendID)
+                    ? localStyles.selectedItem
+                    : {},
+                ]}
               />
             )}
-            onPress={() => toggleSelection(item.friendID)}
-            style={[
-              styles.listItem,
-              selectedFriends.includes(item.friendID)
-                ? { backgroundColor: '#74C69D' }
-                : {},
-            ]}
+            ListEmptyComponent={
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text>No friends in this location</Text>
+              </View>
+            }
           />
-        )}
-        ListEmptyComponent={
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text>No friends in this location</Text>
-          </View>
-        }
-      />
+        </View>
+      </View>
 
-      {selectedFriends.length > 0 && (
-        <Button
-          mode="contained"
-          style={styles.button}
-          onPress={() => {
-            console.log(`Pinging friends with IDs:`, selectedFriends);
-            // Here you would implement your ping functionality
-            // For example: sendPingToFriends(selectedFriends);
-
-            // Show confirmation
-            navigation.navigate('WhatNow', {
-              message: `Ping sent to ${selectedFriends.length} friend${
-                selectedFriends.length > 1 ? 's' : ''
-              }!`,
-            });
-          }}
+      <View style={localStyles.bottomContainer}>
+        <TouchableOpacity
+          style={[
+            localStyles.pingButton,
+            selectedFriends.length === 0 ? { opacity: 0.5 } : {},
+          ]}
+          onPress={handleSendPing}
+          disabled={selectedFriends.length === 0}
         >
-          Ping {selectedFriends.length} Friend
-          {selectedFriends.length > 1 ? 's' : ''}
-        </Button>
-      )}
-    </View>
+          <Text style={localStyles.pingButtonLabel}>Ping Selected Friends</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
