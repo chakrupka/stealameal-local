@@ -5,20 +5,31 @@ const SquadSchema = new mongoose.Schema(
     squadName: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
+    // Store Firebase UIDs as strings
     members: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String,
         required: true,
       },
     ],
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String, // Firebase UID of the user who created the squad
       required: true,
+    },
+    // Optional fields
+    description: {
+      type: String,
+      default: '',
+    },
+    squadImage: {
+      type: String, // URL to the squad image
+      default: null,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
     },
   },
   {
@@ -27,5 +38,12 @@ const SquadSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// Make sure we're not using the old reference to User model
+// Instead, we store Firebase UIDs directly
+
+// Add index for faster lookups
+SquadSchema.index({ members: 1 });
+SquadSchema.index({ createdBy: 1 });
 
 export default mongoose.model('Squad', SquadSchema);

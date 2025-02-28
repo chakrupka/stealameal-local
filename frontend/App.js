@@ -9,6 +9,8 @@ import { DMSans_400Regular } from '@expo-google-fonts/dm-sans';
 import Starter from './screens/Starter';
 import Login from './screens/Login';
 import CreateAccount from './screens/CreateAccount';
+import SetLocation from './screens/SetLocation';
+
 import WhatNow from './screens/WhatNow';
 import ScheduleMeal from './screens/ScheduleMeal';
 import PingFriends from './screens/PingFriends';
@@ -49,6 +51,8 @@ export default function App() {
         <Stack.Screen name="PickFriend" component={PickFriend} />
         <Stack.Screen name="BuildSquad" component={BuildSquad} />
         <Stack.Screen name="CampusMap" component={CampusMap} />
+        <Stack.Screen name="SetLocation" component={SetLocation} />
+
         <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
         <Stack.Screen name="AddFriendsScreen" component={AddFriendsScreen} />
         <Stack.Screen

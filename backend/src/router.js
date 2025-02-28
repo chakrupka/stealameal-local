@@ -38,7 +38,9 @@ router.get(
 // Squad Routes
 router.post('/squads', SquadHandlers.createSquad);
 router.get('/squads', SquadHandlers.getAllSquads);
+router.get('/squads/user/:userID', SquadHandlers.getUserSquads);
 router.get('/squads/:squadID', SquadHandlers.getSquadById);
+router.patch('/squads/:squadID', SquadHandlers.updateSquad);
 router.delete('/squads/:squadID', SquadHandlers.deleteSquad);
 router.post('/squads/:squadID/members', SquadHandlers.addMemberToSquad);
 router.delete(
