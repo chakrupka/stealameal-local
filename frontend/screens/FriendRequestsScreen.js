@@ -179,9 +179,15 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   const handleAccept = (senderID) => {
     console.log('Accepting request from:', senderID);
     console.log('Using userID for acceptance:', userID);
-    acceptRequest({ idToken, userID, senderID });
-  };
 
+    // Make sure we're passing parameters in the right order
+    // The user viewing their requests is the receiver
+    acceptRequest({
+      idToken,
+      userID, // This is the receiverID (user viewing their requests)
+      senderID, // This is the user who sent the request
+    });
+  };
   const handleDecline = (senderID) => {
     console.log('Declining request from:', senderID);
     console.log('Using userID for decline:', userID);

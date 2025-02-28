@@ -232,7 +232,9 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
+      // Pass parameters in correct order: token, receiverID (current user), senderID
       await acceptFriendRequest(idToken, userID, senderID);
+
       set((state) => {
         state.userSlice.status = 'succeeded';
         state.userSlice.friendRequests = state.userSlice.friendRequests.filter(
@@ -241,14 +243,16 @@ const createUserSlice = (set, get) => ({
       });
       return { success: true };
     } catch (error) {
+      console.error('Error accepting friend request:', error);
+
       set((state) => {
         state.userSlice.status = 'failed';
         state.userSlice.error =
-          error.response?.data || 'Failed to accept friend request';
+          error.response?.data?.error || 'Failed to accept friend request';
       });
       return {
         success: false,
-        error: error.response?.data || 'Failed to accept friend request',
+        error: error.response?.data?.error || 'Failed to accept friend request',
       };
     }
   },

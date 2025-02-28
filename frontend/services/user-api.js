@@ -144,6 +144,36 @@ export const sendFriendRequest = async (
     throw error;
   }
 };
+export const acceptFriendRequest = async (idToken, receiverID, senderID) => {
+  console.log('API: Accepting friend request with params:', {
+    receiverID,
+    senderID,
+  });
+  
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/accept-friend-request`,
+      { 
+        receiverID, 
+        senderID 
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    console.log('API: Friend request accepted response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'API: Error accepting friend request:',
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+};
 export const getFriendRequests = async (idToken, userID) => {
   const response = await axios.get(
     `${BASE_URL}/users/${userID}/friend-requests`, // Fixed the path to match router.js
