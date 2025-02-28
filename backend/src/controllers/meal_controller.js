@@ -1,6 +1,5 @@
 import Meal from '../models/meal_model';
 
-// Create new meal
 const createMeal = async (req, res) => {
   try {
     const newMeal = new Meal(req.body);
@@ -11,7 +10,6 @@ const createMeal = async (req, res) => {
   }
 };
 
-// Get all meals
 const getAllMeals = async (req, res) => {
   try {
     const meals = await Meal.find().populate(
@@ -24,7 +22,6 @@ const getAllMeals = async (req, res) => {
   }
 };
 
-// fetch meal by ID
 const getMealById = async (req, res) => {
   try {
     const meal = await Meal.findById(req.params.mealID).populate(
@@ -38,7 +35,6 @@ const getMealById = async (req, res) => {
   }
 };
 
-// Update meal
 const updateMeal = async (req, res) => {
   try {
     const updatedMeal = await Meal.findByIdAndUpdate(
@@ -53,7 +49,6 @@ const updateMeal = async (req, res) => {
   }
 };
 
-// Delete meal
 const deleteMeal = async (req, res) => {
   try {
     await Meal.findByIdAndDelete(req.params.mealID);

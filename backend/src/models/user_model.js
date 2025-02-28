@@ -2,16 +2,24 @@ import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema(
   {
-    authID: { type: String, required: true, unique: true },
+    userID: { type: String, required: true, unique: true }, // Firebase UID as userID
+    authID: { type: String, required: false, unique: false },
     profilePic: { type: String },
     email: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     location: { type: String },
-    friendList: [
+    friendsList: [
       {
         friendID: String,
         locationAvailable: { type: Boolean, default: false },
+      },
+    ],
+    friendRequests: [
+      {
+        senderID: String,
+        senderName: String,
+        senderEmail: String,
       },
     ],
     timesAvailable: {

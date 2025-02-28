@@ -54,14 +54,12 @@ export default function BuildSquad({ navigation, route }) {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [squadName, setSquadName] = useState("");
 
-  // Toggle friend selection
   const toggleSelection = (id) => {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
   };
 
-  // Render individual friend item
   const renderFriend = ({ item }) => (
     <TouchableOpacity onPress={() => toggleSelection(item.id)}>
       <View
@@ -70,7 +68,6 @@ export default function BuildSquad({ navigation, route }) {
           selectedFriends.includes(item.id) ? LAYOUT.selectedItem : {},
         ]}
       >
-        {/* Avatar */}
         <View style={styles.listItemAvatar}>
           <Avatar.Text
             size={40}
@@ -80,12 +77,10 @@ export default function BuildSquad({ navigation, route }) {
           />
         </View>
 
-        {/* Name */}
         <View style={styles.listItemContent}>
           <Text>{item.name}</Text>
         </View>
 
-        {/* Checkbox */}
         <View style={styles.listItemCheckbox}>
           <Checkbox
             status={selectedFriends.includes(item.id) ? "checked" : "unchecked"}
@@ -98,27 +93,22 @@ export default function BuildSquad({ navigation, route }) {
     </TouchableOpacity>
   );
 
-  // Determine if squad is valid (has name and at least one friend)
   const isSquadValid = selectedFriends.length > 0 && squadName.trim() !== "";
 
   return (
     <View style={styles.container}>
-      {/* Top navigation bar */}
       <TopNav
         navigation={navigation}
         title="Build a Squad"
         profilePic={profilePic}
       />
 
-      {/* Main header */}
       <Text style={styles.header}>BUILD YOUR SQUAD</Text>
 
-      {/* Subheader */}
       <Text style={styles.subheader}>
         Click on friends to make a new group.
       </Text>
 
-      {/* Friends list */}
       <View style={[styles.listContainer, LAYOUT.listAdjustment]}>
         <FlatList
           data={dummyFriends}
@@ -129,7 +119,6 @@ export default function BuildSquad({ navigation, route }) {
         />
       </View>
 
-      {/* Bottom input and button area */}
       <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
         {/* Squad name input */}
         <View style={LAYOUT.inputContainer}>
@@ -142,7 +131,6 @@ export default function BuildSquad({ navigation, route }) {
           />
         </View>
 
-        {/* Create squad button */}
         <TouchableOpacity
           style={[
             styles.pingButton,

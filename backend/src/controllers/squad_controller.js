@@ -16,7 +16,6 @@ const createSquad = async (req, res) => {
   }
 };
 
-// Get all squads
 const getAllSquads = async (req, res) => {
   try {
     const squads = await Squad.find().populate('members', 'firstName lastName');
@@ -26,7 +25,6 @@ const getAllSquads = async (req, res) => {
   }
 };
 
-// fetch squad by ID
 const getSquadById = async (req, res) => {
   try {
     const squad = await Squad.findById(req.params.squadID).populate(
@@ -40,7 +38,6 @@ const getSquadById = async (req, res) => {
   }
 };
 
-// Add a member to squad
 const addMemberToSquad = async (req, res) => {
   try {
     const squad = await Squad.findById(req.params.squadID);
@@ -58,7 +55,6 @@ const addMemberToSquad = async (req, res) => {
   }
 };
 
-// Remove a member from squad
 const removeMemberFromSquad = async (req, res) => {
   try {
     const squad = await Squad.findById(req.params.squadID);
@@ -74,7 +70,6 @@ const removeMemberFromSquad = async (req, res) => {
   }
 };
 
-// Delete squad
 const deleteSquad = async (req, res) => {
   try {
     await Squad.findByIdAndDelete(req.params.squadID);

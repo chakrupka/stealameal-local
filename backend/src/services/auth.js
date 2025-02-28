@@ -1,13 +1,17 @@
+// src/services/auth.js
+
 import admin from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+// Check if already initialized to avoid duplicate initialization
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
-const app = admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-const auth = getAuth(app);
+const auth = getAuth(admin.app());
 
 const verifyAuth = async (idToken) => {
   try {
@@ -19,4 +23,5 @@ const verifyAuth = async (idToken) => {
   }
 };
 
+export { admin }; // Export the initialized admin instance
 export default verifyAuth;
