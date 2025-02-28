@@ -1,8 +1,7 @@
-// src/screens/Login.js
 import React, { useState } from 'react';
 import { View, TextInput, ActivityIndicator } from 'react-native';
 import { Button, Text } from 'react-native-paper';
-import { signInUser } from '../services/firebase-auth';
+import { signInUser } from '../services/firebase-auth'; // Add this import
 import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
@@ -14,13 +13,8 @@ export default function Login({ navigation, route }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Simple way to store user state in Zustand
-  const setLoggedInUser = (user) => {
-    useStore.setState((state) => {
-      state.userSlice.currentUser = user;
-      state.userSlice.isLoggedIn = true;
-    });
-  };
+  // Use the login method from the store
+  const login = useStore((state) => state.userSlice.login);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,34 +28,69 @@ export default function Login({ navigation, route }) {
 
       // 1. Sign in with Firebase
       const idToken = await signInUser(email, password);
+      console.log('Obtained ID Token:', idToken);
 
-      // 2. Fetch user from your backend: GET /api/auth
-      const response = await fetch(`http://localhost:9090/api/auth`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
+      // 2. Fetch the user's data from our backend
+      try {
+        console.log(
+          'Attempting to fetch user data from:',
+          `http://localhost:9090/api/auth`,
+        );
+        console.log('Using ID Token:', idToken);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to login');
+        const response = await fetch(`http://localhost:9090/api/auth`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response text:', errorText);
+
+          // Log more details about the error
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${errorText}`,
+          );
+        }
+
+        const userData = await response.json();
+        console.log('Fetched user data:', userData);
+
+        // 3. Save user + token in Zustand
+        const loginResult = await useStore.getState().userSlice.login({
+          email,
+          password,
+          idToken,
+        });
+
+        if (loginResult.success) {
+          // 4. Navigate to main screen
+          navigation.navigate('WhatNow', { profilePic });
+        } else {
+          setError(loginResult.error || 'Login failed');
+        }
+      } catch (fetchError) {
+        console.error('Fetch user error details:', fetchError);
+        console.error('Error name:', fetchError.name);
+        console.error('Error message:', fetchError.message);
+
+        // Check for specific network errors
+        if (fetchError.message.includes('Network request failed')) {
+          setError(
+            'Unable to connect to the server. Please check your network connection.',
+          );
+        } else {
+          setError(fetchError.message || 'Failed to fetch user data');
+        }
       }
-
-      // 3. Parse user data
-      const userData = await response.json();
-
-      // 4. Save user + token in Zustand
-      setLoggedInUser({
-        ...userData,
-        idToken,
-      });
-
-      // 5. Navigate to main screen
-      navigation.navigate('WhatNow', { profilePic });
     } catch (err) {
-      console.error('Login error:', err.message);
+      console.error('Login error:', err);
 
       let errorMessage =
         'Login failed. Please check your credentials and try again.';
@@ -80,7 +109,6 @@ export default function Login({ navigation, route }) {
       setLoading(false);
     }
   };
-
   return (
     <View style={styles.container}>
       <TopNav navigation={navigation} title="Log In" profilePic={profilePic} />

@@ -21,7 +21,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     if (idToken && userID) {
-      fetchFriendRequests({ idToken, userID });
+      iendRequests({ idToken, userID });
     }
   }, [idToken, userID, fetchFriendRequests]);
 

@@ -30,7 +30,7 @@ export const signInUser = async (email, password) => {
 };
 
 export const signOutUser = () => {
-  return signOut(auth);
+  return firebaseSignOut(auth); // Use firebaseSignOut instead of signOut
 };
 
 export const subscribeToUser = (callback) => onAuthStateChanged(auth, callback);

@@ -7,51 +7,103 @@ import {
   TextInput,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { Text, Avatar, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import useStore from '../store';
+import useStore from '../store'; // Import the Zustand store
 import styles from '../styles';
 import TopNav from '../components/TopNav';
+import { searchUsersByEmail, sendFriendRequest } from '../services/user-api';
 
 const AddFriendsScreen = ({ navigation, route }) => {
   const profilePic = route.params?.profilePic || null;
-  const {
-    searchResults,
-    status,
-    error,
-    searchUsers,
-    sendRequest,
-    idToken,
-    userID,
-  } = useStore((state) => state.userSlice);
+
+  // Access the Zustand store
+  const currentUser = useStore((state) => state.userSlice.currentUser);
+  const isLoggedIn = useStore((state) => state.userSlice.isLoggedIn);
+  const searchResults = useStore((state) => state.userSlice.searchResults);
+  const status = useStore((state) => state.userSlice.status);
+  const searchUsers = useStore((state) => state.userSlice.searchUsers);
 
   const [email, setEmail] = useState('');
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+
+  // Track which user is selected
+  const [selectedUserID, setSelectedUserID] = useState(null);
 
   useEffect(() => {
-    if (idToken && email) {
+    if (!currentUser || !isLoggedIn) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
+  }, [currentUser, isLoggedIn, navigation]);
+
+  // Debounce the search
+  useEffect(() => {
+    if (currentUser?.idToken && email) {
       setSearching(true);
+      setSearchError(null);
       const delayDebounceFn = setTimeout(() => {
-        searchUsers({ idToken, email });
-        setSearching(false);
+        // Call store's searchUsers
+        searchUsers({ idToken: currentUser.idToken, email })
+          .then((res) => {
+            // The store will update state.userSlice.searchResults for you
+            console.log(
+              'Search complete in store. Updated searchResults:',
+              res,
+            );
+          })
+          .catch((error) => {
+            console.error('Search error:', error);
+            setSearchError('Failed to search. Please try again.');
+          })
+          .finally(() => {
+            setSearching(false);
+          });
       }, 500);
 
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [idToken, email, searchUsers]);
-
-  const handleSendRequest = async (receiverEmail) => {
-    await sendRequest({
-      idToken,
-      senderID: userID,
-      senderName: 'Sender Name', // Replace with actual sender name
-      senderEmail: 'Sender Email', // Replace with actual sender email
-      receiverEmail,
-    });
+  }, [currentUser, email, searchUsers]);
+  const handleSelectUser = (userID) => {
+    setSelectedUserID(userID === selectedUserID ? null : userID);
   };
 
-  // Display loading spinner
+  const handleAddFriend = async () => {
+    if (!selectedUserID) {
+      Alert.alert('Please select a user first.');
+      return;
+    }
+
+    try {
+      await sendFriendRequest(
+        currentUser.idToken,
+        currentUser.userID,
+        selectedUserID,
+      );
+      Alert.alert('Friend request sent!');
+    } catch (error) {
+      console.error('Failed to send friend request:', error);
+      Alert.alert('Failed to send friend request. Please try again.');
+    }
+  };
+
+  if (!currentUser || !isLoggedIn) {
+    return null;
+  }
+
+  if (!currentUser || !isLoggedIn) {
+    return null;
+  }
+
+  if (!currentUser || !isLoggedIn) {
+    return null;
+  }
+
   if (status === 'loading' || searching) {
     return (
       <SafeAreaView style={styles.container}>
@@ -71,47 +123,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
     );
   }
 
-  // Display error message
-  if (status === 'failed') {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Add Friends"
-          profilePic={profilePic}
-        />
-        <View style={styles.content}>
-          <Text style={styles.errorText}>Error: {error}</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Render individual search result item
-  const renderUser = ({ item }) => (
-    <View style={styles.userCard}>
-      <View style={styles.userCardInfo}>
-        <Avatar.Text
-          size={40}
-          label={item.name ? item.name.charAt(0).toUpperCase() : ''}
-        />
-        <View style={styles.userCardText}>
-          <Text style={styles.userName}>{item.name}</Text>
-          <Text style={styles.userEmail}>{item.email}</Text>
-        </View>
-      </View>
-
-      <Button
-        mode="contained"
-        onPress={() => handleSendRequest(item.email)}
-        color="#096A2E"
-        style={styles.addButton}
-      >
-        Add Friend
-      </Button>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <TopNav
@@ -119,6 +130,7 @@ const AddFriendsScreen = ({ navigation, route }) => {
         title="Add Friends"
         profilePic={profilePic}
       />
+
       <View style={styles.content}>
         <View style={styles.searchContainer}>
           <TextInput
@@ -137,13 +149,53 @@ const AddFriendsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
+        {searchError && <Text style={styles.errorText}>{searchError}</Text>}
+
         <FlatList
           data={searchResults}
           keyExtractor={(item) => item.userID}
-          renderItem={renderUser}
+          renderItem={({ item }) => {
+            const isSelected = item.userID === selectedUserID;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.userCard,
+                  { backgroundColor: isSelected ? '#e0ffe0' : '#fff' },
+                ]}
+                onPress={() => handleSelectUser(item.userID)}
+              >
+                <View style={styles.userCardInfo}>
+                  <Avatar.Text
+                    size={40}
+                    label={item.name ? item.name.charAt(0).toUpperCase() : ''}
+                  />
+                  <View style={styles.userCardText}>
+                    <Text style={styles.userName}>{item.name}</Text>
+                    <Text style={styles.userEmail}>{item.email}</Text>
+                  </View>
+                </View>
+                {isSelected && (
+                  <Text style={{ color: '#096A2E', fontWeight: '600' }}>
+                    Selected
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          }}
           showsVerticalScrollIndicator={true}
           contentContainerStyle={styles.resultsContentContainer}
         />
+
+        {selectedUserID && (
+          <Button
+            mode="contained"
+            onPress={handleAddFriend}
+            color="#096A2E"
+            style={[styles.addButton, { marginTop: 16 }]}
+          >
+            Confirm Add Friend
+          </Button>
+        )}
       </View>
     </SafeAreaView>
   );

@@ -6,35 +6,35 @@ import {
   searchUsersByEmail,
   fetchOwnUser,
 } from '../services/user-api';
-
-import { signInUser, signOutUser, getUser } from '../services/firebase-auth';
+import { signInUser, signOutUser } from '../services/firebase-auth';
 
 const createUserSlice = (set, get) => ({
-  // User authentication state
+  // Authentication State
   currentUser: null,
   isLoggedIn: false,
 
-  // Friend functionality state
+  // Friend Functionality State
   friendRequests: [],
   searchResults: [],
   status: 'idle',
   error: null,
 
-  // Login functionality
+  // Login Functionality
   login: async ({ email, password }) => {
+    // Reset status and error
     set((state) => {
       state.userSlice.status = 'loading';
       state.userSlice.error = null;
     });
 
     try {
-      // Step 1: Authenticate with Firebase
+      // 1. Authenticate with Firebase
       const idToken = await signInUser(email, password);
 
-      // Step 2: Fetch the user's data from our backend
+      // 2. Fetch the user's data from our backend
       const userData = await fetchOwnUser(idToken);
 
-      // Step 3: Update the store with user data
+      // 3. Update the store with user data
       set((state) => {
         state.userSlice.status = 'succeeded';
         state.userSlice.currentUser = {
@@ -47,15 +47,23 @@ const createUserSlice = (set, get) => ({
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
+
       set((state) => {
         state.userSlice.status = 'failed';
         state.userSlice.error = error.message || 'Login failed';
+        state.userSlice.isLoggedIn = false;
+        state.userSlice.currentUser = null;
       });
-      return { success: false, error: error.message || 'Login failed' };
+
+      return {
+        success: false,
+        error: error.message || 'Login failed',
+      };
     }
   },
-
-  // Logout functionality
+  // ==============================
+  // Logout Functionality
+  // ==============================
   logout: async () => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -81,7 +89,9 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // Get current user profile
+  // ==============================
+  // Refresh User Profile
+  // ==============================
   refreshUserProfile: async () => {
     const { currentUser } = get().userSlice;
 
@@ -114,7 +124,9 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // Friend request functionality
+  // ==============================
+  // Send Friend Request
+  // ==============================
   sendRequest: async ({
     idToken,
     senderID,
@@ -129,11 +141,11 @@ const createUserSlice = (set, get) => ({
 
     try {
       await sendFriendRequest(
-        idToken,
-        senderID,
-        senderName,
-        senderEmail,
-        receiverEmail,
+        currentUser.idToken,
+        currentUser.userID, // senderID
+        currentUser.firstName + ' ' + currentUser.lastName, // senderName
+        currentUser.email, // senderEmail
+        selectedUserID, // receiverID
       );
       set((state) => {
         state.userSlice.status = 'succeeded';
@@ -152,6 +164,10 @@ const createUserSlice = (set, get) => ({
     }
   },
 
+  // ==============================
+  // Fetch Friend Requests
+  // ==============================
+  // user-slice.js
   fetchFriendRequests: async ({ idToken, userID }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -159,11 +175,22 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
+      // returns an array of docs
       const requests = await getFriendRequests(idToken, userID);
+
+      // REMOVE this transform code
+      // const transformed = requests.map((u) => ({
+      //   senderID: u._id,
+      //   senderName: `${u.firstName} ${u.lastName}`,
+      //   senderEmail: u.email,
+      // }));
+
       set((state) => {
         state.userSlice.status = 'succeeded';
+        // Store the subdocuments exactly as returned
         state.userSlice.friendRequests = requests;
       });
+
       return { success: true, requests };
     } catch (error) {
       set((state) => {
@@ -178,6 +205,9 @@ const createUserSlice = (set, get) => ({
     }
   },
 
+  // ==============================
+  // Accept Friend Request
+  // ==============================
   acceptRequest: async ({ idToken, userID, senderID }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -206,6 +236,9 @@ const createUserSlice = (set, get) => ({
     }
   },
 
+  // ==============================
+  // Decline Friend Request
+  // ==============================
   declineRequest: async ({ idToken, userID, senderID }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -234,6 +267,9 @@ const createUserSlice = (set, get) => ({
     }
   },
 
+  // ==============================
+  // Search Users by Email
+  // ==============================
   searchUsers: async ({ idToken, email }) => {
     set((state) => {
       state.userSlice.status = 'loading';

@@ -11,13 +11,13 @@ const UserSchema = new mongoose.Schema(
     location: { type: String },
     friendsList: [
       {
-        friendID: String,
+        friendID: String, // Ensure this is a String
         locationAvailable: { type: Boolean, default: false },
       },
     ],
     friendRequests: [
       {
-        senderID: String,
+        senderID: String, // Ensure this is a String
         senderName: String,
         senderEmail: String,
       },

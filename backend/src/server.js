@@ -1,11 +1,11 @@
 // src/server.js
+
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import apiRoutes from './router';
+import router from './router'; // Import the actual Express Router
 import requireAuth from './middleware/require-auth';
 
 const app = express();
@@ -15,7 +15,7 @@ const app = express();
 // ================================
 app.use(
   cors({
-    origin: '*', // For development only; restrict in production
+    origin: '*', // For dev only; restrict in production
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
@@ -24,13 +24,6 @@ app.use(
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ================================
-// Static files and views
-// ================================
-app.set('view engine', 'ejs');
-app.use(express.static('static'));
-app.set('views', path.join(__dirname, '../src/views'));
 
 // ================================
 // Default Route
@@ -42,15 +35,18 @@ app.get('/', (req, res) => {
 // ================================
 // PUBLIC ROUTES
 // ================================
-// For POST /api/auth => create user
-app.use('/api/auth', apiRoutes);
+// Because router.js contains POST /auth and GET /auth, we can
+// just mount the router on /api for everything.
+// We do want to let "POST /api/auth" happen without token => see requireAuth logic
+app.use('/api', router);
 
 // ================================
 // PROTECTED ROUTES
 // ================================
 // All other /api/... routes require authentication
+// If you prefer to separate them, do:
 app.use(requireAuth);
-app.use('/api', apiRoutes);
+app.use('/api', router);
 
 // ================================
 // MongoDB Connection

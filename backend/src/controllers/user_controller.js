@@ -1,6 +1,6 @@
 // src/controllers/user_controller.js
 import User from '../models/user_model';
-import { admin } from '../services/auth'; // Import the shared admin instance
+import { admin } from '../middleware/require-auth'; // Import the shared admin instance
 
 // Create new user
 const handleCreateUser = async (req, res) => {
@@ -120,28 +120,23 @@ const handleDelete = async (req, res) => {
 // ================================
 const sendFriendRequest = async (req, res) => {
   try {
-    const { senderID, receiverID } = req.body;
+    const { senderID, senderName, senderEmail, receiverID } = req.body;
 
-    // Check if both users exist
-    const sender = await User.findById(senderID);
-    const receiver = await User.findById(receiverID);
+    // 1. Find both users
+    const sender = await User.findOne({ userID: senderID });
+    const receiver = await User.findOne({ userID: receiverID });
     if (!sender || !receiver) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if already friends
-    if (receiver.friendsList.includes(senderID)) {
-      return res.status(400).json({ error: 'You are already friends' });
-    }
-
-    // Check if request already sent
-    if (receiver.friendRequests.includes(senderID)) {
-      return res.status(400).json({ error: 'Friend request already sent' });
-    }
-
-    // Send the friend request
-    receiver.friendRequests.push(senderID);
+    // 2. Add the friend request object to the receiver
+    receiver.friendRequests.push({
+      senderID,
+      senderName,
+      senderEmail,
+    });
     await receiver.save();
+
     return res.status(200).json({ message: 'Friend request sent' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -153,8 +148,8 @@ const acceptFriendRequest = async (req, res) => {
     const { receiverID, senderID } = req.body;
 
     // Get the receiver and sender users
-    const receiver = await User.findById(receiverID);
-    const sender = await User.findById(senderID);
+    const receiver = await User.findOne({ userID: receiverID }); // Use userID instead of _id
+    const sender = await User.findOne({ userID: senderID }); // Use userID instead of _id
 
     if (!receiver || !sender) {
       return res.status(404).json({ error: 'User not found' });
@@ -181,28 +176,46 @@ const acceptFriendRequest = async (req, res) => {
   }
 };
 
+const declineFriendRequest = async (req, res) => {
+  try {
+    const { receiverID, senderID } = req.body;
+    const receiver = await User.findOne({ userID: receiverID }); // Use userID instead of _id
+
+    if (!receiver) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if request exists
+    if (!receiver.friendRequests.includes(senderID)) {
+      return res.status(400).json({ error: 'No friend request found' });
+    }
+
+    // Decline the request
+    receiver.friendRequests = receiver.friendRequests.filter(
+      (id) => id.toString() !== senderID,
+    );
+    await receiver.save();
+
+    return res.status(200).json({ message: 'Friend request declined' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
 const getFriendRequests = async (req, res) => {
   try {
     const { userID } = req.params;
-    const user = await User.findById(userID);
+    const user = await User.findOne({ userID });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Populate friend requests with user details
-    const friendRequests = await User.find({
-      _id: { $in: user.friendRequests },
-    }).select('firstName lastName email');
-
-    return res.status(200).json(friendRequests);
+    // Just return the array you stored:
+    return res.status(200).json(user.friendRequests);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
-
-// user_controller.js
-
 const searchByEmail = async (req, res) => {
   try {
     // Grab the 'email' from the query string: /users/search?email=...
@@ -228,32 +241,6 @@ const searchByEmail = async (req, res) => {
     return res.json(results);
   } catch (error) {
     console.error('Error searching by email:', error);
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-const declineFriendRequest = async (req, res) => {
-  try {
-    const { receiverID, senderID } = req.body;
-    const receiver = await User.findById(receiverID);
-
-    if (!receiver) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Check if request exists
-    if (!receiver.friendRequests.includes(senderID)) {
-      return res.status(400).json({ error: 'No friend request found' });
-    }
-
-    // Decline the request
-    receiver.friendRequests = receiver.friendRequests.filter(
-      (id) => id.toString() !== senderID,
-    );
-    await receiver.save();
-
-    return res.status(200).json({ message: 'Friend request declined' });
-  } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };

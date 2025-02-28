@@ -14,29 +14,51 @@ export const createUser = async (userData) => {
 };
 
 export const fetchOwnUser = async (idToken) => {
-  const response = await axios.get(`${BASE_URL}/users/me`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
-  return response.data;
-};
+  console.log('Fetching own user with token:', idToken);
 
-export const searchUsersByEmail = async (idToken, email) => {
-  // Encode the email in the query string
-  const response = await axios.get(
-    `${BASE_URL}/users/search?email=${encodeURIComponent(email)}`,
-    {
+  try {
+    const response = await axios.get(`${BASE_URL}/auth`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-    },
-  );
-  return response.data; // Array of { userID, name, email }
-};
+    });
 
+    console.log('Fetch user response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'Fetch user error:',
+      error.response ? error.response.data : error,
+    );
+    throw error;
+  }
+};
+export const searchUsersByEmail = async (idToken, email) => {
+  console.log('API: Searching users');
+  console.log('Email:', email);
+  console.log('idToken:', idToken);
+
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/search-users?email=${encodeURIComponent(email)}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    console.log('API: Search response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'API: Search error',
+      error.response ? error.response.data : error.message,
+    );
+    throw error;
+  }
+};
 export const fetchPublicUser = async (idToken, idToFetch) => {
   const response = await axios.get(`${BASE_URL}/users/${idToFetch}`, {
     headers: {
@@ -74,21 +96,19 @@ export const deleteUser = async (idToken, userID) => {
   return response.data;
 };
 
-export const sendFriendRequest = async (idToken, receiverEmail) => {
+export const sendFriendRequest = async (idToken, senderID, receiverID) => {
   const response = await axios.post(
-    `${BASE_URL}/users/send-friend-request`, // Fixed the path to match router.js
-    { receiverEmail },
+    `${BASE_URL}/users/send-friend-request`,
+    { senderID, receiverID },
     {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-      timeout: 10000,
     },
   );
   return response.data;
 };
-
 export const getFriendRequests = async (idToken, userID) => {
   const response = await axios.get(
     `${BASE_URL}/users/${userID}/friend-requests`, // Fixed the path to match router.js

@@ -1,4 +1,5 @@
 // src/router.js
+
 import { Router } from 'express';
 import UserHandlers from './controllers/user_controller';
 import SquadHandlers from './controllers/squad_controller';
@@ -9,15 +10,13 @@ const router = Router();
 // ================================
 // PUBLIC ROUTES
 // ================================
-// Open route for creating user (No Authentication Required)
+// For creating a user
 router.post('/auth', UserHandlers.handleCreateUser);
-
-// ================================
-// PROTECTED ROUTES (Require Authentication)
-// ================================
-
-// GET /auth => Return the current user's data
 router.get('/auth', UserHandlers.handleGetOwnedUser);
+
+// ================================
+// PROTECTED ROUTES
+// ================================
 
 // User Routes
 router.get('/users', UserHandlers.handleGetUsers);
@@ -26,7 +25,7 @@ router.patch('/users/:userID', UserHandlers.handleUpdate);
 router.delete('/users/:userID', UserHandlers.handleDelete);
 
 // Friend Request Routes
-router.get('/users/search', UserHandlers.searchByEmail);
+router.get('/search-users', UserHandlers.searchByEmail);
 router.post('/users/send-friend-request', UserHandlers.sendFriendRequest);
 router.get('/users/:userID/friend-requests', UserHandlers.getFriendRequests);
 router.post('/users/accept-friend-request', UserHandlers.acceptFriendRequest);
@@ -50,4 +49,5 @@ router.get('/meals/:mealID', MealHandlers.getMealById);
 router.patch('/meals/:mealID', MealHandlers.updateMeal);
 router.delete('/meals/:mealID', MealHandlers.deleteMeal);
 
+// Export a proper Express Router object
 export default router;
