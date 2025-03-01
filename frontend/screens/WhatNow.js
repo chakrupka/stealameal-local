@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
@@ -9,10 +9,25 @@ export default function WhatNow({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
   const message = route.params?.message || null;
   const [showMessage, setShowMessage] = useState(!!message);
+  const logout = useStore((state) => state.userSlice.logout);
 
   // Get current user location from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const userLocation = currentUser?.location || 'Not set';
+
+  // Handle hardware back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        // Show logout confirmation when hardware back button is pressed
+        handleLogoutConfirmation();
+        return true; // Prevent default behavior
+      },
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   // Format location for display
   const formatLocation = (location) => {
@@ -23,6 +38,7 @@ export default function WhatNow({ navigation, route }) {
     return location.charAt(0).toUpperCase() + location.slice(1);
   };
 
+  // Message display timeout
   useEffect(() => {
     if (message) {
       setShowMessage(true);
