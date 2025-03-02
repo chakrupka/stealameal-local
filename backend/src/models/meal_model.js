@@ -26,6 +26,19 @@ const MealSchema = new mongoose.Schema(
         },
       },
     ],
+    squads: [
+      {
+        squadID: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Squad',
+        },
+        status: {
+          type: String,
+          enum: ['invited', 'confirmed', 'declined'],
+          default: 'invited',
+        },
+      },
+    ],
     date: {
       type: Date,
       required: true,
@@ -34,6 +47,37 @@ const MealSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
+        // 24 hour now
+        '00:00',
+        '00:15',
+        '00:30',
+        '00:45',
+        '01:00',
+        '01:15',
+        '01:30',
+        '01:45',
+        '02:00',
+        '02:15',
+        '02:30',
+        '02:45',
+        '03:00',
+        '03:15',
+        '03:30',
+        '03:45',
+        '04:00',
+        '04:15',
+        '04:30',
+        '04:45',
+        '05:00',
+        '05:15',
+        '05:30',
+        '05:45',
+        '06:00',
+        '06:15',
+        '06:30',
+        '06:45',
+        '07:00',
+        '07:15',
         '07:30',
         '07:45',
         '08:00',
@@ -93,6 +137,13 @@ const MealSchema = new mongoose.Schema(
         '21:30',
         '21:45',
         '22:00',
+        '22:15',
+        '22:30',
+        '22:45',
+        '23:00',
+        '23:15',
+        '23:30',
+        '23:45',
       ],
     },
     mealType: {
@@ -104,6 +155,10 @@ const MealSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    notes: {
+      type: String,
+      default: '',
+    },
   },
   {
     toObject: { virtuals: true },
@@ -112,29 +167,72 @@ const MealSchema = new mongoose.Schema(
   },
 );
 
-// not sure if we need this. Just trying to prevent scheduling conflict meals.
 MealSchema.pre('save', async function (next) {
-  const conflictingMeal = await mongoose.model('Meal').findOne({
-    date: this.date,
-    participants: {
-      $elemMatch: {
-        userID: {
-          $in: this.participants.map((p) => {
-            return p.userID;
-          }),
+  try {
+    if (
+      !this.isNew &&
+      !this.isModified('date') &&
+      !this.isModified('time') &&
+      !this.isModified('mealType')
+    ) {
+      console.log('Skipping conflict check for status update');
+      return next();
+    }
+
+    console.log('Checking for conflicts...');
+
+    const confirmedUserIds = this.participants
+      .filter((p) => p.status === 'confirmed')
+      .map((p) => p.userID);
+
+    if (confirmedUserIds.length === 0) {
+      console.log('No confirmed participants, skipping conflict check');
+      return next();
+    }
+
+    const dateStart = new Date(this.date);
+    dateStart.setHours(0, 0, 0, 0);
+
+    const dateEnd = new Date(this.date);
+    dateEnd.setHours(23, 59, 59, 999);
+
+    console.log(
+      `Checking conflicts on ${dateStart.toISOString()} for meal type ${
+        this.mealType
+      }`,
+    );
+    console.log(`Current meal ID: ${this._id}`);
+
+    const conflictingMeal = await mongoose.model('Meal').findOne({
+      _id: { $ne: this._id }, // Exclude this meal from the check
+      date: {
+        $gte: dateStart,
+        $lte: dateEnd,
+      },
+      mealType: this.mealType,
+      participants: {
+        $elemMatch: {
+          userID: { $in: confirmedUserIds },
+          status: 'confirmed',
         },
       },
-    },
-    mealType: this.mealType,
-  });
+    });
 
-  if (conflictingMeal) {
-    const error = new Error('Conflicting meal schedule within the same block.');
-    error.statusCode = 400;
+    if (conflictingMeal) {
+      console.log(`Found conflicting meal: ${conflictingMeal._id}`);
+      const error = new Error(
+        'Conflicting meal schedule within the same block.',
+      );
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    console.log('No conflicts found');
+    return next();
+  } catch (error) {
+    console.error('Error in conflict detection:', error);
     return next(error);
   }
-
-  return next();
 });
 
 export default mongoose.model('Meal', MealSchema);

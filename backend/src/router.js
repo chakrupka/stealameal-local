@@ -2,51 +2,74 @@ import { Router } from 'express';
 import UserHandlers from './controllers/user_controller';
 import SquadHandlers from './controllers/squad_controller';
 import MealHandlers from './controllers/meal_controller';
+import PingHandlers from './controllers/ping_controller';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  return res.send('Authorized. Welcome to the StealAMeal API.');
+//public routes
+router.post('/auth', UserHandlers.handleCreateUser);
+router.get('/auth', UserHandlers.handleGetOwnedUser);
+
+//protected routes
+
+// User routes
+router.get('/users', UserHandlers.handleGetUsers);
+router.get('/users/:userID', UserHandlers.handleGetUserId);
+router.patch('/users/:userID', UserHandlers.handleUpdate);
+router.delete('/users/:userID', UserHandlers.handleDelete);
+
+// Friend Requests routes
+router.get('/search-users', UserHandlers.searchByEmail);
+router.post('/users/send-friend-request', UserHandlers.sendFriendRequest);
+router.get('/users/:userID/friend-requests', UserHandlers.getFriendRequests);
+router.post('/users/accept-friend-request', UserHandlers.acceptFriendRequest);
+router.post('/users/decline-friend-request', UserHandlers.declineFriendRequest);
+router.get(
+  '/users/by-firebase-uid/:firebaseUID',
+  UserHandlers.handleGetByFirebaseUid,
+);
+
+// Squads routes
+router.post('/squads', SquadHandlers.createSquad);
+router.get('/squads', SquadHandlers.getAllSquads);
+router.get('/squads/user/:userID', SquadHandlers.getUserSquads);
+router.get('/squads/:squadID', SquadHandlers.getSquadById);
+router.patch('/squads/:squadID', SquadHandlers.updateSquad);
+router.delete('/squads/:squadID', SquadHandlers.deleteSquad);
+router.post('/squads/:squadID/members', SquadHandlers.addMemberToSquad);
+router.delete(
+  '/squads/:squadID/members/:userID',
+  SquadHandlers.removeMemberFromSquad,
+);
+
+// Meals routes
+router.post('/meals', MealHandlers.createMeal);
+router.get('/meals', MealHandlers.getAllMeals);
+router.get('/meals/:mealID', MealHandlers.getMealById);
+router.patch('/meals/:mealID', MealHandlers.updateMeal);
+router.delete('/meals/:mealID', MealHandlers.deleteMeal);
+
+// Pings routes
+router.post('/pings', PingHandlers.createPing);
+router.get('/pings/active', PingHandlers.getActivePings);
+router.post('/pings/:pingId/respond', PingHandlers.respondToPing);
+router.post('/pings/:pingId/dismiss', PingHandlers.dismissPing);
+router.post('/pings/:pingId/cancel', PingHandlers.cancelPing);
+
+router.stack.forEach((route) => {
+  if (route.route) {
+    route.route.path = route.route.path;
+  }
 });
 
-router.route('/users').get(UserHandlers.handleGetUsers);
-
-router
-  .route('/auth')
-  .get(UserHandlers.handleGetOwnedUser)
-  .post(UserHandlers.handleCreateUser);
-
-router
-  .route('/users/:userID')
-  .get(UserHandlers.handleGetUserId)
-  .patch(UserHandlers.handleUpdate)
-  .delete(UserHandlers.handleDelete);
-
-router
-  .route('/squads')
-  .post(SquadHandlers.createSquad)
-  .get(SquadHandlers.getAllSquads);
-
-router
-  .route('/squads/:squadID')
-  .get(SquadHandlers.getSquadById)
-  .delete(SquadHandlers.deleteSquad);
-
-router.route('/squads/:squadID/members').post(SquadHandlers.addMemberToSquad);
-
-router
-  .route('/squads/:squadID/members/:userID')
-  .delete(SquadHandlers.removeMemberFromSquad);
-
-router
-  .route('/meals')
-  .post(MealHandlers.createMeal)
-  .get(MealHandlers.getAllMeals);
-
-router
-  .route('/meals/:mealID')
-  .get(MealHandlers.getMealById)
-  .patch(MealHandlers.updateMeal)
-  .delete(MealHandlers.deleteMeal);
+router.filter = function (callback) {
+  const filteredRouter = Router();
+  this.stack.forEach((route) => {
+    if (route.route && callback(route.route)) {
+      filteredRouter.use(route);
+    }
+  });
+  return filteredRouter;
+};
 
 export default router;
