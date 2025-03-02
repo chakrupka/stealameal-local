@@ -21,10 +21,9 @@ export default function TopNav({ navigation, title, profilePic }) {
           onPress: async () => {
             try {
               await logout();
-              // Navigate to Login screen
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Login' }],
+                routes: [{ name: 'Starter' }],
               });
             } catch (error) {
               console.error('Logout failed:', error);

@@ -31,7 +31,9 @@
     "express": "^4.21.2",
     "firebase-admin": "^13.1.0",
     "mongoose": "^8.10.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "os": "^0.1.2",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.26.5",
