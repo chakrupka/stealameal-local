@@ -1,7 +1,6 @@
 import axios from 'axios';
-import Config from 'react-native-config';
 
-const BASE_URL = `http://localhost:9090/api`;
+const BASE_URL = `http://localhost:9090/api/meals`; // Fixed URL to include /meals path
 
 export const createMeal = async (idToken, mealData) => {
   const response = await axios.post(`${BASE_URL}`, mealData, {

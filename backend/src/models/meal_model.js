@@ -12,12 +12,27 @@ const MealSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    // Individual participants
     participants: [
       {
         userID: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User',
           required: true,
+        },
+        status: {
+          type: String,
+          enum: ['invited', 'confirmed', 'declined'],
+          default: 'invited',
+        },
+      },
+    ],
+    // Squad participants - reference to squads
+    squads: [
+      {
+        squadID: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Squad',
         },
         status: {
           type: String,
@@ -104,6 +119,10 @@ const MealSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    notes: {
+      type: String,
+      default: '',
+    },
   },
   {
     toObject: { virtuals: true },
@@ -112,29 +131,79 @@ const MealSchema = new mongoose.Schema(
   },
 );
 
-// not sure if we need this. Just trying to prevent scheduling conflict meals.
+// Improved conflict detection logic
 MealSchema.pre('save', async function (next) {
-  const conflictingMeal = await mongoose.model('Meal').findOne({
-    date: this.date,
-    participants: {
-      $elemMatch: {
-        userID: {
-          $in: this.participants.map((p) => {
-            return p.userID;
-          }),
+  try {
+    // Skip conflict check for meal status updates when nothing critical changed
+    if (
+      !this.isNew &&
+      !this.isModified('date') &&
+      !this.isModified('time') &&
+      !this.isModified('mealType')
+    ) {
+      console.log('Skipping conflict check for status update');
+      return next();
+    }
+
+    console.log('Checking for conflicts...');
+
+    // Get users who are confirming this meal (status = confirmed)
+    const confirmedUserIds = this.participants
+      .filter((p) => p.status === 'confirmed')
+      .map((p) => p.userID);
+
+    // If no confirmed participants, no need to check for conflicts
+    if (confirmedUserIds.length === 0) {
+      console.log('No confirmed participants, skipping conflict check');
+      return next();
+    }
+
+    // Get date for query (midnight to 11:59 PM of the same day)
+    const dateStart = new Date(this.date);
+    dateStart.setHours(0, 0, 0, 0);
+
+    const dateEnd = new Date(this.date);
+    dateEnd.setHours(23, 59, 59, 999);
+
+    console.log(
+      `Checking conflicts on ${dateStart.toISOString()} for meal type ${
+        this.mealType
+      }`,
+    );
+    console.log(`Current meal ID: ${this._id}`);
+
+    // Find meals on the same day, with the same meal type,
+    // where any of the confirmed participants are also confirmed in another meal
+    const conflictingMeal = await mongoose.model('Meal').findOne({
+      _id: { $ne: this._id }, // Exclude this meal from the check
+      date: {
+        $gte: dateStart,
+        $lte: dateEnd,
+      },
+      mealType: this.mealType,
+      participants: {
+        $elemMatch: {
+          userID: { $in: confirmedUserIds },
+          status: 'confirmed',
         },
       },
-    },
-    mealType: this.mealType,
-  });
+    });
 
-  if (conflictingMeal) {
-    const error = new Error('Conflicting meal schedule within the same block.');
-    error.statusCode = 400;
+    if (conflictingMeal) {
+      console.log(`Found conflicting meal: ${conflictingMeal._id}`);
+      const error = new Error(
+        'Conflicting meal schedule within the same block.',
+      );
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    console.log('No conflicts found');
+    return next();
+  } catch (error) {
+    console.error('Error in conflict detection:', error);
     return next(error);
   }
-
-  return next();
 });
 
 export default mongoose.model('Meal', MealSchema);

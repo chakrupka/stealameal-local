@@ -95,6 +95,20 @@ export default function WhatNow({ navigation, route }) {
         <Button
           mode="contained"
           style={localStyles.actionButton}
+          onPress={() => navigation.navigate('ViewMeals', { profilePic })}
+        >
+          View Your Meals
+        </Button>
+        <Button
+          mode="contained"
+          style={localStyles.actionButton}
+          onPress={() => navigation.navigate('MealRequests', { profilePic })}
+        >
+          View Meal Requests
+        </Button>
+        <Button
+          mode="contained"
+          style={localStyles.actionButton}
           onPress={() =>
             navigation.navigate('AddFriendsScreen', { profilePic })
           }
