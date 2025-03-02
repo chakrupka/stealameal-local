@@ -12,8 +12,8 @@ import { Button, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
-import { createUser, signInUser, signOutUser } from '../services/firebase-auth'; // Import Firebase auth services
-import useStore from '../store'; // Import Zustand store
+import { createUser, signInUser, signOutUser } from '../services/firebase-auth';
+import useStore from '../store';
 
 export default function CreateAccount({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -24,7 +24,6 @@ export default function CreateAccount({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [profilePic, setProfilePic] = useState(null);
 
-  // Get login and logout functions from the store
   const login = useStore((state) => state.userSlice.login);
   const logout = useStore((state) => state.userSlice.logout);
 
@@ -84,7 +83,6 @@ export default function CreateAccount({ navigation }) {
         profilePic,
       };
 
-      // 3. POST to /api/auth to create the user
       const response = await fetch('http://localhost:9090/api/auth', {
         method: 'POST',
         headers: {
@@ -103,11 +101,9 @@ export default function CreateAccount({ navigation }) {
 
       console.log('Attempting to log in with new account');
 
-      // Sign in with Firebase to get the ID token
       const idToken = await signInUser(email, password);
       console.log('Obtained ID Token for new user:', idToken);
 
-      // 5. Use store's login function to set up the user state
       const loginResult = await login({
         email,
         password,

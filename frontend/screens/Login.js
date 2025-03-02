@@ -25,11 +25,9 @@ export default function Login({ navigation, route }) {
       setLoading(true);
       setError('');
 
-      // 1. Sign in with Firebase
       const idToken = await signInUser(email, password);
       console.log('Obtained ID Token:', idToken);
 
-      // 2. Fetch the user's data from our backend
       try {
         console.log(
           'Attempting to fetch user data from:',
@@ -52,7 +50,6 @@ export default function Login({ navigation, route }) {
           const errorText = await response.text();
           console.error('Error response text:', errorText);
 
-          // Log more details about the error
           throw new Error(
             `HTTP error! status: ${response.status}, message: ${errorText}`,
           );
@@ -61,7 +58,6 @@ export default function Login({ navigation, route }) {
         const userData = await response.json();
         console.log('Fetched user data:', userData);
 
-        // 3. Save user + token in Zustand
         const loginResult = await useStore.getState().userSlice.login({
           email,
           password,
@@ -69,7 +65,6 @@ export default function Login({ navigation, route }) {
         });
 
         if (loginResult.success) {
-          // 4. Navigate to main screen
           navigation.navigate('WhatNow', { profilePic });
         } else {
           setError(loginResult.error || 'Login failed');
@@ -79,7 +74,6 @@ export default function Login({ navigation, route }) {
         console.error('Error name:', fetchError.name);
         console.error('Error message:', fetchError.message);
 
-        // Check for specific network errors
         if (fetchError.message.includes('Network request failed')) {
           setError(
             'Unable to connect to the server. Please check your network connection.',

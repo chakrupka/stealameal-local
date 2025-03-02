@@ -5,11 +5,9 @@ import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 
-// Function to extract Firebase UID from JWT token
 const extractUserIdFromToken = (token) => {
   try {
     console.log('Attempting to extract UID from token');
-    // Split the token into parts
     const parts = token.split('.');
     if (parts.length !== 3) {
       console.log('Invalid token format, not a JWT');
@@ -71,14 +69,12 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   const idToken = currentUser?.idToken;
 
-  // Extract Firebase UID from token as a fallback
   let firebaseUid = null;
   if (idToken) {
     firebaseUid = extractUserIdFromToken(idToken);
     console.log('Firebase UID extracted from token:', firebaseUid);
   }
 
-  // Choose the best userID
   if (!userID && firebaseUid) {
     userID = firebaseUid;
     console.log('Using Firebase UID from token as userID:', userID);
@@ -113,7 +109,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Choose the best userID to use
     const effectiveUserID =
       currentUser.userID || firebaseUid || currentUser.verifiedAuthId;
 
@@ -143,13 +138,11 @@ const FriendRequestsScreen = ({ navigation, route }) => {
       userID: effectiveUserID,
     });
 
-    // Return cleanup function
     return () => {
       console.log('FriendRequestsScreen useEffect cleanup');
     };
   }, [currentUser, idToken, firebaseUid, fetchFriendRequests]);
 
-  // If not logged in, show login prompt
   if (!userSlice.isLoggedIn) {
     console.log('User not logged in, showing login prompt');
     return (

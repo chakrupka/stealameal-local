@@ -96,11 +96,9 @@ export default function ViewMeals({ navigation, route }) {
     }
   };
 
-  // Apply filters and search query
   const applyFilters = (mealsToFilter, activeFilter, query) => {
     let result = [...mealsToFilter];
 
-    // Apply status filter
     switch (activeFilter) {
       case 'hosting':
         result = result.filter(
@@ -182,7 +180,6 @@ export default function ViewMeals({ navigation, route }) {
     }
   };
 
-  // Get time from date and time fields
   const getFormattedDateTime = (date, time) => {
     if (!date) return 'No date specified';
 
@@ -192,7 +189,6 @@ export default function ViewMeals({ navigation, route }) {
       result += ` at ${time}`;
     }
 
-    // Add indicator if meal is in the past
     if (new Date(date) < new Date()) {
       result += ' (Past)';
     }
@@ -200,7 +196,6 @@ export default function ViewMeals({ navigation, route }) {
     return result;
   };
 
-  // Check if user is the host of the meal
   const isUserHost = (meal) => {
     return (
       meal.host &&
@@ -209,7 +204,6 @@ export default function ViewMeals({ navigation, route }) {
     );
   };
 
-  // Get user's participation status for a meal
   const getUserStatus = (meal) => {
     if (isUserHost(meal)) return 'host';
 
@@ -226,7 +220,6 @@ export default function ViewMeals({ navigation, route }) {
     return participant ? participant.status : 'unknown';
   };
 
-  // Get host name from meal
   const getHostName = (meal) => {
     if (!meal.host) return 'Unknown Host';
 
@@ -236,7 +229,6 @@ export default function ViewMeals({ navigation, route }) {
         : 'Unknown Host';
     }
 
-    // If host is current user
     if (meal.host === currentUser._id) {
       return 'You';
     }
@@ -244,7 +236,6 @@ export default function ViewMeals({ navigation, route }) {
     return 'Unknown Host';
   };
 
-  // Handle meal deletion
   const handleDeleteMeal = async (mealId) => {
     Alert.alert(
       'Confirm Deletion',
@@ -307,7 +298,6 @@ export default function ViewMeals({ navigation, route }) {
     }
   };
 
-  // Render a meal item
   const renderMealItem = ({ item }) => {
     const statusColor = getMealStatusColor(item);
     const userStatus = getUserStatus(item);

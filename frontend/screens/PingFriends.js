@@ -1,18 +1,472 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   SectionList,
+  FlatList,
   ActivityIndicator,
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import { Button, List, Checkbox, Text } from 'react-native-paper';
+import { Button, List, Checkbox, Text, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { fetchFriendDetails } from '../services/user-api';
+import { sendPing } from '../services/ping-api';
+
+export default function PingFriends({ navigation, route }) {
+  const profilePic = route.params?.profilePic || null;
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedSquads, setSelectedSquads] = useState([]);
+  const [groupedFriends, setGroupedFriends] = useState([]);
+  const [squads, setSquads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'squads'
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Get current user and API-related functions from store
+  const currentUser = useStore((state) => state.userSlice.currentUser);
+  const userSquads = useStore((state) => state.squadSlice.squads);
+  const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
+  const getAllSquads = useStore((state) => state.squadSlice.getAllSquads);
+  const idToken = currentUser?.idToken;
+
+  // Memoized load data function to prevent re-creation on every render
+  const loadData = useCallback(async () => {
+    if (dataLoaded || !currentUser?.userID) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load squads if needed
+      if (userSquads.length === 0) {
+        const fetchedSquads = await getUserSquads(currentUser.userID);
+        setSquads(fetchedSquads || []);
+      } else {
+        setSquads(userSquads);
+      }
+
+      // Load friends
+      if (!currentUser.friendsList || currentUser.friendsList.length === 0) {
+        console.log('No friends list available');
+        setGroupedFriends([{ title: 'No Location', data: [] }]);
+      } else {
+        console.log(
+          'Friends list:',
+          JSON.stringify(currentUser.friendsList, null, 2),
+        );
+
+        const friendsWithDetails = await Promise.all(
+          currentUser.friendsList.map(async (friend) => {
+            try {
+              const details = await fetchFriendDetails(
+                idToken,
+                friend.friendID,
+              );
+
+              return {
+                friendID: friend.friendID,
+                name: `${details.firstName} ${details.lastName}`.trim(),
+                email: details.email,
+                location: details.location || 'No Location',
+                locationAvailable: friend.locationAvailable || false,
+                mongoId: details._id, // Store MongoDB ID for API calls
+                initials: `${details.firstName.charAt(
+                  0,
+                )}${details.lastName.charAt(0)}`.toUpperCase(),
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching details for friend ${friend.friendID}:`,
+                error,
+              );
+              // if we can't get their details
+              return {
+                friendID: friend.friendID,
+                name: `Friend ${friend.friendID.substring(0, 5)}`,
+                email: 'Unknown',
+                location: 'No Location',
+                locationAvailable: false,
+                initials: '??',
+              };
+            }
+          }),
+        );
+
+        const friendsByLocation = {};
+        friendsWithDetails.forEach((friend) => {
+          if (!friendsByLocation[friend.location]) {
+            friendsByLocation[friend.location] = [];
+          }
+          friendsByLocation[friend.location].push(friend);
+        });
+
+        const sections = Object.keys(friendsByLocation).map((location) => ({
+          title: location,
+          data: friendsByLocation[location],
+        }));
+
+        setGroupedFriends(sections);
+      }
+
+      setDataLoaded(true);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, idToken, getUserSquads, userSquads, dataLoaded]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const toggleFriendSelection = (friendID) => {
+    setSelectedFriends((prev) =>
+      prev.includes(friendID)
+        ? prev.filter((id) => id !== friendID)
+        : [...prev, friendID],
+    );
+  };
+
+  const toggleSquadSelection = (squadId) => {
+    setSelectedSquads((prev) => {
+      if (prev.includes(squadId)) {
+        return prev.filter((id) => id !== squadId);
+      }
+      return [...prev, squadId];
+    });
+  };
+
+  const handleSendPing = async () => {
+    if (selectedFriends.length === 0 && selectedSquads.length === 0) {
+      Alert.alert('Error', 'Please select at least one friend or squad');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+      const pingData = {
+        sender: currentUser._id,
+        senderName: `${currentUser.firstName} ${currentUser.lastName}`,
+        message: "Let's grab a meal!",
+        expiresAt: expiresAt,
+        recipients: selectedFriends,
+        squads: selectedSquads,
+      };
+
+      await sendPing(idToken, pingData);
+
+      const selectedNames = [];
+
+      if (selectedFriends.length > 0) {
+        const friendNames = selectedFriends.map((friendID) => {
+          const friend = groupedFriends
+            .flatMap((section) => section.data)
+            .find((f) => f.friendID === friendID);
+          return friend ? friend.name : 'Friend';
+        });
+        selectedNames.push(...friendNames);
+      }
+
+      if (selectedSquads.length > 0) {
+        const squadNames = selectedSquads.map((squadId) => {
+          const squad = squads.find((s) => s._id === squadId);
+          return squad ? squad.squadName : 'Squad';
+        });
+        selectedNames.push(...squadNames);
+      }
+
+      const displayNames =
+        selectedNames.length <= 3
+          ? selectedNames.join(', ')
+          : `${selectedNames.slice(0, 2).join(', ')} and ${
+              selectedNames.length - 2
+            } more`;
+
+      navigation.navigate('WhatNow', {
+        message: `Ping sent to ${displayNames}!`,
+      });
+    } catch (error) {
+      console.error('Error sending ping:', error);
+      Alert.alert(
+        'Error',
+        'Failed to send ping: ' + (error.message || 'Please try again'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderFriendItem = ({ item }) => (
+    <List.Item
+      title={item.name}
+      description={item.email}
+      left={() => (
+        <Avatar.Text
+          size={40}
+          label={item.initials}
+          style={localStyles.avatar}
+        />
+      )}
+      right={() => (
+        <Checkbox
+          status={
+            selectedFriends.includes(item.friendID) ? 'checked' : 'unchecked'
+          }
+          onPress={() => toggleFriendSelection(item.friendID)}
+        />
+      )}
+      onPress={() => toggleFriendSelection(item.friendID)}
+      style={[
+        localStyles.listItem,
+        selectedFriends.includes(item.friendID) ? localStyles.selectedItem : {},
+      ]}
+    />
+  );
+
+  const renderSquadItem = ({ item }) => (
+    <List.Item
+      title={item.squadName}
+      description={`${item.members.length} members`}
+      left={() => <List.Icon icon="account-group" />}
+      right={() => (
+        <Checkbox
+          status={selectedSquads.includes(item._id) ? 'checked' : 'unchecked'}
+          onPress={() => toggleSquadSelection(item._id)}
+        />
+      )}
+      onPress={() => toggleSquadSelection(item._id)}
+      style={[
+        localStyles.listItem,
+        selectedSquads.includes(item._id) ? localStyles.selectedItem : {},
+      ]}
+    />
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <TopNav
+          navigation={navigation}
+          title="Ping Friends"
+          profilePic={profilePic}
+        />
+        <View
+          style={[
+            styles.content,
+            { justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <ActivityIndicator size="large" color="#096A2E" />
+          <Text style={{ marginTop: 20 }}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <TopNav
+          navigation={navigation}
+          title="Ping Friends"
+          profilePic={profilePic}
+        />
+        <View
+          style={[
+            styles.content,
+            { justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <Text style={{ color: 'red', marginBottom: 20 }}>{error}</Text>
+          <Button mode="contained" onPress={() => navigation.goBack()}>
+            Go Back
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // If no friends available and no squads
+  if (
+    (!currentUser?.friendsList || currentUser.friendsList.length === 0) &&
+    (!squads || squads.length === 0)
+  ) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <TopNav
+          navigation={navigation}
+          title="Ping Friends"
+          profilePic={profilePic}
+        />
+        <View style={localStyles.contentContainer}>
+          <View style={localStyles.headerContainer}>
+            <Text style={localStyles.headerText}>PING FRIENDS</Text>
+          </View>
+          <Text style={localStyles.subheaderText}>
+            Select friends or squads to ping.
+          </Text>
+
+          <View style={localStyles.emptyContainer}>
+            <Text style={localStyles.emptyText}>
+              You don't have any friends or squads yet. Add some first!
+            </Text>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate('AddFriendsScreen')}
+              style={{ marginTop: 10 }}
+            >
+              Add Friends
+            </Button>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <TopNav
+        navigation={navigation}
+        title="Ping Friends"
+        profilePic={profilePic}
+      />
+
+      <View style={localStyles.contentContainer}>
+        <View style={localStyles.headerContainer}>
+          <Text style={localStyles.headerText}>PING FRIENDS</Text>
+        </View>
+
+        <Text style={localStyles.subheaderText}>
+          Select friends or squads to ping.
+        </Text>
+
+        <View style={localStyles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              localStyles.tab,
+              activeTab === 'friends' && localStyles.activeTab,
+            ]}
+            onPress={() => setActiveTab('friends')}
+          >
+            <Text
+              style={[
+                localStyles.tabText,
+                activeTab === 'friends' && localStyles.activeTabText,
+              ]}
+            >
+              Friends
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              localStyles.tab,
+              activeTab === 'squads' && localStyles.activeTab,
+            ]}
+            onPress={() => setActiveTab('squads')}
+          >
+            <Text
+              style={[
+                localStyles.tabText,
+                activeTab === 'squads' && localStyles.activeTabText,
+              ]}
+            >
+              Squads
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={localStyles.listContainer}>
+          {activeTab === 'friends' ? (
+            groupedFriends.length > 0 ? (
+              <SectionList
+                sections={groupedFriends}
+                keyExtractor={(item, index) =>
+                  item.friendID || `friend-${index}`
+                }
+                renderSectionHeader={({ section: { title } }) => (
+                  <Text style={localStyles.sectionHeader}>{title}</Text>
+                )}
+                renderItem={renderFriendItem}
+                ListEmptyComponent={
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text>No friends available</Text>
+                  </View>
+                }
+              />
+            ) : (
+              <View style={localStyles.emptyContainer}>
+                <Text style={localStyles.emptyText}>
+                  You don't have any friends yet. Add some friends first!
+                </Text>
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate('AddFriendsScreen')}
+                  style={{ marginTop: 10 }}
+                >
+                  Add Friends
+                </Button>
+              </View>
+            )
+          ) : // Squads tab
+          squads.length > 0 ? (
+            <FlatList
+              data={squads}
+              renderItem={renderSquadItem}
+              keyExtractor={(item) => item._id}
+              ListEmptyComponent={
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text>No squads available</Text>
+                </View>
+              }
+            />
+          ) : (
+            <View style={localStyles.emptyContainer}>
+              <Text style={localStyles.emptyText}>
+                You don't have any squads yet. Create a squad first!
+              </Text>
+              <Button
+                mode="contained"
+                onPress={() => navigation.navigate('CreateSquadScreen')}
+                style={{ marginTop: 10 }}
+              >
+                Create Squad
+              </Button>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={localStyles.bottomContainer}>
+        <TouchableOpacity
+          style={[
+            localStyles.pingButton,
+            selectedFriends.length === 0 && selectedSquads.length === 0
+              ? { opacity: 0.5 }
+              : {},
+          ]}
+          onPress={handleSendPing}
+          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
+        >
+          <Text style={localStyles.pingButtonLabel}>
+            Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
 
 const localStyles = StyleSheet.create({
   contentContainer: {
@@ -37,6 +491,32 @@ const localStyles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 15,
     paddingHorizontal: 20,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  activeTab: {
+    backgroundColor: '#E8F5D9',
+    borderBottomWidth: 2,
+    borderBottomColor: '#5C4D7D',
+  },
+  tabText: {
+    fontWeight: '500',
+    color: '#555',
+  },
+  activeTabText: {
+    color: '#5C4D7D',
+    fontWeight: 'bold',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -79,7 +559,7 @@ const localStyles = StyleSheet.create({
     backgroundColor: 'white',
   },
   selectedItem: {
-    backgroundColor: '#74C69D',
+    backgroundColor: '#A4C67D',
   },
   bottomContainer: {
     width: '100%',
@@ -111,273 +591,7 @@ const localStyles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
+  avatar: {
+    backgroundColor: '#CBDBA7',
+  },
 });
-
-export default function PingFriends({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
-  const [selectedFriends, setSelectedFriends] = useState([]);
-  const [groupedFriends, setGroupedFriends] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Get current user and API-related functions from store
-  const currentUser = useStore((state) => state.userSlice.currentUser);
-  const idToken = currentUser?.idToken;
-
-  useEffect(() => {
-    // Fetch friends data when component mounts
-    const fetchFriendsData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        if (
-          !currentUser ||
-          !currentUser.friendsList ||
-          currentUser.friendsList.length === 0
-        ) {
-          console.log('No friends list available');
-          setGroupedFriends([{ title: 'No Location', data: [] }]);
-          setLoading(false);
-          return;
-        }
-
-        console.log(
-          'Friends list:',
-          JSON.stringify(currentUser.friendsList, null, 2),
-        );
-
-        const friendsWithDetails = await Promise.all(
-          currentUser.friendsList.map(async (friend) => {
-            try {
-              const details = await fetchFriendDetails(
-                idToken,
-                friend.friendID,
-              );
-
-              return {
-                friendID: friend.friendID,
-                name: `${details.firstName} ${details.lastName}`.trim(),
-                email: details.email,
-                location: details.location || 'No Location',
-                locationAvailable: friend.locationAvailable || false,
-              };
-            } catch (error) {
-              console.error(
-                `Error fetching details for friend ${friend.friendID}:`,
-                error,
-              );
-              // if we can't get their details
-              return {
-                friendID: friend.friendID,
-                name: `Friend ${friend.friendID.substring(0, 5)}`,
-                email: 'Unknown',
-                location: 'No Location',
-                locationAvailable: false,
-              };
-            }
-          }),
-        );
-
-        const friendsByLocation = {};
-        friendsWithDetails.forEach((friend) => {
-          if (!friendsByLocation[friend.location]) {
-            friendsByLocation[friend.location] = [];
-          }
-          friendsByLocation[friend.location].push(friend);
-        });
-
-        const sections = Object.keys(friendsByLocation).map((location) => ({
-          title: location,
-          data: friendsByLocation[location],
-        }));
-
-        setGroupedFriends(sections);
-      } catch (error) {
-        console.error('Error fetching friends data:', error);
-        setError('Failed to load your friends. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFriendsData();
-  }, [currentUser, idToken]);
-
-  const toggleSelection = (friendID) => {
-    setSelectedFriends((prev) =>
-      prev.includes(friendID)
-        ? prev.filter((id) => id !== friendID)
-        : [...prev, friendID],
-    );
-  };
-
-  const handleSendPing = () => {
-    if (selectedFriends.length > 0) {
-      console.log('Pinging friends:', selectedFriends);
-      // Get names of selected friends for the message
-      const selectedNames = selectedFriends.map((friendID) => {
-        const friend = groupedFriends
-          .flatMap((section) => section.data)
-          .find((f) => f.friendID === friendID);
-        return friend ? friend.name : 'Friend';
-      });
-
-      navigation.navigate('WhatNow', {
-        message: `Ping sent to ${selectedNames.join(', ')}!`,
-      });
-    } else {
-      console.log('Please select at least one friend');
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <ActivityIndicator size="large" color="#096A2E" />
-          <Text style={{ marginTop: 20 }}>Loading friends...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: 'red', marginBottom: 20 }}>{error}</Text>
-          <Button mode="contained" onPress={() => navigation.goBack()}>
-            Go Back
-          </Button>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // If no friends available  :(
-  if (!currentUser?.friendsList || currentUser.friendsList.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
-        <View style={localStyles.contentContainer}>
-          <View style={localStyles.headerContainer}>
-            <Text style={localStyles.headerText}>PING FRIENDS</Text>
-          </View>
-          <Text style={localStyles.subheaderText}>
-            Select friends to ping based on location.
-          </Text>
-
-          <View style={localStyles.emptyContainer}>
-            <Text style={localStyles.emptyText}>
-              You don't have any friends yet. Add some friends first!
-            </Text>
-            <Button
-              mode="contained"
-              onPress={() => navigation.navigate('AddFriendsScreen')}
-              style={{ marginTop: 10 }}
-            >
-              Add Friends
-            </Button>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Ping Friends"
-        profilePic={profilePic}
-      />
-
-      <View style={localStyles.contentContainer}>
-        <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>PING FRIENDS</Text>
-        </View>
-
-        <Text style={localStyles.subheaderText}>
-          Select friends to ping based on location.
-        </Text>
-
-        <View style={localStyles.listContainer}>
-          <SectionList
-            sections={groupedFriends}
-            keyExtractor={(item, index) => item.friendID || `friend-${index}`}
-            renderSectionHeader={({ section: { title } }) => (
-              <Text style={localStyles.sectionHeader}>{title}</Text>
-            )}
-            renderItem={({ item }) => (
-              <List.Item
-                title={item.name}
-                description={item.email}
-                left={() => <List.Icon icon="account-circle" />}
-                right={() => (
-                  <Checkbox
-                    status={
-                      selectedFriends.includes(item.friendID)
-                        ? 'checked'
-                        : 'unchecked'
-                    }
-                    onPress={() => toggleSelection(item.friendID)}
-                  />
-                )}
-                onPress={() => toggleSelection(item.friendID)}
-                style={[
-                  localStyles.listItem,
-                  selectedFriends.includes(item.friendID)
-                    ? localStyles.selectedItem
-                    : {},
-                ]}
-              />
-            )}
-            ListEmptyComponent={
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <Text>No friends in this location</Text>
-              </View>
-            }
-          />
-        </View>
-      </View>
-
-      <View style={localStyles.bottomContainer}>
-        <TouchableOpacity
-          style={[
-            localStyles.pingButton,
-            selectedFriends.length === 0 ? { opacity: 0.5 } : {},
-          ]}
-          onPress={handleSendPing}
-          disabled={selectedFriends.length === 0}
-        >
-          <Text style={localStyles.pingButtonLabel}>Ping Selected Friends</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}

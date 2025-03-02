@@ -11,7 +11,6 @@ export default function TopNav({ navigation, title, profilePic }) {
 
   const handleBackAction = async () => {
     if (isWhatNowScreen) {
-      // Show confirmation dialog for logout
       Alert.alert('Confirm Logout', 'Are you sure you want to log out?', [
         {
           text: 'Cancel',
@@ -21,7 +20,6 @@ export default function TopNav({ navigation, title, profilePic }) {
           text: 'Logout',
           onPress: async () => {
             try {
-              // Call the logout function from store
               await logout();
               // Navigate to Login screen
               navigation.reset({

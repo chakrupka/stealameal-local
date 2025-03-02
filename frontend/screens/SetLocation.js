@@ -69,7 +69,6 @@ export default function SetLocation({ navigation, route }) {
     setLoading(true);
 
     try {
-      // Verify that we have the required user data
       if (!currentUser) {
         throw new Error('User information not available');
       }
@@ -77,9 +76,6 @@ export default function SetLocation({ navigation, route }) {
       console.log('Updating location for user:', currentUser._id);
       console.log('New location:', selectedLocation);
 
-      // Make direct API call to update location
-      // Note: Your handleUpdate function uses findByIdAndUpdate which requires MongoDB _id
-      // not Firebase UID, so we need to use _id here
       const response = await axios.patch(
         `http://localhost:9090/api/users/${currentUser._id}`,
         { location: selectedLocation },
@@ -93,17 +89,14 @@ export default function SetLocation({ navigation, route }) {
 
       console.log('Update response:', response.data);
 
-      // Refresh user profile to get the updated data
       if (refreshUserProfile) {
         await refreshUserProfile();
       }
 
-      // Find the location name for the success message
       const locationName =
         locations.find((loc) => loc.id === selectedLocation)?.name ||
         selectedLocation;
 
-      // Navigate back with success message
       navigation.navigate('WhatNow', {
         profilePic,
         message: `Your location has been updated to ${locationName}`,
@@ -111,7 +104,6 @@ export default function SetLocation({ navigation, route }) {
     } catch (error) {
       console.error('Error updating location:', error);
 
-      // More detailed error logging
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response data:', error.response.data);
@@ -175,7 +167,6 @@ export default function SetLocation({ navigation, route }) {
   );
 }
 
-// Additional local styles
 const localStyles = StyleSheet.create({
   scrollView: {
     flex: 1,

@@ -1,26 +1,21 @@
-// src/controllers/user_controller.js
 import User from '../models/user_model';
 import { admin } from '../middleware/require-auth'; // Import the shared admin instance
 
-// Create new user
 const handleCreateUser = async (req, res) => {
   try {
     const { email, firstName, lastName, profilePic, password } = req.body;
 
-    // Step 1: Check if email already exists in MongoDB
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email is already in use.' });
     }
 
-    // Step 2: Create a new user in Firebase Authentication
     const firebaseUser = await admin.auth().createUser({
       email,
       displayName: `${firstName} ${lastName}`,
       password,
     });
 
-    // Step 3: Create a new user in MongoDB with the Firebase UID as userID
     const newUser = new User({
       userID: firebaseUser.uid, // Store the Firebase UID as userID
       email,
@@ -34,9 +29,7 @@ const handleCreateUser = async (req, res) => {
   } catch (error) {
     console.error('Error creating user:', error);
 
-    // Step 4: Error Handling for Firebase Errors
     if (error?.errorInfo?.code === 'auth/email-already-exists') {
-      // This error will now be rare, but we still handle it
       return res
         .status(400)
         .json({ error: 'Email already registered in Firebase.' });
@@ -46,13 +39,10 @@ const handleCreateUser = async (req, res) => {
   }
 };
 
-// Get the authenticated user's details
 const handleGetOwnedUser = async (req, res) => {
   try {
-    // We read the Firebase UID from requireAuth
     const firebaseUID = req.verifiedAuthId;
 
-    // Find user in MongoDB by userID (the stored Firebase UID)
     const user = await User.findOne({ userID: firebaseUID }).populate(
       'mealsScheduled',
     );
@@ -64,7 +54,6 @@ const handleGetOwnedUser = async (req, res) => {
   }
 };
 
-// Get all users
 const handleGetUsers = async (req, res) => {
   try {
     const users = await User.find().populate('mealsScheduled');
@@ -74,7 +63,6 @@ const handleGetUsers = async (req, res) => {
   }
 };
 
-// Get user by ID
 const handleGetUserId = async (req, res) => {
   try {
     const user = await User.findById(req.params.userID).populate(
@@ -87,7 +75,6 @@ const handleGetUserId = async (req, res) => {
   }
 };
 
-// Update a user by ID
 const handleUpdate = async (req, res) => {
   try {
     const updatedUser = await User.findByIdAndUpdate(
@@ -104,7 +91,6 @@ const handleUpdate = async (req, res) => {
   }
 };
 
-// Delete a user by ID
 const handleDelete = async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.userID);
@@ -115,9 +101,6 @@ const handleDelete = async (req, res) => {
   }
 };
 
-// ================================
-// Friend Request Functionality
-// ================================
 const sendFriendRequest = async (req, res) => {
   try {
     const { senderID, senderName, senderEmail, receiverID } = req.body;
@@ -129,7 +112,6 @@ const sendFriendRequest = async (req, res) => {
       receiverID,
     });
 
-    // Validate input parameters
     if (!senderID || !receiverID) {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -137,7 +119,6 @@ const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // Check if sender and receiver are the same user
     if (senderID === receiverID) {
       return res.status(400).json({
         error: 'Invalid request',
@@ -145,7 +126,6 @@ const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // First check if both IDs are valid Firebase UID format
     if (typeof senderID !== 'string' || senderID.length < 20) {
       console.warn(
         'Suspicious senderID format (might be MongoDB _id?):',
@@ -160,7 +140,6 @@ const sendFriendRequest = async (req, res) => {
       );
     }
 
-    // 1. Find the receiver user by Firebase UID (userID field)
     const receiver = await User.findOne({ userID: receiverID });
 
     if (!receiver) {
@@ -184,7 +163,6 @@ const sendFriendRequest = async (req, res) => {
     }
     console.log('Backend: Sender found:', sender.email);
 
-    // 3. Check if a friend request already exists
     const existingRequest = receiver.friendRequests.find(
       (request) => request.senderID === senderID,
     );
@@ -197,7 +175,6 @@ const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // 4. Check if they're already friends
     const alreadyFriends = receiver.friendsList.some(
       (friend) => friend.friendID === senderID,
     );
@@ -210,7 +187,6 @@ const sendFriendRequest = async (req, res) => {
       });
     }
 
-    // 5. Add the friend request object to the receiver
     receiver.friendRequests.push({
       senderID,
       senderName: senderName || `${sender.firstName} ${sender.lastName}`,
@@ -230,7 +206,7 @@ const sendFriendRequest = async (req, res) => {
 const handleGetByFirebaseUid = async (req, res) => {
   try {
     const { firebaseUID } = req.params;
-    const user = await User.findOne({ userID: firebaseUID }); 
+    const user = await User.findOne({ userID: firebaseUID });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -245,7 +221,6 @@ const acceptFriendRequest = async (req, res) => {
   try {
     const { receiverID, senderID } = req.body;
 
-    // Get the receiver and sender users
     const receiver = await User.findOne({ userID: receiverID });
     const sender = await User.findOne({ userID: senderID });
 
@@ -253,7 +228,6 @@ const acceptFriendRequest = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if request exists
     const requestIndex = receiver.friendRequests.findIndex(
       (request) => request.senderID === senderID,
     );
@@ -262,10 +236,8 @@ const acceptFriendRequest = async (req, res) => {
       return res.status(400).json({ error: 'No friend request found' });
     }
 
-    // Accept the request - remove from friendRequests
     receiver.friendRequests.splice(requestIndex, 1);
 
-    // Add to friendsList
     receiver.friendsList.push({ friendID: senderID, locationAvailable: false });
     sender.friendsList.push({ friendID: receiverID, locationAvailable: false });
 
@@ -287,7 +259,6 @@ const declineFriendRequest = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if request exists
     const requestIndex = receiver.friendRequests.findIndex(
       (request) => request.senderID === senderID,
     );
@@ -296,7 +267,6 @@ const declineFriendRequest = async (req, res) => {
       return res.status(400).json({ error: 'No friend request found' });
     }
 
-    // Decline the request + remove from friendRequests
     receiver.friendRequests.splice(requestIndex, 1);
     await receiver.save();
 
@@ -310,12 +280,10 @@ const getFriendRequests = async (req, res) => {
     const { userID } = req.params;
     console.log('Getting friend requests for userID:', userID);
 
-    // First check if this is a valid Firebase UID format
     if (!userID || typeof userID !== 'string' || userID.length < 20) {
       console.warn('Suspicious userID format (might be MongoDB _id?):', userID);
     }
 
-    // Get all users for debugging
     const allUsers = await User.find({}, { userID: 1, email: 1 });
     console.log('Available users in database:');
 
@@ -323,13 +291,11 @@ const getFriendRequests = async (req, res) => {
       console.log(`- Email: ${u.email}, userID: ${u.userID}, _id: ${u._id}`);
     });
 
-    // Try to find the user
     const user = await User.findOne({ userID });
 
     if (!user) {
       console.error(`User not found with userID: ${userID}`);
 
-      // Check IF ACTUALLY a MongoDB _id
       if (userID.length === 24) {
         try {
           const userByMongoId = await User.findById(userID);
@@ -337,11 +303,8 @@ const getFriendRequests = async (req, res) => {
             console.error(
               `Found user by MongoDB _id instead of Firebase UID. This is incorrect usage.`,
             );
-            // just log for debugging
           }
-        } catch (e) {
-          // Invalid ObjectId format - ignore
-        }
+        } catch (e) {}
       }
 
       return res.status(404).json({
@@ -369,10 +332,8 @@ const searchByEmail = async (req, res) => {
       return res.status(400).json({ error: 'Missing email query parameter' });
     }
 
-    // Case-insensitive match on the email substring
     const users = await User.find(
       { email: { $regex: new RegExp(email, 'i') } },
-      // Only return the fields needed by addfriends
       { firstName: 1, lastName: 1, email: 1, userID: 1 },
     );
 

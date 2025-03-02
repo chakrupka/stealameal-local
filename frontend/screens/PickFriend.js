@@ -109,12 +109,10 @@ export default function PickFriend({ navigation, route }) {
   const [expandedSquads, setExpandedSquads] = useState({});
   const [dataFetched, setDataFetched] = useState(false);
 
-  // Get current user and squads from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const squads = useStore((state) => state.squadSlice.squads);
   const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
 
-  // Fetch friend and squad data
   const loadData = useCallback(async () => {
     if (!currentUser?.userID || dataFetched) return;
 
@@ -122,26 +120,21 @@ export default function PickFriend({ navigation, route }) {
       setLoading(true);
       setError(null);
 
-      // Fetch squads if needed
       if (!squads || squads.length === 0) {
         await getUserSquads(currentUser.userID);
       }
 
       let processedData = [];
 
-      // Process friends if available
       if (currentUser.friendsList && currentUser.friendsList.length > 0) {
-        // Fetch details for each friend
         const processedFriends = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
-              // Fetch friend details from API
               const details = await fetchFriendDetails(
                 currentUser.idToken,
                 friend.friendID,
               );
 
-              // Get initials for avatar
               const initials = `${details.firstName.charAt(
                 0,
               )}${details.lastName.charAt(0)}`.toUpperCase();
@@ -252,12 +245,10 @@ export default function PickFriend({ navigation, route }) {
 
   const toggleSelection = (id, type) => {
     setSelectedItems((prev) => {
-      // If already selected, remove it
       if (prev.some((item) => item.id === id)) {
         return prev.filter((item) => item.id !== id);
       }
 
-      // Otherwise add it
       return [...prev, { id, type }];
     });
   };
@@ -321,13 +312,10 @@ export default function PickFriend({ navigation, route }) {
       );
       const isExpanded = expandedSquads[item.id];
 
-      // Filter out current user to get other members
       const otherMembers = item.members.filter(
         (member) => member.id !== currentUser.userID,
       );
-      // Get first 4 other members
       const firstFourMembers = otherMembers.slice(0, 4);
-      // calc number of additional members beyond the first 4 for ui
       const additionalMembersCount = otherMembers.length - 4;
 
       return (
@@ -469,7 +457,6 @@ export default function PickFriend({ navigation, route }) {
     );
   }
 
-  // No friends or squads state
   if (!combinedData || combinedData.length === 0) {
     return (
       <View style={styles.container}>
@@ -499,7 +486,6 @@ export default function PickFriend({ navigation, route }) {
     );
   }
 
-  // Get all selected members (including those in squads)
   const allSelectedMembers = getAllSelectedMembers();
 
   // Get names of selected items for display

@@ -17,7 +17,6 @@ const createUserSlice = (set, get) => ({
   status: 'idle',
   error: null,
 
-  // Login
   login: async ({ email, password }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -25,11 +24,9 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      // 1. Authenticate with Firebase
       const idToken = await signInUser(email, password);
       console.log('Login - Got idToken from Firebase');
 
-      // 2. Fetch the user's data from our backend
       const userData = await fetchOwnUser(idToken);
       console.log(
         'Login - Got user data from backend:',
@@ -215,9 +212,7 @@ const createUserSlice = (set, get) => ({
       };
     }
   },
-  // ==fetchFriendRequests============================
-  // Accept Friend Request
-  // ==============================
+
   acceptRequest: async ({ idToken, userID, senderID }) => {
     set((state) => {
       state.userSlice.status = 'loading';
@@ -250,9 +245,7 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  // ==============================
-  // Decline Friend Request
-  // ==============================
+
   declineRequest: async ({ idToken, userID, senderID }) => {
     set((state) => {
       state.userSlice.status = 'loading';

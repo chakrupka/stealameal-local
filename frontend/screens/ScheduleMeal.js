@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   ScrollView,
+  Platform,
 } from 'react-native';
 import {
   Text,
@@ -36,13 +37,80 @@ const getMealType = (hours) => {
 };
 
 // Format time to HH:MM format for the API
+// Format time to HH:MM format for the API with validation against schema enum values
+// Format time to HH:MM format for the API with support for 24-hour times
 const formatTimeForApi = (date) => {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const nearestQuarter = Math.round(minutes / 15) * 15;
-  return `${hours}:${
-    nearestQuarter === 60 ? '45' : nearestQuarter.toString().padStart(2, '0')
-  }`;
+  // Get hours and minutes
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  // Round minutes to nearest quarter hour (0, 15, 30, 45)
+  let roundedMinutes = Math.round(minutes / 15) * 15;
+
+  // Handle case where minutes round to 60
+  if (roundedMinutes === 60) {
+    roundedMinutes = 0;
+    hours = (hours + 1) % 24;
+  }
+
+  // Format to two digits
+  const formattedHours = hours.toString().padStart(2, '0');
+  const formattedMinutes = roundedMinutes.toString().padStart(2, '0');
+
+  // Format as HH:MM
+  const timeString = `${formattedHours}:${formattedMinutes}`;
+
+  // Generate complete list of valid times for 24 hours at 15-minute intervals
+  const generateValidTimes = () => {
+    const times = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m of [0, 15, 30, 45]) {
+        times.push(
+          `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
+        );
+      }
+    }
+    return times;
+  };
+
+  const allPossibleTimes = generateValidTimes();
+
+  // Find the closest valid time
+  if (!allPossibleTimes.includes(timeString)) {
+    console.warn(
+      `Unexpected time format: ${timeString}. Finding closest valid time.`,
+    );
+
+    // This shouldn't happen with our rounding logic above, but just in case,
+    // return the nearest valid time by finding the one that minimizes the
+    // absolute difference in minutes
+
+    const timeToMinutes = (timeStr) => {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const selectedTimeInMinutes = timeToMinutes(timeString);
+
+    let closestTime = allPossibleTimes[0];
+    let minDifference = Math.abs(
+      timeToMinutes(closestTime) - selectedTimeInMinutes,
+    );
+
+    for (const validTime of allPossibleTimes) {
+      const difference = Math.abs(
+        timeToMinutes(validTime) - selectedTimeInMinutes,
+      );
+      if (difference < minDifference) {
+        minDifference = difference;
+        closestTime = validTime;
+      }
+    }
+
+    return closestTime;
+  }
+
+  return timeString;
 };
 
 export default function ScheduleMeal({ navigation, route }) {
@@ -55,32 +123,28 @@ export default function ScheduleMeal({ navigation, route }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'squads'
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Date/Time state
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(new Date());
-
-  // Location and notes state
-  const [location, setLocation] = useState(LOCATION_OPTIONS[0]); // Default to first option
+  const [tempDate, setTempDate] = useState(new Date());
+  const [tempTime, setTempTime] = useState(new Date());
+  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
   const [mealName, setMealName] = useState('');
   const [notes, setNotes] = useState('');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Get store data
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const userSquads = useStore((state) => state.squadSlice.squads);
   const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
   const createMeal = useStore((state) => state.mealSlice.createMeal);
   const getAllSquads = useStore((state) => state.squadSlice.getAllSquads);
 
-  // Memoized load data function to prevent re-creation on every render
   const loadData = useCallback(async () => {
     if (dataLoaded || !currentUser?.userID) return;
 
     setLoading(true);
     try {
-      // Load squads if needed
       if (userSquads.length === 0) {
         const fetchedSquads = await getUserSquads(currentUser.userID);
         setSquads(fetchedSquads || []);
@@ -132,12 +196,10 @@ export default function ScheduleMeal({ navigation, route }) {
     }
   }, [currentUser, getUserSquads, userSquads, dataLoaded]);
 
-  // Load data once when component mounts or when current user changes
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Generate default meal name based on time and location
   useEffect(() => {
     const timeOfDay = getMealType(selectedTime.getHours());
     const defaultName = `${timeOfDay.charAt(0).toUpperCase()}${timeOfDay.slice(
@@ -210,23 +272,36 @@ export default function ScheduleMeal({ navigation, route }) {
   );
 
   const handleDateChange = (event, date) => {
-    setShowDatePicker(false);
-    if (date) {
-      setSelectedDate(date);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (date) {
+        setSelectedDate(date);
+      }
+    } else {
+      // For iOS, update the tempDate
+      if (date) {
+        setTempDate(date);
+      }
     }
   };
 
   const handleTimeChange = (event, time) => {
-    setShowTimePicker(false);
-    if (time) {
-      setSelectedTime(time);
-
-      // Update meal name when time changes
-      const timeOfDay = getMealType(time.getHours());
-      const defaultName = `${timeOfDay
-        .charAt(0)
-        .toUpperCase()}${timeOfDay.slice(1)} at ${location}`;
-      setMealName(defaultName);
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+      if (time) {
+        setSelectedTime(time);
+        // Update meal name when time changes
+        const timeOfDay = getMealType(time.getHours());
+        const defaultName = `${timeOfDay
+          .charAt(0)
+          .toUpperCase()}${timeOfDay.slice(1)} at ${location}`;
+        setMealName(defaultName);
+      }
+    } else {
+      // For iOS, update the tempTime
+      if (time) {
+        setTempTime(time);
+      }
     }
   };
 
@@ -267,24 +342,19 @@ export default function ScheduleMeal({ navigation, route }) {
     try {
       setLoading(true);
 
-      // Prepare participant data - use MongoDB IDs
       const participants = selectedFriends.map((item) => ({
         userID: item.mongoId, // Use the MongoDB _id for participant references
         status: 'invited', // Match the status enum in the schema
       }));
 
-      // Combine date and time
       const date = new Date(selectedDate);
       date.setHours(selectedTime.getHours());
       date.setMinutes(selectedTime.getMinutes());
 
-      // Get the meal type based on the time of day
       const mealType = getMealType(selectedTime.getHours());
 
-      // Format time string to match enum values in the schema
       const timeString = formatTimeForApi(selectedTime);
 
-      // Create meal data object matching the schema
       const mealData = {
         mealName: mealName,
         host: currentUser._id, // Use MongoDB _id for host
@@ -302,7 +372,6 @@ export default function ScheduleMeal({ navigation, route }) {
         JSON.stringify(mealData, null, 2),
       );
 
-      // Create the meal
       const result = await createMeal(mealData);
       console.log('Meal created:', result);
 
@@ -312,7 +381,6 @@ export default function ScheduleMeal({ navigation, route }) {
       setLocation(LOCATION_OPTIONS[0]);
       setNotes('');
 
-      // Show success message and navigate
       Alert.alert('Success', `Meal "${mealName}" scheduled successfully`, [
         {
           text: 'OK',
@@ -513,8 +581,8 @@ export default function ScheduleMeal({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      {/* Date picker modal */}
-      {showDatePicker && (
+      {/* Android DateTimePicker */}
+      {Platform.OS === 'android' && showDatePicker && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
@@ -523,8 +591,7 @@ export default function ScheduleMeal({ navigation, route }) {
         />
       )}
 
-      {/* Time picker modal */}
-      {showTimePicker && (
+      {Platform.OS === 'android' && showTimePicker && (
         <DateTimePicker
           value={selectedTime}
           mode="time"
@@ -556,18 +623,84 @@ export default function ScheduleMeal({ navigation, route }) {
               <Text style={localStyles.modalLabel}>Date:</Text>
               <TouchableOpacity
                 style={localStyles.inputField}
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  setTempDate(new Date(selectedDate));
+                  setShowDatePicker(true);
+                }}
               >
                 <Text>{formatDate(selectedDate)}</Text>
               </TouchableOpacity>
 
+              {/* Inline date picker for iOS */}
+              {Platform.OS === 'ios' && showDatePicker && (
+                <View style={localStyles.pickerContainer}>
+                  <View style={localStyles.pickerHeader}>
+                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <Text style={localStyles.pickerCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={localStyles.pickerTitle}>Select Date</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedDate(tempDate);
+                        setShowDatePicker(false);
+                      }}
+                    >
+                      <Text style={localStyles.pickerDone}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={tempDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={handleDateChange}
+                    style={localStyles.picker}
+                  />
+                </View>
+              )}
+
               <Text style={localStyles.modalLabel}>Time:</Text>
               <TouchableOpacity
                 style={localStyles.inputField}
-                onPress={() => setShowTimePicker(true)}
+                onPress={() => {
+                  setTempTime(new Date(selectedTime));
+                  setShowTimePicker(true);
+                }}
               >
                 <Text>{formatTime(selectedTime)}</Text>
               </TouchableOpacity>
+
+              {/* Inline time picker for iOS */}
+              {Platform.OS === 'ios' && showTimePicker && (
+                <View style={localStyles.pickerContainer}>
+                  <View style={localStyles.pickerHeader}>
+                    <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                      <Text style={localStyles.pickerCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={localStyles.pickerTitle}>Select Time</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedTime(tempTime);
+                        // Update meal name when time changes
+                        const timeOfDay = getMealType(tempTime.getHours());
+                        const defaultName = `${timeOfDay
+                          .charAt(0)
+                          .toUpperCase()}${timeOfDay.slice(1)} at ${location}`;
+                        setMealName(defaultName);
+                        setShowTimePicker(false);
+                      }}
+                    >
+                      <Text style={localStyles.pickerDone}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={tempTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={handleTimeChange}
+                    style={localStyles.picker}
+                  />
+                </View>
+              )}
 
               <Text style={localStyles.modalLabel}>Location:</Text>
               <View style={localStyles.locationOptionsContainer}>
@@ -914,5 +1047,39 @@ const localStyles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#5C4D7D',
+  },
+  // New picker styles for inline date/time selection
+  pickerContainer: {
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    marginBottom: 15,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  pickerCancel: {
+    color: '#5C4D7D',
+    fontSize: 16,
+  },
+  pickerDone: {
+    color: '#5C4D7D',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  picker: {
+    height: 200,
+    width: '100%',
   },
 });

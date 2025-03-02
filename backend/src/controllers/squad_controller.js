@@ -244,10 +244,8 @@ const removeMemberFromSquad = async (req, res) => {
   try {
     const { squadID, userID } = req.params;
 
-    // Get the current user's Firebase UID from the auth middleware
     const currentUserId = req.verifiedAuthId;
 
-    // Find the squad
     const squad = await Squad.findById(squadID);
 
     if (!squad) {
@@ -308,7 +306,6 @@ const deleteSquad = async (req, res) => {
     // Get the current user's Firebase UID from the auth middleware
     const currentUserId = req.verifiedAuthId;
 
-    // Find the squad
     const squad = await Squad.findById(squadID);
 
     if (!squad) {
@@ -318,7 +315,6 @@ const deleteSquad = async (req, res) => {
       });
     }
 
-    // Check if the current user is the creator of the squad
     if (squad.createdBy !== currentUserId) {
       return res.status(403).json({
         error: 'Access denied',

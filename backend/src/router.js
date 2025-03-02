@@ -2,14 +2,15 @@ import { Router } from 'express';
 import UserHandlers from './controllers/user_controller';
 import SquadHandlers from './controllers/squad_controller';
 import MealHandlers from './controllers/meal_controller';
+import PingHandlers from './controllers/ping_controller';
 
 const router = Router();
 
-//public routes (accessible without authentication)
+//public routes
 router.post('/auth', UserHandlers.handleCreateUser);
 router.get('/auth', UserHandlers.handleGetOwnedUser);
 
-//protected routes (require authentication)
+//protected routes
 
 // User routes
 router.get('/users', UserHandlers.handleGetUsers);
@@ -48,14 +49,19 @@ router.get('/meals/:mealID', MealHandlers.getMealById);
 router.patch('/meals/:mealID', MealHandlers.updateMeal);
 router.delete('/meals/:mealID', MealHandlers.deleteMeal);
 
-// Add path property to routes for filtering
+// Pings routes
+router.post('/pings', PingHandlers.createPing);
+router.get('/pings/active', PingHandlers.getActivePings);
+router.post('/pings/:pingId/respond', PingHandlers.respondToPing);
+router.post('/pings/:pingId/dismiss', PingHandlers.dismissPing);
+router.post('/pings/:pingId/cancel', PingHandlers.cancelPing);
+
 router.stack.forEach((route) => {
   if (route.route) {
     route.route.path = route.route.path;
   }
 });
 
-// Add filter method to router
 router.filter = function (callback) {
   const filteredRouter = Router();
   this.stack.forEach((route) => {

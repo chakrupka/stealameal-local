@@ -11,23 +11,20 @@ import {
 } from 'react-native';
 import { Text, Avatar, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import useStore from '../store'; // Import the Zustand store
+import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { searchUsersByEmail, sendFriendRequest } from '../services/user-api';
 
-// Function to extract Firebase UID from JWT token
 const extractUserIdFromToken = (token) => {
   try {
     console.log('Attempting to extract UID from token');
-    // Split the token into parts
     const parts = token.split('.');
     if (parts.length !== 3) {
       console.log('Invalid token format, not a JWT');
       return null;
     }
 
-    // Decode the payload (middle part)
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -40,7 +37,6 @@ const extractUserIdFromToken = (token) => {
     const payload = JSON.parse(jsonPayload);
     console.log('Token payload:', JSON.stringify(payload, null, 2));
 
-    // Return the user_id from the payload
     const uid = payload.user_id || payload.sub;
     console.log('Extracted UID from token:', uid);
     return uid;
@@ -53,7 +49,6 @@ const extractUserIdFromToken = (token) => {
 const AddFriendsScreen = ({ navigation, route }) => {
   const profilePic = route.params?.profilePic || null;
 
-  // Access the Zustand store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const isLoggedIn = useStore((state) => state.userSlice.isLoggedIn);
   const searchResults = useStore((state) => state.userSlice.searchResults);
@@ -64,14 +59,11 @@ const AddFriendsScreen = ({ navigation, route }) => {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
 
-  // Track which user is selected
   const [selectedUserID, setSelectedUserID] = useState(null);
 
-  // Extract Firebase UID from token if needed
   const [firebaseUid, setFirebaseUid] = useState(null);
 
   useEffect(() => {
-    // Try to extract Firebase UID from token when component mounts or currentUser changes
     if (currentUser?.idToken && !currentUser.userID) {
       const extractedUid = extractUserIdFromToken(currentUser.idToken);
       setFirebaseUid(extractedUid);
@@ -185,7 +177,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
         selectedUserID,
       );
 
-      // Display the user-friendly message if available, otherwise use a default message
       const message = response.userFriendlyMessage || 'Friend request sent!';
       Alert.alert('Success', message);
 
@@ -194,7 +185,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Failed to send friend request:', error);
 
-      // Extract the user-friendly message from the error response if available
       let errorMessage = 'Please try again.';
 
       if (error.response && error.response.data) {

@@ -1,4 +1,3 @@
-// src/server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -7,19 +6,15 @@ import dotenv from 'dotenv';
 import router from './router';
 import requireAuth from './middleware/require-auth';
 
-// Load environment variables
 dotenv.config();
 
-// Create Express app
 const app = express();
 const PORT = process.env.PORT || 9090;
 
-// Middleware
 app.use(express.json());
 app.use(cors());
 app.use(morgan('dev')); // Logging
 
-// Test route to check if the server is running
 app.get('/', (req, res) => {
   res.json({
     message: 'API is running',
@@ -27,15 +22,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Public route for authentication without token requirement
+// Public route
 app.post('/api/auth', (req, res, next) => {
   router.handle(req, res, next);
 });
 
-// Protected routes - require authentication
+// Protected routes
 app.use('/api', requireAuth, router);
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(err.statusCode || 500).json({

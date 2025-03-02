@@ -429,6 +429,41 @@ export default StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
+  // Add these styles to your localStyles StyleSheet:
+
+  pickerContainer: {
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    marginBottom: 15,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  pickerCancel: {
+    color: '#5C4D7D',
+    fontSize: 16,
+  },
+  pickerDone: {
+    color: '#5C4D7D',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  picker: {
+    height: 200,
+    width: '100%',
+  },
 
   initials: {
     color: '#fff',

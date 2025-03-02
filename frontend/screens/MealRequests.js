@@ -24,12 +24,10 @@ export default function MealRequests({ navigation, route }) {
   const [mealRequests, setMealRequests] = useState([]);
   const [hostedMeals, setHostedMeals] = useState([]);
 
-  // Get user and meals from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const getAllMeals = useStore((state) => state.mealSlice.getAllMeals);
   const updateMeal = useStore((state) => state.mealSlice.updateMeal);
 
-  // Load meal requests and hosted meals
   useEffect(() => {
     const loadMeals = async () => {
       if (!currentUser) {
@@ -47,17 +45,14 @@ export default function MealRequests({ navigation, route }) {
           throw new Error('Invalid meals data received');
         }
 
-        // Filter meals where current user is participant with 'invited' status
         const requests = meals.filter(
           (meal) =>
             meal.participants &&
             meal.participants.some(
               (p) =>
                 p.userID &&
-                // Check MongoDB ObjectId match
                 (p.userID._id === currentUser._id ||
                   p.userID === currentUser._id ||
-                  // Check if userID is the Firebase UID
                   (typeof p.userID === 'string' &&
                     p.userID === currentUser.userID)) &&
                 p.status === 'invited',
@@ -93,7 +88,6 @@ export default function MealRequests({ navigation, route }) {
     loadMeals();
   }, [currentUser, getAllMeals]);
 
-  // Format date for display
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -110,7 +104,6 @@ export default function MealRequests({ navigation, route }) {
     }
   };
 
-  // Get participant's MongoDB ID based on their userID, handle both object and string cases
   const getParticipantMongoId = (meal) => {
     const participant = meal.participants.find(
       (p) =>
@@ -125,18 +118,15 @@ export default function MealRequests({ navigation, route }) {
     return participant;
   };
 
-  // Handle meal request response (accept/decline)
   const handleMealResponse = async (mealId, action) => {
     try {
       setLoading(true);
 
-      // Find the meal to update
       const meal = mealRequests.find((m) => m._id === mealId);
       if (!meal) {
         throw new Error('Meal not found');
       }
 
-      // Get the participant reference
       const participantToUpdate = meal.participants.find(
         (p) =>
           (p.userID && p.userID._id === currentUser._id) ||
@@ -148,7 +138,6 @@ export default function MealRequests({ navigation, route }) {
         throw new Error('Participant not found in meal');
       }
 
-      // Create updated participants list
       const updatedParticipants = meal.participants.map((p) => {
         if (
           (p.userID && p.userID._id === currentUser._id) ||
@@ -165,13 +154,10 @@ export default function MealRequests({ navigation, route }) {
 
       console.log('Updating meal with new participants:', updatedParticipants);
 
-      // Update meal
       await updateMeal(mealId, { participants: updatedParticipants });
 
-      // Update local state
       setMealRequests((prev) => prev.filter((m) => m._id !== mealId));
 
-      // Show confirmation
       Alert.alert(
         'Success',
         `You have ${
@@ -189,7 +175,6 @@ export default function MealRequests({ navigation, route }) {
     }
   };
 
-  // Get host name from meal
   const getHostName = (meal) => {
     if (!meal.host) return 'Unknown Host';
 
@@ -199,7 +184,6 @@ export default function MealRequests({ navigation, route }) {
         : 'Unknown Host';
     }
 
-    // If host is current user
     if (meal.host === currentUser._id) {
       return 'You (Host)';
     }
@@ -207,18 +191,15 @@ export default function MealRequests({ navigation, route }) {
     return 'Unknown Host';
   };
 
-  // Get participant name
   const getParticipantName = (participant) => {
     if (!participant || !participant.userID) return 'Unknown';
 
-    // If participant is object with user details
     if (typeof participant.userID === 'object') {
       return participant.userID.firstName && participant.userID.lastName
         ? `${participant.userID.firstName} ${participant.userID.lastName}`
         : 'Unknown';
     }
 
-    // If participant is current user
     if (
       participant.userID === currentUser._id ||
       participant.userID === currentUser.userID
@@ -229,7 +210,6 @@ export default function MealRequests({ navigation, route }) {
     return 'Unknown Participant';
   };
 
-  // Render a meal request item
   const renderMealRequest = ({ item }) => (
     <Card style={localStyles.card}>
       <Card.Content>

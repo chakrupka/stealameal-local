@@ -12,7 +12,6 @@ const MealSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    // Individual participants
     participants: [
       {
         userID: {
@@ -27,7 +26,6 @@ const MealSchema = new mongoose.Schema(
         },
       },
     ],
-    // Squad participants - reference to squads
     squads: [
       {
         squadID: {
@@ -49,6 +47,37 @@ const MealSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
+        // 24 hour now
+        '00:00',
+        '00:15',
+        '00:30',
+        '00:45',
+        '01:00',
+        '01:15',
+        '01:30',
+        '01:45',
+        '02:00',
+        '02:15',
+        '02:30',
+        '02:45',
+        '03:00',
+        '03:15',
+        '03:30',
+        '03:45',
+        '04:00',
+        '04:15',
+        '04:30',
+        '04:45',
+        '05:00',
+        '05:15',
+        '05:30',
+        '05:45',
+        '06:00',
+        '06:15',
+        '06:30',
+        '06:45',
+        '07:00',
+        '07:15',
         '07:30',
         '07:45',
         '08:00',
@@ -108,6 +137,13 @@ const MealSchema = new mongoose.Schema(
         '21:30',
         '21:45',
         '22:00',
+        '22:15',
+        '22:30',
+        '22:45',
+        '23:00',
+        '23:15',
+        '23:30',
+        '23:45',
       ],
     },
     mealType: {
@@ -131,10 +167,8 @@ const MealSchema = new mongoose.Schema(
   },
 );
 
-// Improved conflict detection logic
 MealSchema.pre('save', async function (next) {
   try {
-    // Skip conflict check for meal status updates when nothing critical changed
     if (
       !this.isNew &&
       !this.isModified('date') &&
@@ -147,18 +181,15 @@ MealSchema.pre('save', async function (next) {
 
     console.log('Checking for conflicts...');
 
-    // Get users who are confirming this meal (status = confirmed)
     const confirmedUserIds = this.participants
       .filter((p) => p.status === 'confirmed')
       .map((p) => p.userID);
 
-    // If no confirmed participants, no need to check for conflicts
     if (confirmedUserIds.length === 0) {
       console.log('No confirmed participants, skipping conflict check');
       return next();
     }
 
-    // Get date for query (midnight to 11:59 PM of the same day)
     const dateStart = new Date(this.date);
     dateStart.setHours(0, 0, 0, 0);
 
@@ -172,8 +203,6 @@ MealSchema.pre('save', async function (next) {
     );
     console.log(`Current meal ID: ${this._id}`);
 
-    // Find meals on the same day, with the same meal type,
-    // where any of the confirmed participants are also confirmed in another meal
     const conflictingMeal = await mongoose.model('Meal').findOne({
       _id: { $ne: this._id }, // Exclude this meal from the check
       date: {

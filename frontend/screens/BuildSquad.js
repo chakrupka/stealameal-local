@@ -12,7 +12,6 @@ import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
 
-// Constants
 const LAYOUT = {
   listAdjustment: {
     top: 300,
@@ -74,11 +73,9 @@ export default function BuildSquad({ navigation, route }) {
           JSON.stringify(currentUser.friendsList, null, 2),
         );
 
-        // Fetch additional details for each friend
         const friendsWithDetails = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
-              // Fetch the friend's details from your API
               const details = await fetchFriendDetails(
                 currentUser.idToken,
                 friend.friendID,
@@ -94,7 +91,6 @@ export default function BuildSquad({ navigation, route }) {
                 `Error fetching details for friend ${friend.friendID}:`,
                 error,
               );
-              // Return a fallback object if we can't get the details
               return {
                 id: friend.friendID,
                 name: `Unknown Friend`,
@@ -198,7 +194,6 @@ export default function BuildSquad({ navigation, route }) {
 
   const isSquadValid = selectedFriends.length > 0 && squadName.trim() !== '';
 
-  // Show loading if friends are not yet loaded
   if (!currentUser || !currentUser.friendsList) {
     return (
       <View
