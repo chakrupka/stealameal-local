@@ -26,6 +26,8 @@ Get started with installation: https://flask.palletsprojects.com/en/stable/
 4. Start development server with `npx expo start`
    - Press `i` on your keyboard once the server is started to open the iOS simulator
 
+5. **When simulating, go to frontend/.env and replace the IP (everything before the colon) with your actual IP address
+
 ## Deployment
 
 TODO: how to deploy the project

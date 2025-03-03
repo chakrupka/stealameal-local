@@ -10,3 +10,8 @@
    - Shortcut: CMD+Shift+P to open command palette, search "user settings", select "Preferences: Open User Settings (JSON)"
 2. Add the following rule: `"eslint.workingDirectories": [{ "mode": "auto" }]`
 3. Save the file
+
+TODO:
+Need to make a .env file (JSON format for )
+Need firebase credentials
+Need MongoDB credentials
