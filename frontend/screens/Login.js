@@ -103,7 +103,11 @@ export default function Login({ navigation, route }) {
     }
   };
   const handleBackPress = () => {
-    navigation.navigate('Starter'); // Navigate back to the "Starter" screen
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Starter');
+    }
   };
   return (
     <View style={styles.container}>

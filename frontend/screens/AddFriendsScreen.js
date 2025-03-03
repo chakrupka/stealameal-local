@@ -203,25 +203,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
     return null;
   }
 
-  if (status === 'loading' || searching) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Add Friends"
-          profilePic={profilePic}
-        />
-        <View style={styles.content}>
-          <ActivityIndicator
-            size="large"
-            color={styles.COLORS?.primary || '#096A2E'}
-          />
-          <Text style={styles.loadingText}>Searching...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <TopNav
@@ -239,6 +220,7 @@ const AddFriendsScreen = ({ navigation, route }) => {
             placeholder="Search by email"
             placeholderTextColor="#888"
             onSubmitEditing={() => Keyboard.dismiss()}
+            editable={true} // Always allow editing
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -249,6 +231,17 @@ const AddFriendsScreen = ({ navigation, route }) => {
         </View>
 
         {searchError && <Text style={styles.errorText}>{searchError}</Text>}
+
+        {/* Show search indicator without blocking the UI */}
+        {searching && (
+          <View style={styles.inlineLoadingContainer}>
+            <ActivityIndicator
+              size="small"
+              color={styles.COLORS?.primary || '#096A2E'}
+            />
+            <Text style={styles.inlineLoadingText}>Searching...</Text>
+          </View>
+        )}
 
         <FlatList
           data={searchResults}
@@ -283,6 +276,13 @@ const AddFriendsScreen = ({ navigation, route }) => {
           }}
           showsVerticalScrollIndicator={true}
           contentContainerStyle={styles.resultsContentContainer}
+          ListEmptyComponent={
+            email.length > 0 && !searching ? (
+              <Text style={styles.noResultsText}>
+                No users found matching "{email}"
+              </Text>
+            ) : null
+          }
         />
 
         {selectedUserID && (

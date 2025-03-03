@@ -22,12 +22,30 @@ app.get('/', (req, res) => {
   });
 });
 
-// Public route
+// Extract the auth routes from router
+// Public POST route (user creation)
 app.post('/api/auth', (req, res, next) => {
+  // For POST, we don't need auth - creating new users
+  const originalUrl = req.originalUrl;
+  const originalPath = req.path;
+
+  // Adjust the path to match what router expects
+  req.url = '/auth';
   router.handle(req, res, next);
 });
 
-// Protected routes
+// Protected GET route (user retrieval) - requires auth
+app.get('/api/auth', requireAuth, (req, res, next) => {
+  // For GET, we need auth - fetching existing user
+  const originalUrl = req.originalUrl;
+  const originalPath = req.path;
+
+  // Adjust the path to match what router expects
+  req.url = '/auth';
+  router.handle(req, res, next);
+});
+
+// All other API routes - requires auth
 app.use('/api', requireAuth, router);
 
 // Error handling
