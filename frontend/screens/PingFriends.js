@@ -310,6 +310,7 @@ export default function PingFriends({ navigation, route }) {
           title="Ping Friends"
           profilePic={profilePic}
         />
+        <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
           <View style={localStyles.headerContainer}>
             <Text style={localStyles.headerText}>PING FRIENDS</Text>

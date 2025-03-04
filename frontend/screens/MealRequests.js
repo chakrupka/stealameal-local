@@ -376,7 +376,6 @@ export default function MealRequests({ navigation, route }) {
         title="Meal Requests"
         profilePic={profilePic}
       />
-
       <View style={styles.content}>
         {/* Pending invitations section */}
         <Text style={localStyles.sectionTitle}>Pending Invitations</Text>
