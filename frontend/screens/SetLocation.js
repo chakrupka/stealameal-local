@@ -128,6 +128,7 @@ export default function SetLocation({ navigation, route }) {
       />
 
       <ScrollView style={localStyles.scrollView}>
+        <View style={{ height: 80 }} />
         <View style={localStyles.contentContainer}>
           {locations.map((location) => (
             <TouchableOpacity
