@@ -56,7 +56,7 @@ export default function TopNav({ navigation, title, profilePic }) {
       <Appbar.Content title={title} color="white" />
       {profilePic && (
         <Avatar.Image
-          size={40}
+          size={4}
           source={{ uri: profilePic }}
           style={styles.avatar}
         />

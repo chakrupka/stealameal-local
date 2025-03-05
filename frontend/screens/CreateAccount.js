@@ -1,4 +1,3 @@
-// src/screens/CreateAccount.js
 import React, { useState } from 'react';
 import {
   View,
@@ -8,7 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
@@ -125,69 +124,83 @@ export default function CreateAccount({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.createAccountContainer}>
       <TopNav
         navigation={navigation}
         title="Create Account"
         profilePic={profilePic}
       />
-      <View style={styles.content}>
-        <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
-          {profilePic ? (
-            <Image source={{ uri: profilePic }} style={styles.profilePic} />
-          ) : (
-            <Text style={styles.uploadText}>Upload Profile Picture</Text>
-          )}
-        </TouchableOpacity>
 
-        <Text style={styles.title}>Sign Up</Text>
+      <Text style={styles.createAccountHeader}>Sign Up</Text>
 
+      <View
+        style={[styles.createAccountInputContainer, { top: 250, left: 90 }]}
+      >
         <TextInput
-          style={styles.inputLarge}
-          placeholder="Enter your first name"
-          placeholderTextColor="#bbb"
+          style={styles.createAccountInput}
+          placeholder="First Name"
           value={firstName}
           onChangeText={setFirstName}
         />
+      </View>
+
+      <View
+        style={[styles.createAccountInputContainer, { top: 290, left: 90 }]}
+      >
         <TextInput
-          style={styles.inputLarge}
-          placeholder="Enter your last name"
-          placeholderTextColor="#bbb"
+          style={styles.createAccountInput}
+          placeholder="Last Name"
           value={lastName}
           onChangeText={setLastName}
         />
+      </View>
+
+      <View
+        style={[styles.createAccountInputContainer, { top: 330, left: 90 }]}
+      >
         <TextInput
-          style={styles.inputLarge}
-          placeholder="Enter your email"
-          placeholderTextColor="#bbb"
+          style={styles.createAccountInput}
+          placeholder="Email"
           value={email}
           onChangeText={setEmail}
-          onBlur={validateEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      </View>
+
+      <View
+        style={[styles.createAccountInputContainer, { top: 370, left: 90 }]}
+      >
         <TextInput
-          style={styles.inputLarge}
-          placeholder="Enter a password"
-          placeholderTextColor="#bbb"
+          style={styles.createAccountInput}
+          placeholder="Password"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
-
-        {loading ? (
-          <ActivityIndicator size="large" color="#096A2E" />
-        ) : (
-          <Button
-            mode="contained"
-            style={styles.button}
-            onPress={handleCreateAccount}
-          >
-            Create Account
-          </Button>
-        )}
       </View>
-    </ScrollView>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#096A2E"
+          style={{ position: 'absolute', top: 593, alignSelf: 'center' }}
+        />
+      ) : (
+        <TouchableOpacity
+          style={styles.createAccountButton}
+          onPress={handleCreateAccount}
+        >
+          <Text>Create Account</Text>
+        </TouchableOpacity>
+      )}
+
+      <Image
+        source={require('../assets/raccoonnobackground.png')}
+        style={styles.createAccountLogo}
+      />
+    </View>
   );
 }

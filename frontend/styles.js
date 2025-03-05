@@ -118,12 +118,68 @@ export default StyleSheet.create({
     alignItems: 'flex-start',
   },
 
+  createAccountContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+
+  createAccountHeader: {
+    ...TYPOGRAPHY.header,
+    width: SIZES.headerWidth,
+    textAlign: 'center',
+    color: COLORS.black,
+    borderWidth: 0.5,
+    borderColor: COLORS.black,
+  },
+
+  createAccountInputContainer: {
+    width: 247,
+    height: 42,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: '#8B8B8B',
+    borderRadius: SIZES.borderRadius.large,
+    paddingHorizontal: SPACING.sm,
+    justifyContent: 'center',
+  },
+
+  createAccountInput: {
+    width: '100%',
+    height: '100%',
+    ...TYPOGRAPHY.input,
+  },
+
+  createAccountButton: {
+    width: 247,
+    height: 42,
+    top: 400,
+    left: 90,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.large,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.2,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  createAccountLogo: {
+    width: 133,
+    height: 128,
+    top: 420,
+    alignSelf: 'center',
+    resizeMode: 'contain',
+  },
+
   // ========= NAVIGATION =========
   topNav: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    height: 100,
     backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
