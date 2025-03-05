@@ -134,7 +134,7 @@ export default function CreateAccount({ navigation }) {
       <Text style={styles.createAccountHeader}>Sign Up</Text>
 
       <View
-        style={[styles.createAccountInputContainer, { top: 250, left: 90 }]}
+        style={[styles.createAccountInputContainer, { top: 200, left: 90 }]}
       >
         <TextInput
           style={styles.createAccountInput}
@@ -145,7 +145,7 @@ export default function CreateAccount({ navigation }) {
       </View>
 
       <View
-        style={[styles.createAccountInputContainer, { top: 290, left: 90 }]}
+        style={[styles.createAccountInputContainer, { top: 240, left: 90 }]}
       >
         <TextInput
           style={styles.createAccountInput}
@@ -156,7 +156,7 @@ export default function CreateAccount({ navigation }) {
       </View>
 
       <View
-        style={[styles.createAccountInputContainer, { top: 330, left: 90 }]}
+        style={[styles.createAccountInputContainer, { top: 280, left: 90 }]}
       >
         <TextInput
           style={styles.createAccountInput}
@@ -169,7 +169,7 @@ export default function CreateAccount({ navigation }) {
       </View>
 
       <View
-        style={[styles.createAccountInputContainer, { top: 370, left: 90 }]}
+        style={[styles.createAccountInputContainer, { top: 320, left: 90 }]}
       >
         <TextInput
           style={styles.createAccountInput}

@@ -143,34 +143,29 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
-  createAccountInput: {
-    width: '100%',
-    height: '100%',
-    ...TYPOGRAPHY.input,
+  loginContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
   },
 
-  createAccountButton: {
+  loginHeader: {
+    ...TYPOGRAPHY.header,
+    width: SIZES.headerWidth,
+    textAlign: 'center',
+    color: COLORS.black,
+    borderWidth: 0.5,
+    borderColor: COLORS.black,
+  },
+
+  loginInputContainer: {
     width: 247,
     height: 42,
-    top: 400,
-    left: 90,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: '#8B8B8B',
     borderRadius: SIZES.borderRadius.large,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.2,
-    elevation: 3,
+    paddingHorizontal: SPACING.sm,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  createAccountLogo: {
-    width: 133,
-    height: 128,
-    top: 420,
-    alignSelf: 'center',
-    resizeMode: 'contain',
   },
 
   // ========= NAVIGATION =========
@@ -343,6 +338,38 @@ export default StyleSheet.create({
     textAlign: 'center',
   },
 
+  createAccountButton: {
+    width: 247,
+    height: 42,
+    top: 370,
+    left: 90,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.large,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.2,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  loginButton: {
+    width: 247,
+    height: 42,
+    top: 350,
+    left: 90,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.large,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.2,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   // ========= FORM ELEMENTS =========
   inputLarge: {
     backgroundColor: COLORS.white,
@@ -371,6 +398,18 @@ export default StyleSheet.create({
     color: COLORS.black,
     ...TYPOGRAPHY.input,
     paddingLeft: SPACING.sm,
+  },
+
+  createAccountInput: {
+    width: '100%',
+    height: '100%',
+    ...TYPOGRAPHY.input,
+  },
+
+  loginInput: {
+    width: '100%',
+    height: '100%',
+    ...TYPOGRAPHY.input,
   },
 
   // ========= IMAGES AND LOGOS =========
@@ -415,6 +454,14 @@ export default StyleSheet.create({
     height: 129,
     left: 200,
     top: 600,
+  },
+
+  createAccountLogo: {
+    width: 133,
+    height: 128,
+    top: 420,
+    alignSelf: 'center',
+    resizeMode: 'contain',
   },
 
   // ========= LIST STYLES =========
