@@ -211,7 +211,7 @@ const localStyles = StyleSheet.create({
     width: '80%',
     padding: 5,
     borderRadius: 30,
-    backgroundColor: '#5C4D7D',
+    backgroundColor: 'rgba(174,207,117,0.75)',
   },
   buttonLabel: {
     fontSize: 16,
