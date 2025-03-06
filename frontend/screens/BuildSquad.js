@@ -12,7 +12,6 @@ import styles from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
-
 const LAYOUT = {
   listAdjustment: {
     top: 50,
@@ -43,40 +42,33 @@ const LAYOUT = {
     backgroundColor: 'white',
   },
 };
-
 export default function BuildSquad({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
-
   // Access Zustand store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const createSquad = useStore((state) => state.squadSlice.createSquad);
   const refreshUserProfile = useStore(
     (state) => state.userSlice.refreshUserProfile,
   );
-
   // State
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [squadName, setSquadName] = useState('');
   const [loading, setLoading] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
-
   // Fetch friends on component mount
   useEffect(() => {
     const fetchFriendsData = async () => {
       setLoading(true);
-
       try {
         if (!currentUser?.friendsList || currentUser.friendsList.length === 0) {
           console.log('No friends list available');
           setFriendsList([]);
           return;
         }
-
         console.log(
           'Friends list:',
           JSON.stringify(currentUser.friendsList, null, 2),
         );
-
         const friendsWithDetails = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
@@ -84,7 +76,6 @@ export default function BuildSquad({ navigation, route }) {
                 currentUser.idToken,
                 friend.friendID,
               );
-
               return {
                 id: friend.friendID,
                 name: `${details.firstName} ${details.lastName}`.trim(),
@@ -103,7 +94,6 @@ export default function BuildSquad({ navigation, route }) {
             }
           }),
         );
-
         setFriendsList(friendsWithDetails);
       } catch (error) {
         console.error('Error fetching friends data:', error);
@@ -112,18 +102,15 @@ export default function BuildSquad({ navigation, route }) {
         setLoading(false);
       }
     };
-
     if (currentUser?.friendsList) {
       fetchFriendsData();
     }
   }, [currentUser]);
-
   const toggleSelection = (id) => {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id],
     );
   };
-
   const renderFriend = ({ item }) => (
     <TouchableOpacity onPress={() => toggleSelection(item.id)}>
       <View
@@ -140,11 +127,9 @@ export default function BuildSquad({ navigation, route }) {
             labelStyle={{ color: '#000' }}
           />
         </View>
-
         <View style={styles.listItemContent}>
           <Text>{item.name}</Text>
         </View>
-
         <View style={styles.listItemCheckbox}>
           <Checkbox
             status={selectedFriends.includes(item.id) ? 'checked' : 'unchecked'}
@@ -156,7 +141,6 @@ export default function BuildSquad({ navigation, route }) {
       </View>
     </TouchableOpacity>
   );
-
   const handleCreateSquad = async () => {
     if (selectedFriends.length === 0 || !squadName.trim()) {
       Alert.alert(
@@ -165,7 +149,6 @@ export default function BuildSquad({ navigation, route }) {
       );
       return;
     }
-
     setLoading(true);
     try {
       const squadData = {
@@ -173,11 +156,8 @@ export default function BuildSquad({ navigation, route }) {
         members: [...selectedFriends, currentUser.userID], // Include current user in squad
         createdBy: currentUser.userID,
       };
-
       const newSquad = await createSquad(squadData);
-
       await refreshUserProfile();
-
       Alert.alert('Success', `Squad "${squadName}" created successfully!`, [
         {
           text: 'OK',
@@ -195,9 +175,7 @@ export default function BuildSquad({ navigation, route }) {
       setLoading(false);
     }
   };
-
   const isSquadValid = selectedFriends.length > 0 && squadName.trim() !== '';
-
   if (!currentUser || !currentUser.friendsList) {
     return (
       <View
@@ -211,7 +189,6 @@ export default function BuildSquad({ navigation, route }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <TopNav
@@ -224,11 +201,9 @@ export default function BuildSquad({ navigation, route }) {
       <View style={localStyles.headerContainer}>
         <Text style={localStyles.headerText}>Build your squad</Text>
       </View>
-
       <Text style={styles.subheader}>
         Select friends to create a new squad.
       </Text>
-
       {friendsList.length === 0 ? (
         <View
           style={[
@@ -273,7 +248,6 @@ export default function BuildSquad({ navigation, route }) {
               }
             />
           </View>
-
           <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
             {/* Squad name input */}
             <View style={LAYOUT.inputContainer}>
@@ -285,7 +259,6 @@ export default function BuildSquad({ navigation, route }) {
                 style={LAYOUT.inputStyle}
               />
             </View>
-
             {loading ? (
               <ActivityIndicator size="large" color="#096A2E" />
             ) : (
@@ -306,7 +279,6 @@ export default function BuildSquad({ navigation, route }) {
     </View>
   );
 }
-
 const localStyles = StyleSheet.create({
   contentContainer: {
     flex: 1,
