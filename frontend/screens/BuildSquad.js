@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { Checkbox, Text, Avatar, TextInput } from 'react-native-paper';
 import styles from '../styles';
@@ -14,7 +15,9 @@ import { fetchFriendDetails } from '../services/user-api';
 
 const LAYOUT = {
   listAdjustment: {
-    top: 300,
+    top: 30,
+    width: 370,
+    backgroundColor: '#ffffff',
   },
   bottomContainer: {
     justifyContent: 'space-between',
@@ -217,9 +220,11 @@ export default function BuildSquad({ navigation, route }) {
       />
       <View style={{ height: 130 }} />
 
-      <Text style={styles.header}>BUILD YOUR SQUAD</Text>
+      <View style={localStyles.headerContainer}>
+        <Text style={localStyles.headerText}>BUILD YOUR SQUAD</Text>
+      </View>
 
-      <Text style={styles.subheader}>
+      <Text style={localStyles.subheaderText}>
         Select friends to create a new squad.
       </Text>
 
@@ -230,15 +235,25 @@ export default function BuildSquad({ navigation, route }) {
             { justifyContent: 'center', alignItems: 'center' },
           ]}
         >
-          <Text style={{ textAlign: 'center', marginTop: 30 }}>
+          <Text style={{ textAlign: 'center', marginTop: -150 }}>
             You haven't added any friends yet. Add friends first to create a
             squad.
           </Text>
           <TouchableOpacity
-            style={[styles.button, { marginTop: 20 }]}
-            onPress={() => navigation.navigate('AddFriends')}
+            style={[
+              styles.button,
+              { marginTop: 20, backgroundColor: '#096A2E' },
+            ]}
+            onPress={() => navigation.navigate('AddFriendsScreen')}
           >
-            <Text style={styles.buttonText}>Add Friends</Text>
+            <Text
+              style={[
+                styles.buttonText,
+                { textAlign: 'center', color: '#ffffff' },
+              ]}
+            >
+              Add Friends
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -290,3 +305,24 @@ export default function BuildSquad({ navigation, route }) {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  headerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  subheaderText: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+});
