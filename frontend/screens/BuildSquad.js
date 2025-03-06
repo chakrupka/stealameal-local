@@ -5,16 +5,19 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { Checkbox, Text, Avatar, TextInput } from 'react-native-paper';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
-
 const LAYOUT = {
   listAdjustment: {
-    top: 300,
+    top: 50,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+    left: 30,
   },
   bottomContainer: {
     justifyContent: 'space-between',
@@ -39,40 +42,33 @@ const LAYOUT = {
     backgroundColor: 'white',
   },
 };
-
 export default function BuildSquad({ navigation, route }) {
   const profilePic = route.params?.profilePic || null;
-
   // Access Zustand store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const createSquad = useStore((state) => state.squadSlice.createSquad);
   const refreshUserProfile = useStore(
     (state) => state.userSlice.refreshUserProfile,
   );
-
   // State
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [squadName, setSquadName] = useState('');
   const [loading, setLoading] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
-
   // Fetch friends on component mount
   useEffect(() => {
     const fetchFriendsData = async () => {
       setLoading(true);
-
       try {
         if (!currentUser?.friendsList || currentUser.friendsList.length === 0) {
           console.log('No friends list available');
           setFriendsList([]);
           return;
         }
-
         console.log(
           'Friends list:',
           JSON.stringify(currentUser.friendsList, null, 2),
         );
-
         const friendsWithDetails = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
@@ -80,7 +76,6 @@ export default function BuildSquad({ navigation, route }) {
                 currentUser.idToken,
                 friend.friendID,
               );
-
               return {
                 id: friend.friendID,
                 name: `${details.firstName} ${details.lastName}`.trim(),
@@ -99,7 +94,6 @@ export default function BuildSquad({ navigation, route }) {
             }
           }),
         );
-
         setFriendsList(friendsWithDetails);
       } catch (error) {
         console.error('Error fetching friends data:', error);
@@ -108,18 +102,15 @@ export default function BuildSquad({ navigation, route }) {
         setLoading(false);
       }
     };
-
     if (currentUser?.friendsList) {
       fetchFriendsData();
     }
   }, [currentUser]);
-
   const toggleSelection = (id) => {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id],
     );
   };
-
   const renderFriend = ({ item }) => (
     <TouchableOpacity onPress={() => toggleSelection(item.id)}>
       <View
@@ -136,11 +127,9 @@ export default function BuildSquad({ navigation, route }) {
             labelStyle={{ color: '#000' }}
           />
         </View>
-
         <View style={styles.listItemContent}>
           <Text>{item.name}</Text>
         </View>
-
         <View style={styles.listItemCheckbox}>
           <Checkbox
             status={selectedFriends.includes(item.id) ? 'checked' : 'unchecked'}
@@ -152,7 +141,6 @@ export default function BuildSquad({ navigation, route }) {
       </View>
     </TouchableOpacity>
   );
-
   const handleCreateSquad = async () => {
     if (selectedFriends.length === 0 || !squadName.trim()) {
       Alert.alert(
@@ -161,7 +149,6 @@ export default function BuildSquad({ navigation, route }) {
       );
       return;
     }
-
     setLoading(true);
     try {
       const squadData = {
@@ -169,11 +156,8 @@ export default function BuildSquad({ navigation, route }) {
         members: [...selectedFriends, currentUser.userID], // Include current user in squad
         createdBy: currentUser.userID,
       };
-
       const newSquad = await createSquad(squadData);
-
       await refreshUserProfile();
-
       Alert.alert('Success', `Squad "${squadName}" created successfully!`, [
         {
           text: 'OK',
@@ -191,9 +175,7 @@ export default function BuildSquad({ navigation, route }) {
       setLoading(false);
     }
   };
-
   const isSquadValid = selectedFriends.length > 0 && squadName.trim() !== '';
-
   if (!currentUser || !currentUser.friendsList) {
     return (
       <View
@@ -207,7 +189,6 @@ export default function BuildSquad({ navigation, route }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <TopNav
@@ -216,13 +197,12 @@ export default function BuildSquad({ navigation, route }) {
         profilePic={profilePic}
       />
       <View style={{ height: 130 }} />
-
-      <Text style={styles.header}>BUILD YOUR SQUAD</Text>
-
+      <View style={localStyles.headerContainer}>
+        <Text style={localStyles.headerText}>Build your squad</Text>
+      </View>
       <Text style={styles.subheader}>
         Select friends to create a new squad.
       </Text>
-
       {friendsList.length === 0 ? (
         <View
           style={[
@@ -235,10 +215,20 @@ export default function BuildSquad({ navigation, route }) {
             squad.
           </Text>
           <TouchableOpacity
-            style={[styles.button, { marginTop: 20 }]}
-            onPress={() => navigation.navigate('AddFriends')}
+            style={[
+              styles.button,
+              { backgroundColor: '#096A2E', marginTop: 20 },
+            ]}
+            onPress={() => navigation.navigate('AddFriendsScreen')}
           >
-            <Text style={styles.buttonText}>Add Friends</Text>
+            <Text
+              style={[
+                styles.buttonText,
+                { color: '#FFFFFF', textAlign: 'center' },
+              ]}
+            >
+              Add Friends
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -257,7 +247,6 @@ export default function BuildSquad({ navigation, route }) {
               }
             />
           </View>
-
           <View style={[styles.bottomContainer, LAYOUT.bottomContainer]}>
             {/* Squad name input */}
             <View style={LAYOUT.inputContainer}>
@@ -269,7 +258,6 @@ export default function BuildSquad({ navigation, route }) {
                 style={LAYOUT.inputStyle}
               />
             </View>
-
             {loading ? (
               <ActivityIndicator size="large" color="#096A2E" />
             ) : (
@@ -290,3 +278,28 @@ export default function BuildSquad({ navigation, route }) {
     </View>
   );
 }
+const localStyles = StyleSheet.create({
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 5,
+  },
+  headerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  subheaderText: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+});

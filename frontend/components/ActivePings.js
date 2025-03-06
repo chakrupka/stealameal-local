@@ -13,26 +13,54 @@ export default function ActivePings({ navigation }) {
   const [activePings, setActivePings] = useState([]);
   const [loading, setLoading] = useState(false);
   const currentUser = useStore((state) => state.userSlice.currentUser);
+  const [lastChecked, setLastChecked] = useState(null);
 
+  // Initial load of pings when component mounts or currentUser changes
   useEffect(() => {
     if (currentUser?.idToken) {
       loadActivePings();
+      setLastChecked(new Date());
     }
   }, [currentUser]);
 
+  // More frequent polling for new pings (every 4 seconds)
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       if (currentUser?.idToken) {
         loadActivePings();
+        setLastChecked(new Date());
       }
-    }, 60000);
+    }, 4000);
 
     return () => clearInterval(refreshInterval);
   }, [currentUser]);
 
-  const loadActivePings = async () => {
+  // Handle focus events to refresh pings when screen comes into focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (currentUser?.idToken) {
+        loadActivePings();
+        setLastChecked(new Date());
+      }
+    };
+
+    // Subscribe to focus events
+    if (navigation?.addListener) {
+      const unsubscribe = navigation.addListener('focus', handleFocus);
+      return unsubscribe;
+    }
+
+    return undefined;
+  }, [navigation, currentUser]);
+
+  const loadActivePings = async (force = false) => {
     try {
-      setLoading(true);
+      // Avoid setting loading state for frequent background refreshes
+      const isInitialLoad = !lastChecked;
+      if (isInitialLoad || force) {
+        setLoading(true);
+      }
+
       const pings = await getActivePings(currentUser.idToken);
       setActivePings(pings);
     } catch (error) {
@@ -100,13 +128,23 @@ export default function ActivePings({ navigation }) {
     }
   };
 
+  // If there are no active pings, we just return null so nothing is rendered
   if (!activePings || activePings.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Ping Notifications</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.sectionTitle}>Ping Notifications</Text>
+        <TouchableOpacity
+          onPress={() => loadActivePings(true)}
+          style={styles.refreshButton}
+          disabled={loading}
+        >
+          <MaterialCommunityIcons name="refresh" size={20} color="#5C4D7D" />
+        </TouchableOpacity>
+      </View>
 
       {activePings.map((ping) => (
         <Card key={ping._id} style={styles.pingCard}>
@@ -170,22 +208,24 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#5C4D7D',
-  },
-  pingCard: {
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#5C4D7D',
+  },
+  refreshButton: {
+    padding: 5,
+  },
+  pingCard: {
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
   },
   senderInfo: {
     flexDirection: 'row',

@@ -14,7 +14,6 @@ const extractUserIdFromToken = (token) => {
       return null;
     }
 
-    // Decode the payload (middle part)
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -27,7 +26,6 @@ const extractUserIdFromToken = (token) => {
     const payload = JSON.parse(jsonPayload);
     console.log('Token payload:', JSON.stringify(payload, null, 2));
 
-    // Return the user_id
     const uid = payload.user_id || payload.sub;
     console.log('Extracted UID from token:', uid);
     return uid;
@@ -44,7 +42,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   const profilePic = route.params?.profilePic || null;
 
-  // Get the entire userSlice state
   const userSlice = useStore((state) => state.userSlice);
 
   console.log('Full userSlice state:', JSON.stringify(userSlice, null, 2));
@@ -57,12 +54,11 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     fetchFriendRequests,
     acceptRequest,
     declineRequest,
+    refreshUserProfile,
   } = userSlice;
 
-  // Log the whole currentUser object to see its structure
   console.log('Current user object:', JSON.stringify(currentUser, null, 2));
 
-  // Try different possible ID field names
   let userID = currentUser?.userID;
 
   console.log('Initial userID from currentUser:', userID);
@@ -143,6 +139,22 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     };
   }, [currentUser, idToken, firebaseUid, fetchFriendRequests]);
 
+  useEffect(() => {
+    const fetchRequests = () => {
+      if (idToken && userID) {
+        console.log('Polling for friend requests with userID:', userID);
+        fetchFriendRequests({
+          idToken,
+          userID,
+        });
+      }
+    };
+
+    const pollInterval = setInterval(fetchRequests, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, [idToken, userID, fetchFriendRequests]);
+
   if (!userSlice.isLoggedIn) {
     console.log('User not logged in, showing login prompt');
     return (
@@ -169,20 +181,26 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     );
   }
 
-  const handleAccept = (senderID) => {
+  const handleAccept = async (senderID) => {
     console.log('Accepting request from:', senderID);
     console.log('Using userID for acceptance:', userID);
 
-    acceptRequest({
+    const result = await acceptRequest({
       idToken,
-      userID, // user viewing their requests
-      senderID, // user who sent the request
+      userID,
+      senderID,
     });
+
+    if (result && result.success) {
+      await refreshUserProfile();
+    }
   };
-  const handleDecline = (senderID) => {
+
+  const handleDecline = async (senderID) => {
     console.log('Declining request from:', senderID);
     console.log('Using userID for decline:', userID);
-    declineRequest({ idToken, userID, senderID });
+
+    await declineRequest({ idToken, userID, senderID });
   };
 
   if (status === 'loading') {
@@ -326,6 +344,13 @@ const FriendRequestsScreen = ({ navigation, route }) => {
             renderItem={renderRequest}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.resultsContentContainer}
+            refreshing={status === 'loading'}
+            onRefresh={() => {
+              if (idToken && userID) {
+                console.log('Manual refresh of friend requests');
+                fetchFriendRequests({ idToken, userID });
+              }
+            }}
           />
         )}
       </View>

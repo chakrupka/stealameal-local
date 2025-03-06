@@ -225,10 +225,23 @@ const createUserSlice = (set, get) => ({
 
       set((state) => {
         state.userSlice.status = 'succeeded';
+        // Remove the request from friendRequests
         state.userSlice.friendRequests = state.userSlice.friendRequests.filter(
           (request) => request.senderID !== senderID,
         );
+
+        // Add the new friend to the friendsList
+        if (!state.userSlice.currentUser.friendsList) {
+          state.userSlice.currentUser.friendsList = [];
+        }
+
+        // Add new friend to the friendsList
+        state.userSlice.currentUser.friendsList.push({
+          friendID: senderID,
+          locationAvailable: false,
+        });
       });
+
       return { success: true };
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -244,7 +257,6 @@ const createUserSlice = (set, get) => ({
       };
     }
   },
-
 
   declineRequest: async ({ idToken, userID, senderID }) => {
     set((state) => {
