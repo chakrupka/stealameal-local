@@ -217,7 +217,9 @@ export default function BuildSquad({ navigation, route }) {
       />
       <View style={{ height: 130 }} />
 
-      <Text style={styles.header}>BUILD YOUR SQUAD</Text>
+      <View style={localStyles.headerContainer}>
+        <Text style={localStyles.headerText}>Build your squad</Text>
+      </View>
 
       <Text style={styles.subheader}>
         Select friends to create a new squad.
