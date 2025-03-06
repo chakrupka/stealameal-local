@@ -25,18 +25,8 @@ const createUserSlice = (set, get) => ({
 
     try {
       const idToken = await signInUser(email, password);
-      console.log('Login - Got idToken from Firebase');
 
       const userData = await fetchOwnUser(idToken);
-      console.log(
-        'Login - Got user data from backend:',
-        JSON.stringify(userData, null, 2),
-      );
-
-      console.log(
-        'Login - User ID is:',
-        userData.userID || userData._id || userData.id,
-      );
 
       set((state) => {
         state.userSlice.status = 'succeeded';
@@ -183,16 +173,10 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      console.log('Fetching friend requests for userID:', userID);
-      console.log('Using idToken:', idToken ? 'Valid token' : 'Invalid token');
-
-      // Call the API to get friend requests
       const requests = await getFriendRequests(idToken, userID);
-      console.log('Friend requests response:', JSON.stringify(requests));
 
       set((state) => {
         state.userSlice.status = 'succeeded';
-        // Store the requests as returned by the API
         state.userSlice.friendRequests = requests || [];
       });
 
@@ -220,8 +204,10 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      // Pass parameters in correct order: token, receiverID (current user), senderID
       await acceptFriendRequest(idToken, userID, senderID);
+
+      // Get the updated user profile from the server
+      const userData = await fetchOwnUser(idToken);
 
       set((state) => {
         state.userSlice.status = 'succeeded';
@@ -230,16 +216,11 @@ const createUserSlice = (set, get) => ({
           (request) => request.senderID !== senderID,
         );
 
-        // Add the new friend to the friendsList
-        if (!state.userSlice.currentUser.friendsList) {
-          state.userSlice.currentUser.friendsList = [];
-        }
-
-        // Add new friend to the friendsList
-        state.userSlice.currentUser.friendsList.push({
-          friendID: senderID,
-          locationAvailable: false,
-        });
+        // Update the entire user object with the fresh data
+        state.userSlice.currentUser = {
+          ...userData,
+          idToken: idToken,
+        };
       });
 
       return { success: true };

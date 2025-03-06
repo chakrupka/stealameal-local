@@ -30,45 +30,63 @@ export default function ViewMeals({ navigation, route }) {
   const [meals, setMeals] = useState([]);
   const [filteredMeals, setFilteredMeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all'); // 'all', 'hosting', 'attending', 'past', 'upcoming'
+  const [filter, setFilter] = useState('all');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
 
-  // Get user and meals from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const getAllMeals = useStore((state) => state.mealSlice.getAllMeals);
   const deleteMeal = useStore((state) => state.mealSlice.deleteMeal);
 
-  // Load all meals
   useEffect(() => {
     loadMeals();
   }, [currentUser, reloadMeals]);
 
-  const loadMeals = async () => {
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (currentUser) {
+        loadMeals(false);
+        setLastRefreshTime(new Date());
+      }
+    }, 6000);
+
+    return () => clearInterval(refreshInterval);
+  }, [currentUser]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (currentUser) {
+        loadMeals();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, currentUser]);
+
+  const loadMeals = async (showLoading = true) => {
     if (!currentUser) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
+
       const allMeals = await getAllMeals();
-      console.log('Loaded all meals:', allMeals.length);
 
       if (!allMeals || !Array.isArray(allMeals)) {
-        console.error('Unexpected meals response:', allMeals);
         throw new Error('Invalid meals data received');
       }
 
-      // Filter meals that involve the current user (either as host or participant with any status)
       const relevantMeals = allMeals.filter(
         (meal) =>
-          // User is host
           (meal.host &&
             ((typeof meal.host === 'object' &&
               meal.host._id === currentUser._id) ||
               (typeof meal.host === 'string' &&
                 meal.host === currentUser._id))) ||
-          // User is participant
           (meal.participants &&
             meal.participants.some(
               (p) =>
@@ -80,7 +98,6 @@ export default function ViewMeals({ navigation, route }) {
             )),
       );
 
-      // Sort meals by date (most recent first)
       relevantMeals.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setMeals(relevantMeals);
@@ -131,11 +148,9 @@ export default function ViewMeals({ navigation, route }) {
         result = result.filter((meal) => new Date(meal.date) >= new Date());
         break;
       default:
-        // 'all' - no filtering
         break;
     }
 
-    // Apply search query
     if (query) {
       const lowercaseQuery = query.toLowerCase();
       result = result.filter(
@@ -151,20 +166,17 @@ export default function ViewMeals({ navigation, route }) {
     setFilteredMeals(result);
   };
 
-  // Handle search
   const onChangeSearch = (query) => {
     setSearchQuery(query);
     applyFilters(meals, filter, query);
   };
 
-  // Handle filter change
   const setActiveFilter = (newFilter) => {
     setFilter(newFilter);
     applyFilters(meals, newFilter, searchQuery);
     setMenuVisible(false);
   };
 
-  // Format date for display
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -253,7 +265,6 @@ export default function ViewMeals({ navigation, route }) {
               setLoading(true);
               await deleteMeal(mealId);
 
-              // Update local state
               setMeals((prev) => prev.filter((m) => m._id !== mealId));
               setFilteredMeals((prev) => prev.filter((m) => m._id !== mealId));
 
@@ -275,9 +286,7 @@ export default function ViewMeals({ navigation, route }) {
     );
   };
 
-  // Determine status color for the meal card
   const getMealStatusColor = (meal) => {
-    // Past meals have gray background
     if (new Date(meal.date) < new Date()) {
       return { backgroundColor: '#f5f5f5', borderLeftColor: '#9e9e9e' };
     }
@@ -286,13 +295,13 @@ export default function ViewMeals({ navigation, route }) {
 
     switch (status) {
       case 'host':
-        return { backgroundColor: '#e3f2fd', borderLeftColor: '#2196f3' }; // Blue for hosting
+        return { backgroundColor: '#e3f2fd', borderLeftColor: '#2196f3' };
       case 'confirmed':
-        return { backgroundColor: '#e8f5e9', borderLeftColor: '#4caf50' }; // Green for attending
+        return { backgroundColor: '#e8f5e9', borderLeftColor: '#4caf50' };
       case 'invited':
-        return { backgroundColor: '#fff9c4', borderLeftColor: '#fbc02d' }; // Yellow for invited
+        return { backgroundColor: '#fff9c4', borderLeftColor: '#fbc02d' };
       case 'declined':
-        return { backgroundColor: '#ffebee', borderLeftColor: '#f44336' }; // Red for declined
+        return { backgroundColor: '#ffebee', borderLeftColor: '#f44336' };
       default:
         return { backgroundColor: 'white', borderLeftColor: '#9e9e9e' };
     }
@@ -389,7 +398,6 @@ export default function ViewMeals({ navigation, route }) {
             <View style={localStyles.chipContainer}>
               {item.participants &&
                 item.participants.map((p) => {
-                  // Get participant name
                   let name = 'Unknown';
                   if (p.userID) {
                     if (typeof p.userID === 'object') {
