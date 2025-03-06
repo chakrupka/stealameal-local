@@ -310,9 +310,10 @@ export default function PingFriends({ navigation, route }) {
           title="Ping Friends"
           profilePic={profilePic}
         />
+        <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
           <View style={localStyles.headerContainer}>
-            <Text style={localStyles.headerText}>PING FRIENDS</Text>
+            <Text style={localStyles.headerText}>Ping your friends</Text>
           </View>
           <Text style={localStyles.subheaderText}>
             Select friends or squads to ping.
@@ -345,7 +346,7 @@ export default function PingFriends({ navigation, route }) {
 
       <View style={localStyles.contentContainer}>
         <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>PING FRIENDS</Text>
+          <Text style={localStyles.headerText}>Ping your friends</Text>
         </View>
 
         <Text style={localStyles.subheaderText}>

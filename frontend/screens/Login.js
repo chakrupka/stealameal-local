@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, ActivityIndicator } from 'react-native';
-import { Button, Text } from 'react-native-paper';
-import { signInUser } from '../services/firebase-auth'; // Add this import
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
+import { Text } from 'react-native-paper';
+import { signInUser } from '../services/firebase-auth';
 import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
@@ -102,6 +108,7 @@ export default function Login({ navigation, route }) {
       setLoading(false);
     }
   };
+
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
       navigation.goBack();
@@ -109,46 +116,57 @@ export default function Login({ navigation, route }) {
       navigation.navigate('Starter');
     }
   };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.loginContainer}>
       <TopNav
         navigation={navigation}
         title="Log In"
         profilePic={profilePic}
         onBackPress={handleBackPress}
       />
-      <View style={styles.content}>
-        <Text style={styles.title}>Enter Your Details</Text>
 
+      <Text style={styles.loginHeader}>Log In</Text>
+
+      <View style={[styles.loginInputContainer, { top: 250, left: 90 }]}>
         <TextInput
-          style={styles.inputLarge}
+          style={styles.loginInput}
           placeholder="Email"
-          placeholderTextColor="#bbb"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
+      </View>
 
+      <View style={[styles.loginInputContainer, { top: 300, left: 90 }]}>
         <TextInput
-          style={styles.inputLarge}
+          style={styles.loginInput}
           placeholder="Password"
-          placeholderTextColor="#bbb"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        {loading ? (
-          <ActivityIndicator size="large" color="#096A2E" />
-        ) : (
-          <Button mode="contained" style={styles.button} onPress={handleLogin}>
-            Log In
-          </Button>
-        )}
       </View>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#096A2E"
+          style={{ position: 'absolute', top: 400, alignSelf: 'center' }}
+        />
+      ) : (
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <Text>Log In</Text>
+        </TouchableOpacity>
+      )}
+
+      <Image
+        source={require('../assets/raccoonnobackground.png')}
+        style={styles.createAccountLogo}
+      />
     </View>
   );
 }

@@ -3,6 +3,7 @@ import { Appbar, Avatar } from 'react-native-paper';
 import { SafeAreaView, View, Alert } from 'react-native';
 import styles from '../styles';
 import useStore from '../store';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TopNav({ navigation, title, profilePic }) {
   const logout = useStore((state) => state.userSlice.logout);
@@ -43,12 +44,19 @@ export default function TopNav({ navigation, title, profilePic }) {
       {isWhatNowScreen ? (
         <Appbar.Action icon="logout" color="white" onPress={handleBackAction} />
       ) : (
-        <Appbar.BackAction color="white" onPress={handleBackAction} />
+        <View style={{ paddingLeft: 10 }}>
+          <MaterialIcons
+            name="arrow-back"
+            size={24}
+            color="white"
+            onPress={handleBackAction}
+          />
+        </View>
       )}
       <Appbar.Content title={title} color="white" />
       {profilePic && (
         <Avatar.Image
-          size={40}
+          size={4}
           source={{ uri: profilePic }}
           style={styles.avatar}
         />

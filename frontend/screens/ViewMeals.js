@@ -457,7 +457,7 @@ export default function ViewMeals({ navigation, route }) {
         title="All Meals"
         profilePic={profilePic}
       />
-
+      <View style={{ height: 50 }} />
       <View style={styles.content}>
         <View style={localStyles.searchContainer}>
           <Searchbar

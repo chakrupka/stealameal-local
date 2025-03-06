@@ -97,6 +97,7 @@ export default function WhatNow({ navigation, route }) {
       <ScrollView
         style={localStyles.scrollContainer}
         contentContainerStyle={localStyles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
       >
         {showMessage && (
           <View style={localStyles.messageCard}>

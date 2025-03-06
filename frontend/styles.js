@@ -2,11 +2,12 @@ import { StyleSheet, Platform, StatusBar } from 'react-native';
 
 const COLORS = {
   primary: '#096A2E',
-  secondary: 'rgba(174,207,117,0.75)', // Light green
+  secondary: 'rgba(174,207,117,0.75)',
   white: '#FFFFFF',
   black: '#000000',
   purple: '#5D4E8E',
   red: 'red',
+  lightgrey: '#D9D9D9',
   selectedItem: '#74C69D',
   textDark: '#3D2200',
 };
@@ -37,7 +38,7 @@ const SIZES = {
   },
   headerWidth: 373,
   container: {
-    standard: 380,
+    standard: 30,
     small: 215,
     medium: 360,
   },
@@ -111,12 +112,69 @@ export default StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
 
+  starterScreenContainer: {
+    backgroundColor: COLORS.primary,
+    position: 'relative',
+    alignItems: 'flex-start',
+  },
+
+  createAccountContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+
+  createAccountHeader: {
+    ...TYPOGRAPHY.header,
+    width: SIZES.headerWidth,
+    textAlign: 'center',
+    color: COLORS.black,
+    borderWidth: 0.5,
+    borderColor: COLORS.black,
+  },
+
+  createAccountInputContainer: {
+    width: 247,
+    height: 42,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: '#8B8B8B',
+    borderRadius: SIZES.borderRadius.large,
+    paddingHorizontal: SPACING.sm,
+    justifyContent: 'center',
+  },
+
+  loginContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+
+  loginHeader: {
+    ...TYPOGRAPHY.header,
+    width: SIZES.headerWidth,
+    textAlign: 'center',
+    color: COLORS.black,
+    borderWidth: 0.5,
+    borderColor: COLORS.black,
+  },
+
+  loginInputContainer: {
+    width: 247,
+    height: 42,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: '#8B8B8B',
+    borderRadius: SIZES.borderRadius.large,
+    paddingHorizontal: SPACING.sm,
+    justifyContent: 'center',
+  },
+
   // ========= NAVIGATION =========
   topNav: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    height: 100,
     backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
@@ -240,6 +298,78 @@ export default StyleSheet.create({
     marginLeft: SPACING.sm,
   },
 
+  starterLoginButtonContainer: {
+    position: 'absolute',
+    width: 268,
+    height: 59,
+    left: 75,
+    top: 400,
+  },
+
+  starterCreateAccountButtonContainer: {
+    position: 'absolute',
+    width: 268,
+    height: 59,
+    left: 75,
+    top: 490,
+  },
+
+  starterAuthButton: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: COLORS.lightgrey,
+    borderWidth: 1,
+    borderColor: COLORS.black,
+    borderRadius: SIZES.borderRadius.large,
+    elevation: 4,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    justifyContent: 'center',
+  },
+
+  starterButtonText: {
+    fontFamily: TYPOGRAPHY.button.fontFamily,
+    fontWeight: '400',
+    fontSize: 24,
+    lineHeight: 32,
+    color: COLORS.textDark,
+    textAlign: 'center',
+  },
+
+  createAccountButton: {
+    width: 247,
+    height: 42,
+    top: 370,
+    left: 90,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.large,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.2,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  loginButton: {
+    width: 247,
+    height: 42,
+    top: 350,
+    left: 90,
+    backgroundColor: COLORS.secondary,
+    borderRadius: SIZES.borderRadius.large,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.2,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   // ========= FORM ELEMENTS =========
   inputLarge: {
     backgroundColor: COLORS.white,
@@ -270,6 +400,18 @@ export default StyleSheet.create({
     paddingLeft: SPACING.sm,
   },
 
+  createAccountInput: {
+    width: '100%',
+    height: '100%',
+    ...TYPOGRAPHY.input,
+  },
+
+  loginInput: {
+    width: '100%',
+    height: '100%',
+    ...TYPOGRAPHY.input,
+  },
+
   // ========= IMAGES AND LOGOS =========
   largeLogo: {
     width: SIZES.container.standard - 30,
@@ -288,6 +430,38 @@ export default StyleSheet.create({
     width: SIZES.container.small - 115,
     height: SIZES.container.small - 115,
     borderRadius: SIZES.borderRadius.circle,
+  },
+
+  starterBackgroundImage: {
+    width: '110%',
+    height: 470,
+    position: 'absolute',
+    left: -17,
+    top: SPACING.xxxl,
+  },
+
+  starterRaccoonImage: {
+    position: 'absolute',
+    width: 102,
+    height: 134,
+    left: 120,
+    top: 700,
+  },
+
+  starterHamburgerImage: {
+    position: 'absolute',
+    width: 133,
+    height: 129,
+    left: 200,
+    top: 600,
+  },
+
+  createAccountLogo: {
+    width: 133,
+    height: 128,
+    top: 420,
+    alignSelf: 'center',
+    resizeMode: 'contain',
   },
 
   // ========= LIST STYLES =========
@@ -423,13 +597,12 @@ export default StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 25,
-    backgroundColor: '#007AFF', // Custom background color
+    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
   },
-  // Add these styles to your localStyles StyleSheet:
 
   pickerContainer: {
     backgroundColor: 'white',

@@ -215,6 +215,7 @@ export default function BuildSquad({ navigation, route }) {
         title="Build a Squad"
         profilePic={profilePic}
       />
+      <View style={{ height: 130 }} />
 
       <Text style={styles.header}>BUILD YOUR SQUAD</Text>
 

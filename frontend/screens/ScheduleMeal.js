@@ -459,10 +459,11 @@ export default function ScheduleMeal({ navigation, route }) {
         title="Schedule Meal"
         profilePic={profilePic}
       />
+      <View style={{ height: 50 }} />
 
       <View style={localStyles.contentContainer}>
         <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>MEAL</Text>
+          <Text style={localStyles.headerText}>Schedule a Meal</Text>
         </View>
 
         <Text style={localStyles.subheaderText}>
