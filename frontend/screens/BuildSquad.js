@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { Checkbox, Text, Avatar, TextInput } from 'react-native-paper';
 import styles from '../styles';
@@ -14,7 +15,10 @@ import { fetchFriendDetails } from '../services/user-api';
 
 const LAYOUT = {
   listAdjustment: {
-    top: 300,
+    top: 50,
+    backgroundColor: '#ffffff',
+    width: '100%',
+    left: 30,
   },
   bottomContainer: {
     justifyContent: 'space-between',
@@ -237,10 +241,20 @@ export default function BuildSquad({ navigation, route }) {
             squad.
           </Text>
           <TouchableOpacity
-            style={[styles.button, { marginTop: 20 }]}
-            onPress={() => navigation.navigate('AddFriends')}
+            style={[
+              styles.button,
+              { backgroundColor: '#096A2E', marginTop: 20 },
+            ]}
+            onPress={() => navigation.navigate('AddFriendsScreen')}
           >
-            <Text style={styles.buttonText}>Add Friends</Text>
+            <Text
+              style={[
+                styles.buttonText,
+                { color: '#ffffff', textAlign: 'center' },
+              ]}
+            >
+              Add Friends
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -292,3 +306,29 @@ export default function BuildSquad({ navigation, route }) {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 5,
+  },
+  headerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  subheaderText: {
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+});
