@@ -162,7 +162,6 @@ export default function CreateAccount({ navigation }) {
           style={styles.createAccountInput}
           placeholder="Email"
           value={email}
-          placeholderTextColor="#bbb"
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
