@@ -221,7 +221,7 @@ export default function BuildSquad({ navigation, route }) {
       <View style={{ height: 130 }} />
 
       <View style={localStyles.headerContainer}>
-        <Text style={localStyles.headerText}>BUILD YOUR SQUAD</Text>
+        <Text style={localStyles.headerText}>Build your squad</Text>
       </View>
 
       <Text style={localStyles.subheaderText}>
