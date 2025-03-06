@@ -1,0 +1,6 @@
+module Pods_projectstealameal {
+  umbrella header "Pods-projectstealameal-umbrella.h"
+
+  export *
+  module * { export * }
+}

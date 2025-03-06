@@ -25,25 +25,37 @@ export default function PingFriends({ navigation, route }) {
   const [squads, setSquads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'squads'
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState('friends');
+  const [shouldRefresh, setShouldRefresh] = useState(true);
 
-  // Get current user and API-related functions from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
+  const refreshUserProfile = useStore(
+    (state) => state.userSlice.refreshUserProfile,
+  );
   const userSquads = useStore((state) => state.squadSlice.squads);
   const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
-  const getAllSquads = useStore((state) => state.squadSlice.getAllSquads);
   const idToken = currentUser?.idToken;
 
-  // Memoized load data function to prevent re-creation on every render
-  const loadData = useCallback(async () => {
-    if (dataLoaded || !currentUser?.userID) return;
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      refreshUserProfile();
+      setShouldRefresh(true);
+    });
 
+    return unsubscribe;
+  }, [navigation, refreshUserProfile]);
+
+  useEffect(() => {
+    if (currentUser?.userID && shouldRefresh) {
+      loadData();
+    }
+  }, [currentUser, shouldRefresh]);
+
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load squads if needed
       if (userSquads.length === 0) {
         const fetchedSquads = await getUserSquads(currentUser.userID);
         setSquads(fetchedSquads || []);
@@ -51,16 +63,9 @@ export default function PingFriends({ navigation, route }) {
         setSquads(userSquads);
       }
 
-      // Load friends
       if (!currentUser.friendsList || currentUser.friendsList.length === 0) {
-        console.log('No friends list available');
         setGroupedFriends([{ title: 'No Location', data: [] }]);
       } else {
-        console.log(
-          'Friends list:',
-          JSON.stringify(currentUser.friendsList, null, 2),
-        );
-
         const friendsWithDetails = await Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
@@ -75,17 +80,12 @@ export default function PingFriends({ navigation, route }) {
                 email: details.email,
                 location: details.location || 'No Location',
                 locationAvailable: friend.locationAvailable || false,
-                mongoId: details._id, // Store MongoDB ID for API calls
+                mongoId: details._id,
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
               };
             } catch (error) {
-              console.error(
-                `Error fetching details for friend ${friend.friendID}:`,
-                error,
-              );
-              // if we can't get their details
               return {
                 friendID: friend.friendID,
                 name: `Friend ${friend.friendID.substring(0, 5)}`,
@@ -114,18 +114,13 @@ export default function PingFriends({ navigation, route }) {
         setGroupedFriends(sections);
       }
 
-      setDataLoaded(true);
+      setShouldRefresh(false);
     } catch (error) {
-      console.error('Error fetching data:', error);
       setError('Failed to load. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [currentUser, idToken, getUserSquads, userSquads, dataLoaded]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  };
 
   const toggleFriendSelection = (friendID) => {
     setSelectedFriends((prev) =>
@@ -198,7 +193,6 @@ export default function PingFriends({ navigation, route }) {
         message: `Ping sent to ${displayNames}!`,
       });
     } catch (error) {
-      console.error('Error sending ping:', error);
       Alert.alert(
         'Error',
         'Failed to send ping: ' + (error.message || 'Please try again'),
@@ -290,15 +284,19 @@ export default function PingFriends({ navigation, route }) {
           ]}
         >
           <Text style={{ color: 'red', marginBottom: 20 }}>{error}</Text>
-          <Button mode="contained" onPress={() => navigation.goBack()}>
-            Go Back
+          <Button
+            mode="contained"
+            onPress={() => {
+              setShouldRefresh(true);
+            }}
+          >
+            Retry
           </Button>
         </View>
       </SafeAreaView>
     );
   }
 
-  // If no friends available and no squads
   if (
     (!currentUser?.friendsList || currentUser.friendsList.length === 0) &&
     (!squads || squads.length === 0)
@@ -310,10 +308,9 @@ export default function PingFriends({ navigation, route }) {
           title="Ping Friends"
           profilePic={profilePic}
         />
-        <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
           <View style={localStyles.headerContainer}>
-            <Text style={localStyles.headerText}>Ping your friends</Text>
+            <Text style={localStyles.headerText}>PING FRIENDS</Text>
           </View>
           <Text style={localStyles.subheaderText}>
             Select friends or squads to ping.
@@ -343,10 +340,10 @@ export default function PingFriends({ navigation, route }) {
         title="Ping Friends"
         profilePic={profilePic}
       />
-      <View style={{ height: 50 }} />
+
       <View style={localStyles.contentContainer}>
         <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>Ping your friends</Text>
+          <Text style={localStyles.headerText}>PING FRIENDS</Text>
         </View>
 
         <Text style={localStyles.subheaderText}>
@@ -420,8 +417,7 @@ export default function PingFriends({ navigation, route }) {
                 </Button>
               </View>
             )
-          ) : // Squads tab
-          squads.length > 0 ? (
+          ) : (
             <FlatList
               data={squads}
               renderItem={renderSquadItem}
@@ -432,19 +428,6 @@ export default function PingFriends({ navigation, route }) {
                 </View>
               }
             />
-          ) : (
-            <View style={localStyles.emptyContainer}>
-              <Text style={localStyles.emptyText}>
-                You don't have any squads yet. Create a squad first!
-              </Text>
-              <Button
-                mode="contained"
-                onPress={() => navigation.navigate('CreateSquadScreen')}
-                style={{ marginTop: 10 }}
-              >
-                Create Squad
-              </Button>
-            </View>
           )}
         </View>
       </View>

@@ -18,10 +18,8 @@ import { searchUsersByEmail, sendFriendRequest } from '../services/user-api';
 
 const extractUserIdFromToken = (token) => {
   try {
-    console.log('Attempting to extract UID from token');
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.log('Invalid token format, not a JWT');
       return null;
     }
 
@@ -35,13 +33,9 @@ const extractUserIdFromToken = (token) => {
     );
 
     const payload = JSON.parse(jsonPayload);
-    console.log('Token payload:', JSON.stringify(payload, null, 2));
-
     const uid = payload.user_id || payload.sub;
-    console.log('Extracted UID from token:', uid);
     return uid;
   } catch (error) {
-    console.error('Error extracting user ID from token:', error);
     return null;
   }
 };
@@ -60,14 +54,12 @@ const AddFriendsScreen = ({ navigation, route }) => {
   const [searchError, setSearchError] = useState(null);
 
   const [selectedUserID, setSelectedUserID] = useState(null);
-
   const [firebaseUid, setFirebaseUid] = useState(null);
 
   useEffect(() => {
     if (currentUser?.idToken && !currentUser.userID) {
       const extractedUid = extractUserIdFromToken(currentUser.idToken);
       setFirebaseUid(extractedUid);
-      console.log('Extracted Firebase UID from token:', extractedUid);
     }
   }, [currentUser]);
 
@@ -80,23 +72,24 @@ const AddFriendsScreen = ({ navigation, route }) => {
     }
   }, [currentUser, isLoggedIn, navigation]);
 
-  // Debounce the search
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setEmail('');
+      setSelectedUserID(null);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   useEffect(() => {
     if (currentUser?.idToken && email) {
       setSearching(true);
       setSearchError(null);
+
       const delayDebounceFn = setTimeout(() => {
-        // Call store's searchUsers
         searchUsers({ idToken: currentUser.idToken, email })
-          .then((res) => {
-            // The store will update state.userSlice.searchResults for you
-            console.log(
-              'Search complete in store. Updated searchResults:',
-              res,
-            );
-          })
+          .then(() => {})
           .catch((error) => {
-            console.error('Search error:', error);
             setSearchError('Failed to search. Please try again.');
           })
           .finally(() => {
@@ -112,13 +105,9 @@ const AddFriendsScreen = ({ navigation, route }) => {
     setSelectedUserID(userID === selectedUserID ? null : userID);
   };
 
-  const logUserInfo = () => {
-    console.log('===== Current User Info =====');
-    console.log('currentUser object:', JSON.stringify(currentUser, null, 2));
-    console.log('MongoDB _id:', currentUser._id);
-    console.log('userID (from currentUser):', currentUser.userID);
-    console.log('Firebase UID (extracted from token):', firebaseUid);
-    console.log('============================');
+  const isAlreadyFriend = (userId) => {
+    if (!currentUser?.friendsList) return false;
+    return currentUser.friendsList.some((friend) => friend.friendID === userId);
   };
 
   const handleAddFriend = async () => {
@@ -126,8 +115,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
       Alert.alert('Please select a user first.');
       return;
     }
-
-    logUserInfo();
 
     try {
       const selectedUser = searchResults.find(
@@ -139,8 +126,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
         return;
       }
 
-      console.log('Selected user:', JSON.stringify(selectedUser, null, 2));
-
       const senderID =
         currentUser.userID ||
         firebaseUid ||
@@ -149,9 +134,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
           : null);
 
       if (!senderID) {
-        console.error(
-          'No valid senderID available. Cannot send friend request.',
-        );
         Alert.alert(
           'Error',
           'Could not determine your user ID. Please log out and log back in.',
@@ -161,13 +143,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
 
       const senderName = `${currentUser.firstName} ${currentUser.lastName}`;
       const senderEmail = currentUser.email;
-
-      console.log('Sending friend request with:', {
-        senderID,
-        senderName,
-        senderEmail,
-        receiverID: selectedUserID,
-      });
 
       const response = await sendFriendRequest(
         currentUser.idToken,
@@ -180,11 +155,9 @@ const AddFriendsScreen = ({ navigation, route }) => {
       const message = response.userFriendlyMessage || 'Friend request sent!';
       Alert.alert('Success', message);
 
-      setSelectedUserID(null); // Reset selection
-      setEmail(''); // Clear search
+      setSelectedUserID(null);
+      setEmail('');
     } catch (error) {
-      console.error('Failed to send friend request:', error);
-
       let errorMessage = 'Please try again.';
 
       if (error.response && error.response.data) {
@@ -220,7 +193,7 @@ const AddFriendsScreen = ({ navigation, route }) => {
             placeholder="Search by email"
             placeholderTextColor="#888"
             onSubmitEditing={() => Keyboard.dismiss()}
-            editable={true} // Always allow editing
+            editable={true}
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -232,7 +205,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
 
         {searchError && <Text style={styles.errorText}>{searchError}</Text>}
 
-        {/* Show search indicator without blocking the UI */}
         {searching && (
           <View style={styles.inlineLoadingContainer}>
             <ActivityIndicator
@@ -248,13 +220,21 @@ const AddFriendsScreen = ({ navigation, route }) => {
           keyExtractor={(item) => item.userID}
           renderItem={({ item }) => {
             const isSelected = item.userID === selectedUserID;
+            const alreadyFriend = isAlreadyFriend(item.userID);
             return (
               <TouchableOpacity
                 style={[
                   styles.userCard,
-                  { backgroundColor: isSelected ? '#e0ffe0' : '#fff' },
+                  {
+                    backgroundColor: isSelected
+                      ? '#e0ffe0'
+                      : alreadyFriend
+                      ? '#f0f0f0'
+                      : '#fff',
+                  },
                 ]}
                 onPress={() => handleSelectUser(item.userID)}
+                disabled={alreadyFriend}
               >
                 <View style={styles.userCardInfo}>
                   <Avatar.Text
@@ -269,6 +249,11 @@ const AddFriendsScreen = ({ navigation, route }) => {
                 {isSelected && (
                   <Text style={{ color: '#096A2E', fontWeight: '600' }}>
                     Selected
+                  </Text>
+                )}
+                {alreadyFriend && (
+                  <Text style={{ color: '#888', fontWeight: '600' }}>
+                    Already Friends
                   </Text>
                 )}
               </TouchableOpacity>

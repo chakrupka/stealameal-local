@@ -15,7 +15,7 @@ import { fetchFriendDetails } from '../services/user-api';
 const LAYOUT = {
   listAdjustment: {
     top: 50,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     width: '100%',
     left: 30,
   },
@@ -197,7 +197,6 @@ export default function BuildSquad({ navigation, route }) {
         profilePic={profilePic}
       />
       <View style={{ height: 130 }} />
-
       <View style={localStyles.headerContainer}>
         <Text style={localStyles.headerText}>Build your squad</Text>
       </View>
@@ -225,7 +224,7 @@ export default function BuildSquad({ navigation, route }) {
             <Text
               style={[
                 styles.buttonText,
-                { color: '#ffffff', textAlign: 'center' },
+                { color: '#FFFFFF', textAlign: 'center' },
               ]}
             >
               Add Friends

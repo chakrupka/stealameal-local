@@ -7,10 +7,8 @@ import TopNav from '../components/TopNav';
 
 const extractUserIdFromToken = (token) => {
   try {
-    console.log('Attempting to extract UID from token');
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.log('Invalid token format, not a JWT');
       return null;
     }
 
@@ -24,10 +22,7 @@ const extractUserIdFromToken = (token) => {
     );
 
     const payload = JSON.parse(jsonPayload);
-    console.log('Token payload:', JSON.stringify(payload, null, 2));
-
     const uid = payload.user_id || payload.sub;
-    console.log('Extracted UID from token:', uid);
     return uid;
   } catch (error) {
     console.error('Error extracting user ID from token:', error);
@@ -36,15 +31,8 @@ const extractUserIdFromToken = (token) => {
 };
 
 const FriendRequestsScreen = ({ navigation, route }) => {
-  console.log('==========================================');
-  console.log('FriendRequestsScreen RENDERING');
-  console.log('==========================================');
-
   const profilePic = route.params?.profilePic || null;
-
   const userSlice = useStore((state) => state.userSlice);
-
-  console.log('Full userSlice state:', JSON.stringify(userSlice, null, 2));
 
   const {
     currentUser,
@@ -57,106 +45,49 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     refreshUserProfile,
   } = userSlice;
 
-  console.log('Current user object:', JSON.stringify(currentUser, null, 2));
-
   let userID = currentUser?.userID;
-
-  console.log('Initial userID from currentUser:', userID);
-
   const idToken = currentUser?.idToken;
 
   let firebaseUid = null;
   if (idToken) {
     firebaseUid = extractUserIdFromToken(idToken);
-    console.log('Firebase UID extracted from token:', firebaseUid);
   }
 
   if (!userID && firebaseUid) {
     userID = firebaseUid;
-    console.log('Using Firebase UID from token as userID:', userID);
   } else if (!userID && currentUser?._id) {
     userID = currentUser._id;
-    console.log('WARNING: Falling back to MongoDB _id as userID:', userID);
-  }
-
-  console.log('Authentication status:', {
-    userExists: !!currentUser,
-    isLoggedIn: userSlice.isLoggedIn,
-    hasToken: !!idToken,
-    hasUserID: !!userID,
-    userIDType: typeof userID,
-    userIDLength: userID ? userID.length : 0,
-    status: status,
-  });
-
-  console.log('Friend requests:', friendRequests ? friendRequests.length : 0);
-  if (friendRequests && friendRequests.length > 0) {
-    console.log(
-      'Friend request details:',
-      JSON.stringify(friendRequests, null, 2),
-    );
   }
 
   useEffect(() => {
-    console.log('FriendRequestsScreen useEffect triggered');
-
     if (!currentUser) {
-      console.log("No current user, can't fetch friend requests");
       return;
     }
 
     const effectiveUserID =
       currentUser.userID || firebaseUid || currentUser.verifiedAuthId;
 
-    if (!effectiveUserID) {
-      console.error('Cannot determine a valid userID for API call');
-      if (idToken) {
-        console.log('Attempting to extract userID from token payload...');
-        const extractedId = extractUserIdFromToken(idToken);
-        if (extractedId) {
-          console.log('Successfully extracted userID from token:', extractedId);
-          userID = extractedId;
-        } else {
-          console.error('Failed to extract userID from token');
-        }
-      }
+    if (!effectiveUserID || !idToken) {
       return;
     }
 
-    if (!idToken) {
-      console.error('Missing idToken in currentUser');
-      return;
-    }
-
-    console.log(`Fetching friend requests with userID: ${effectiveUserID}`);
     fetchFriendRequests({
       idToken,
       userID: effectiveUserID,
     });
-
-    return () => {
-      console.log('FriendRequestsScreen useEffect cleanup');
-    };
-  }, [currentUser, idToken, firebaseUid, fetchFriendRequests]);
+  }, [currentUser, idToken]);
 
   useEffect(() => {
-    const fetchRequests = () => {
+    const unsubscribe = navigation.addListener('focus', () => {
       if (idToken && userID) {
-        console.log('Polling for friend requests with userID:', userID);
-        fetchFriendRequests({
-          idToken,
-          userID,
-        });
+        fetchFriendRequests({ idToken, userID });
       }
-    };
+    });
 
-    const pollInterval = setInterval(fetchRequests, 30000);
-
-    return () => clearInterval(pollInterval);
-  }, [idToken, userID, fetchFriendRequests]);
+    return unsubscribe;
+  }, [navigation, idToken, userID]);
 
   if (!userSlice.isLoggedIn) {
-    console.log('User not logged in, showing login prompt');
     return (
       <SafeAreaView style={styles.container}>
         <TopNav
@@ -182,29 +113,18 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   }
 
   const handleAccept = async (senderID) => {
-    console.log('Accepting request from:', senderID);
-    console.log('Using userID for acceptance:', userID);
-
     const result = await acceptRequest({
       idToken,
       userID,
       senderID,
     });
-
-    if (result && result.success) {
-      await refreshUserProfile();
-    }
   };
 
   const handleDecline = async (senderID) => {
-    console.log('Declining request from:', senderID);
-    console.log('Using userID for decline:', userID);
-
     await declineRequest({ idToken, userID, senderID });
   };
 
   if (status === 'loading') {
-    console.log('Friend requests loading...');
     return (
       <SafeAreaView style={styles.container}>
         <TopNav
@@ -229,7 +149,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   }
 
   if (status === 'failed') {
-    console.log('Friend requests failed to load. Error:', error);
     return (
       <SafeAreaView style={styles.container}>
         <TopNav
@@ -248,7 +167,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
             mode="contained"
             onPress={() => {
               if (idToken && userID) {
-                console.log('Retrying with userID:', userID);
                 fetchFriendRequests({ idToken, userID });
               }
             }}
@@ -261,7 +179,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   }
 
   const renderRequest = ({ item, index }) => {
-    console.log(`Rendering request item ${index}:`, item);
     return (
       <Card style={styles.userCard}>
         <View style={styles.userCardInfo}>
@@ -302,11 +219,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     );
   };
 
-  console.log(
-    'Rendering main component with friend requests:',
-    friendRequests ? friendRequests.length : 0,
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <TopNav
@@ -329,7 +241,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
               mode="outlined"
               onPress={() => {
                 if (idToken && userID) {
-                  console.log('Refreshing with userID:', userID);
                   fetchFriendRequests({ idToken, userID });
                 }
               }}
@@ -347,7 +258,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
             refreshing={status === 'loading'}
             onRefresh={() => {
               if (idToken && userID) {
-                console.log('Manual refresh of friend requests');
                 fetchFriendRequests({ idToken, userID });
               }
             }}
