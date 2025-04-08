@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { USER_API_URL } from '../configs/api-config';
 
-const BASE_URL = `http://localhost:9090/api`;
+const BASE_URL = USER_API_URL;
 
 export const createUser = async (userData) => {
   // no token is needed as it's a public route
@@ -22,11 +23,6 @@ export const fetchOwnUser = async (idToken) => {
       },
     });
 
-    console.log(
-      'Raw user data from server:',
-      JSON.stringify(response.data, null, 2),
-    );
-
     // Ensure userID exists
     if (response.data && !response.data.userID) {
       console.warn('Warning: User data missing userID field!');
@@ -41,7 +37,6 @@ export const fetchOwnUser = async (idToken) => {
 export const searchUsersByEmail = async (idToken, email) => {
   console.log('API: Searching users');
   console.log('Email:', email);
-  console.log('idToken:', idToken);
 
   try {
     const response = await axios.get(
@@ -104,14 +99,6 @@ export const updateUserLocation = async (idToken, userID, location) => {
         timeout: 10000,
       },
     );
-    
-    // Debug timestamp info
-    console.log('TIMESTAMP DEBUG - Location update API response:', response.data);
-    console.log('TIMESTAMP DEBUG - Response locationUpdatedAt:', {
-      exists: !!response.data.locationUpdatedAt,
-      value: response.data.locationUpdatedAt,
-      type: response.data.locationUpdatedAt ? typeof response.data.locationUpdatedAt : 'undefined'
-    });
     
     return response.data;
   } catch (error) {
@@ -205,10 +192,6 @@ export const acceptFriendRequest = async (idToken, receiverID, senderID) => {
   }
 };
 export const fetchFriendDetails = async (idToken, friendID) => {
-  console.log(
-    `API: Fetching details for friend with Firebase UID: ${friendID}`,
-  );
-
   try {
     const response = await axios.get(
       `${BASE_URL}/users/by-firebase-uid/${friendID}`,
@@ -220,42 +203,20 @@ export const fetchFriendDetails = async (idToken, friendID) => {
         timeout: 10000,
       },
     );
-
-    // Log all timestamp-related fields
-    const timestampFields = {
-      location: response.data.location,
-      locationUpdatedAt: response.data.locationUpdatedAt,
-      updatedAt: response.data.updatedAt,
-      createdAt: response.data.createdAt,
-      hasLocationUpdatedAt: !!response.data.locationUpdatedAt,
-      hasUpdatedAt: !!response.data.updatedAt,
-      locationUpdatedAtType: typeof response.data.locationUpdatedAt,
-      updatedAtType: typeof response.data.updatedAt,
-      allFieldNames: Object.keys(response.data)
-    };
     
-    console.log('TIMESTAMP DEBUG - Friend details fetch - ALL timestamp fields:', timestampFields);
-    
-    // Validate the locationUpdatedAt field if it exists
     if (response.data.locationUpdatedAt) {
       try {
-        // Check if it's a valid date string
         const date = new Date(response.data.locationUpdatedAt);
         
         if (isNaN(date.getTime())) {
-          console.error('TIMESTAMP DEBUG - Friend details fetch - Invalid date in response:', response.data.locationUpdatedAt);
           delete response.data.locationUpdatedAt;
         } else {
-          console.log('TIMESTAMP DEBUG - Friend details fetch - Valid date confirmed:', date);
           // Ensure it's stored as ISO string
           response.data.locationUpdatedAt = date.toISOString();
         }
       } catch (err) {
-        console.error('TIMESTAMP DEBUG - Friend details fetch - Error parsing date:', err);
         delete response.data.locationUpdatedAt;
       }
-    } else if (response.data.location && response.data.location !== 'No Location' && response.data.location !== 'ghost') {
-      console.log('TIMESTAMP DEBUG - Friend details fetch - Location exists but no timestamp');
     }
     
     return response.data;
@@ -269,7 +230,7 @@ export const fetchFriendDetails = async (idToken, friendID) => {
 };
 export const getFriendRequests = async (idToken, userID) => {
   const response = await axios.get(
-    `${BASE_URL}/users/${userID}/friend-requests`, // Fixed the path to match router.js
+    `${BASE_URL}/users/${userID}/friend-requests`, 
     {
       headers: {
         'Content-Type': 'application/json',
@@ -293,7 +254,7 @@ export const fixLocationTimestamps = async (idToken) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
         },
-        timeout: 30000, // This could take longer
+        timeout: 30000, 
       },
     );
     

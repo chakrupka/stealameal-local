@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { MEAL_API_URL } from '../configs/api-config';
 
-const BASE_URL = `http://localhost:9090/api/meals`; // Fixed URL to include /meals path
+const BASE_URL = MEAL_API_URL;
 
 export const createMeal = async (idToken, mealData) => {
   const response = await axios.post(`${BASE_URL}`, mealData, {

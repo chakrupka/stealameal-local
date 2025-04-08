@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Button, Text, RadioButton, List, Card } from 'react-native-paper';
+import axios from 'axios';
+import { USER_API_URL } from '../configs/api-config';
 import useStore from '../store';
 
-// Utility function to get location information for a friend
 export const getFriendLocationInfo = (friend, users) => {
   if (!friend || !users) return { available: false, lastUpdated: null, location: null };
   
@@ -43,26 +44,18 @@ export default function LocationUpdate({ navigation }) {
   ];
 
   useEffect(() => {
-    console.log('TIMESTAMP DEBUG - LocationUpdate - currentUser changed, checking timestamp');
-    
-    if (currentUser?.locationUpdatedAt) {
-      console.log('TIMESTAMP DEBUG - LocationUpdate - Raw timestamp:', currentUser.locationUpdatedAt);
-      console.log('TIMESTAMP DEBUG - LocationUpdate - Timestamp type:', typeof currentUser.locationUpdatedAt);
-      
+    if (currentUser?.locationUpdatedAt) {      
       try {
         const date = new Date(currentUser.locationUpdatedAt);
         
         if (isNaN(date.getTime())) {
-          console.error('TIMESTAMP DEBUG - LocationUpdate - Invalid date from timestamp:', currentUser.locationUpdatedAt);
+          console.error('Invalid date from timestamp:', currentUser.locationUpdatedAt);
         } else {
-          console.log('TIMESTAMP DEBUG - LocationUpdate - Parsed date:', date);
           setLastUpdated(date);
         }
       } catch (err) {
-        console.error('TIMESTAMP DEBUG - LocationUpdate - Error parsing date:', err);
+        console.error('Error parsing date:', err);
       }
-    } else {
-      console.log('TIMESTAMP DEBUG - LocationUpdate - No locationUpdatedAt in currentUser');
     }
   }, [currentUser]);
 
@@ -93,7 +86,7 @@ export default function LocationUpdate({ navigation }) {
     const diffInMs = now - lastUpdated;
     const diffInMins = diffInMs / (1000 * 60);
 
-    // Location expires after 90 minutes (1.5 hours)
+    // Location expires after 90 mins
     return diffInMins >= 90;
   };
 
@@ -111,7 +104,6 @@ export default function LocationUpdate({ navigation }) {
         throw new Error('User information not available');
       }
 
-      // Use the existing updateUserProfile method
       const result = await updateUserProfile({
         location: selectedLocation,
       });
@@ -158,16 +150,15 @@ export default function LocationUpdate({ navigation }) {
     
     setLoadingFriends(true);
     try {
-      // Get all users - this would normally be an API call
-      // For demonstration, we'll use a mock approach
-      const usersResponse = await fetch('http://localhost:9090/api/users', {
+      // Get all users from the API using environment-aware config
+      const usersResponse = await axios.get(`${USER_API_URL}/users`, {
         headers: {
           'Authorization': `Bearer ${currentUser.idToken}`
         }
       });
       
-      if (usersResponse.ok) {
-        const users = await usersResponse.json();
+      if (usersResponse.status === 200) {
+        const users = usersResponse.data;
         setAllUsers(users);
         
         // Process friend location data
@@ -188,7 +179,6 @@ export default function LocationUpdate({ navigation }) {
     }
   };
   
-  // Fetch friend data when component mounts or when user refreshes
   useEffect(() => {
     fetchFriendLocations();
   }, [currentUser]);
@@ -251,7 +241,6 @@ export default function LocationUpdate({ navigation }) {
         </View>
       )}
       
-      {/* Friend locations section */}
       {currentUser?.friendsList?.length > 0 && (
         <View style={styles.friendsSection}>
           <Text style={styles.sectionTitle}>Friend Locations</Text>
@@ -358,7 +347,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '500',
   },
-  // New styles for friends section
   friendsSection: {
     marginTop: 30,
     paddingTop: 20,

@@ -72,6 +72,36 @@ export default function PingFriends({ navigation, route }) {
     }
   }, [currentUser, shouldRefresh]);
 
+  // Add a function to fix all timestamps in the database
+  const fixAllTimestamps = async () => {
+    if (!currentUser?.idToken) return;
+
+    try {
+      const response = await fetch(
+        'http://localhost:9090/api/fix-location-timestamps',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentUser.idToken}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('TIMESTAMP DEBUG - Fix result:', result);
+        alert(`Fix applied! ${result.details?.usersFixed || 0} users updated.`);
+
+        // Reload data
+        await loadData();
+      } else {
+        console.error('Error fixing timestamps:', await response.text());
+      }
+    } catch (err) {
+      console.error('Error calling fix endpoint:', err);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -96,12 +126,57 @@ export default function PingFriends({ navigation, route }) {
                 friend.friendID,
               );
 
+              // Debug logging
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - Friend details:',
+                JSON.stringify(details, null, 2),
+              );
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt raw:',
+                details.locationUpdatedAt,
+              );
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt type:',
+                typeof details.locationUpdatedAt,
+              );
+
               // Check if locationUpdatedAt exists
               let locationUpdatedAt = null;
               let isTimestampInferred = false;
 
+              // Logging extra details to understand the exact data received
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - Full details JSON:',
+                JSON.stringify(details),
+              );
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - Object.keys(details):',
+                Object.keys(details),
+              );
+
+              // Check all possible timestamp fields
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - ALL timestamp fields:',
+                {
+                  locationUpdatedAt: details.locationUpdatedAt,
+                  updatedAt: details.updatedAt,
+                  createdAt: details.createdAt,
+                  hasLocationUpdatedAt:
+                    'locationUpdatedAt' in details &&
+                    details.locationUpdatedAt !== null,
+                  hasUpdatedAt:
+                    'updatedAt' in details && details.updatedAt !== null,
+                  hasCreatedAt:
+                    'createdAt' in details && details.createdAt !== null,
+                },
+              );
+
               // If locationUpdatedAt is missing but updatedAt exists, use updatedAt as fallback
               if (!details.locationUpdatedAt && details.updatedAt) {
+                console.log(
+                  'TIMESTAMP DEBUG - PingFriends - Using updatedAt as fallback:',
+                  details.updatedAt,
+                );
                 details.locationUpdatedAt = details.updatedAt;
               }
 
@@ -110,42 +185,92 @@ export default function PingFriends({ navigation, route }) {
                 'locationUpdatedAt' in details &&
                 details.locationUpdatedAt !== null &&
                 details.locationUpdatedAt !== undefined;
+              console.log(
+                'TIMESTAMP DEBUG - PingFriends - hasLocationUpdatedAt:',
+                hasLocationUpdatedAt,
+              );
 
               if (hasLocationUpdatedAt) {
                 try {
                   // Use the existing timestamp
                   locationUpdatedAt = new Date(details.locationUpdatedAt);
+                  console.log(
+                    'TIMESTAMP DEBUG - PingFriends - Parsed locationUpdatedAt:',
+                    locationUpdatedAt,
+                  );
+                  console.log(
+                    'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt.toString():',
+                    locationUpdatedAt.toString(),
+                  );
+                  console.log(
+                    'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt.getTime():',
+                    locationUpdatedAt.getTime(),
+                  );
 
                   // Make sure it's a valid date (not NaN)
                   const isValidDate = !isNaN(locationUpdatedAt.getTime());
+                  console.log(
+                    'TIMESTAMP DEBUG - PingFriends - isValidDate:',
+                    isValidDate,
+                  );
 
                   if (!isValidDate) {
+                    console.error(
+                      'TIMESTAMP DEBUG - PingFriends - Invalid date from locationUpdatedAt',
+                    );
                     locationUpdatedAt = null;
                     isTimestampInferred = true;
                   } else {
+                    console.log(
+                      'TIMESTAMP DEBUG - PingFriends - Valid date from locationUpdatedAt:',
+                      locationUpdatedAt,
+                    );
                     isTimestampInferred = false;
                   }
                 } catch (err) {
+                  console.error(
+                    'TIMESTAMP DEBUG - PingFriends - Error parsing date:',
+                    err,
+                  );
                   locationUpdatedAt = null;
                   isTimestampInferred = true;
                 }
               } else {
                 // No timestamp available
+                console.log(
+                  'TIMESTAMP DEBUG - PingFriends - No locationUpdatedAt timestamp available',
+                );
                 locationUpdatedAt = null;
                 isTimestampInferred = true;
               }
+
+              console.log(
+                'TIMESTAMP DEBUG - Final locationUpdatedAt:',
+                locationUpdatedAt,
+              );
+              console.log(
+                'TIMESTAMP DEBUG - isTimestampInferred:',
+                isTimestampInferred,
+              );
 
               // Format the time since update
               const lastUpdated = locationUpdatedAt
                 ? formatTimeSince(locationUpdatedAt)
                 : 'Never';
 
-              // Check if location is expired (more than 90 minutes old)
+              console.log('Formatted lastUpdated:', lastUpdated);
+
+              // Check if location is expired (more than 2 hours old)
               let isLocationExpired = true;
 
               if (locationUpdatedAt) {
                 const ageInMinutes =
                   (new Date() - locationUpdatedAt) / (1000 * 60);
+                console.log(
+                  `Location age: ${ageInMinutes.toFixed(2)} minutes (${(
+                    ageInMinutes / 60
+                  ).toFixed(2)} hours)`,
+                );
                 // Location expires after 90 minutes (1.5 hours)
                 isLocationExpired = ageInMinutes >= 90;
               } else {
@@ -155,6 +280,8 @@ export default function PingFriends({ navigation, route }) {
                   details.location === 'No Location' ||
                   details.location === 'ghost';
               }
+
+              console.log('Is location expired:', isLocationExpired);
 
               return {
                 friendID: friend.friendID,
@@ -534,13 +661,6 @@ export default function PingFriends({ navigation, route }) {
                 <Text style={localStyles.emptyText}>
                   You don't have any friends yet. Add some friends first!
                 </Text>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('AddFriendsScreen')}
-                  style={{ marginTop: 10 }}
-                >
-                  Add Friends
-                </Button>
               </View>
             )
           ) : (

@@ -10,6 +10,7 @@ import {
 import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../styles';
+import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 import { createUser, signInUser, signOutUser } from '../services/firebase-auth';
 import useStore from '../store';
@@ -82,7 +83,7 @@ export default function CreateAccount({ navigation }) {
         profilePic,
       };
 
-      const response = await fetch('http://localhost:9090/api/auth', {
+      const response = await fetch(`${USER_API_URL}/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
