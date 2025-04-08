@@ -16,7 +16,9 @@ router.get('/auth', UserHandlers.handleGetOwnedUser);
 router.get('/users', UserHandlers.handleGetUsers);
 router.get('/users/:userID', UserHandlers.handleGetUserId);
 router.patch('/users/:userID', UserHandlers.handleUpdate);
+router.patch('/users/:userID/location', UserHandlers.updateLocation);
 router.delete('/users/:userID', UserHandlers.handleDelete);
+router.post('/fix-location-timestamps', UserHandlers.fixMissingLocationTimestamps);
 
 // Friend Requests routes
 router.get('/search-users', UserHandlers.searchByEmail);

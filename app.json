@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "877dfe4a-0ab4-42af-b279-7c4fae9b78ff"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.harry.beesley.gilman.projectstealameal",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
