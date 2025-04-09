@@ -10,6 +10,7 @@ import { Text } from 'react-native-paper';
 import { signInUser } from '../services/firebase-auth';
 import useStore from '../store';
 import styles from '../styles';
+import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 
 export default function Login({ navigation, route }) {
@@ -37,11 +38,11 @@ export default function Login({ navigation, route }) {
       try {
         console.log(
           'Attempting to fetch user data from:',
-          `http://localhost:9090/api/auth`,
+          `${USER_API_URL}/auth`,
         );
         console.log('Using ID Token:', idToken);
 
-        const response = await fetch(`http://localhost:9090/api/auth`, {
+        const response = await fetch(`${USER_API_URL}/auth`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
