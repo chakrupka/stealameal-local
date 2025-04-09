@@ -57,14 +57,14 @@ const TYPOGRAPHY = {
   header: {
     fontFamily: 'Inter',
     fontStyle: 'italic',
-    fontWeight: '100',
+    fontWeight: '300',
     fontSize: 50,
     lineHeight: 61,
   },
   subheader: {
     fontFamily: 'Inter',
     fontStyle: 'italic',
-    fontWeight: '100',
+    fontWeight: '300',
     fontSize: 20,
     lineHeight: 24,
   },
@@ -88,6 +88,23 @@ const TYPOGRAPHY = {
     fontSize: 18,
     fontFamily: 'DMSans_400Regular',
   },
+};
+
+export const FLEX_ROW_CENTER = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+export const FLEX_COL_CENTER = {
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+export const FILL_HEIGHT_WIDTH = {
+  height: '100%',
+  width: '100%',
 };
 
 export default StyleSheet.create({
@@ -114,13 +131,16 @@ export default StyleSheet.create({
 
   starterScreenContainer: {
     backgroundColor: COLORS.primary,
-    position: 'relative',
-    alignItems: 'flex-start',
+    ...FLEX_COL_CENTER,
+    gap: 20,
   },
 
   createAccountContainer: {
-    flex: 1,
+    ...FLEX_COL_CENTER,
+    ...FILL_HEIGHT_WIDTH,
+    paddingTop: '50%',
     backgroundColor: COLORS.white,
+    gap: 20,
   },
 
   createAccountHeader: {
@@ -132,6 +152,30 @@ export default StyleSheet.create({
     borderColor: COLORS.black,
   },
 
+  createAccountProfilePicContainer: {
+    height: 100,
+    width: 100,
+    borderColor: 'grey',
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderRadius: 50,
+    marginBottom: -10,
+    overflow: 'hidden',
+  },
+
+  createAccountProfilePicImage: {
+    height: '100%',
+    width: '100%',
+    borderRadius: 100,
+  },
+
+  createAccountProfilePicSubheader: {
+    color: '#bbb',
+    fontWeight: '600',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+
   createAccountInputContainer: {
     width: 247,
     height: 42,
@@ -140,21 +184,21 @@ export default StyleSheet.create({
     borderColor: '#8B8B8B',
     borderRadius: SIZES.borderRadius.large,
     paddingHorizontal: SPACING.sm,
-    justifyContent: 'center',
   },
 
   loginContainer: {
-    flex: 1,
+    paddingTop: 100,
+    ...FLEX_COL_CENTER,
+    ...FILL_HEIGHT_WIDTH,
     backgroundColor: COLORS.white,
+    gap: 20,
   },
 
   loginHeader: {
-    ...TYPOGRAPHY.header,
-    width: SIZES.headerWidth,
+    fontSize: 40,
+    fontWeight: 300,
+    color: '#444',
     textAlign: 'center',
-    color: COLORS.black,
-    borderWidth: 0.5,
-    borderColor: COLORS.black,
   },
 
   loginInputContainer: {
@@ -165,7 +209,6 @@ export default StyleSheet.create({
     borderColor: '#8B8B8B',
     borderRadius: SIZES.borderRadius.large,
     paddingHorizontal: SPACING.sm,
-    justifyContent: 'center',
   },
 
   // ========= NAVIGATION =========
@@ -173,21 +216,31 @@ export default StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    right: 0,
-    height: 100,
+    height: 115,
+    width: '100%',
     backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop:
-      Platform.OS === 'ios' ? SPACING.xl : StatusBar.currentHeight + SPACING.sm,
-    paddingBottom: SPACING.sm,
-    paddingHorizontal: SPACING.md,
+    ...FLEX_ROW_CENTER,
+    justifyContent: 'space-between',
     zIndex: 1000,
   },
 
-  avatar: {
-    marginLeft: -SPACING.sm,
-    marginRight: SPACING.xl,
+  navIcon: { paddingBottom: 5, paddingLeft: 15 },
+
+  accountIcon: {
+    paddingRight: 10,
+  },
+
+  navTitle: {
+    fontSize: 26,
+    paddingBottom: 5,
+    marginLeft: -15,
+    marginRight: -20,
+  },
+
+  navPlaceholder: {
+    width: 35,
+    height: 35,
+    marginRight: 20,
   },
 
   // ========= TEXT STYLES =========
@@ -298,35 +351,15 @@ export default StyleSheet.create({
     marginLeft: SPACING.sm,
   },
 
-  starterLoginButtonContainer: {
-    position: 'absolute',
-    width: 268,
-    height: 59,
-    left: 75,
-    top: 400,
-  },
-
-  starterCreateAccountButtonContainer: {
-    position: 'absolute',
-    width: 268,
-    height: 59,
-    left: 75,
-    top: 490,
-  },
-
   starterAuthButton: {
-    width: '100%',
-    height: '100%',
     backgroundColor: COLORS.lightgrey,
     borderWidth: 1,
+    width: 268,
     borderColor: COLORS.black,
     borderRadius: SIZES.borderRadius.large,
-    elevation: 4,
-    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
     shadowRadius: 4,
-    justifyContent: 'center',
   },
 
   starterButtonText: {
@@ -341,8 +374,7 @@ export default StyleSheet.create({
   createAccountButton: {
     width: 247,
     height: 42,
-    top: 370,
-    left: 90,
+    marginTop: 10,
     backgroundColor: COLORS.secondary,
     borderRadius: SIZES.borderRadius.large,
     shadowColor: COLORS.black,
@@ -357,8 +389,6 @@ export default StyleSheet.create({
   loginButton: {
     width: 247,
     height: 42,
-    top: 350,
-    left: 90,
     backgroundColor: COLORS.secondary,
     borderRadius: SIZES.borderRadius.large,
     shadowColor: COLORS.black,
@@ -433,10 +463,7 @@ export default StyleSheet.create({
   },
 
   starterBackgroundImage: {
-    width: '110%',
-    height: 470,
-    position: 'absolute',
-    left: -17,
+    width: '90%',
     top: SPACING.xxxl,
   },
 
@@ -642,5 +669,98 @@ export default StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+
+  // ========= PROFILE =========
+  profileView: {
+    main: {
+      ...FLEX_COL_CENTER,
+      ...FILL_HEIGHT_WIDTH,
+    },
+    container: {
+      alignItems: 'center',
+      justifyContent: 'start',
+      marginTop: 120,
+      height: '75%',
+      width: '75%',
+    },
+    profilePic: {
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      borderColor: COLORS.primary,
+      borderWidth: 5,
+    },
+    name: {
+      marginTop: 10,
+      width: '120%',
+      textAlign: 'center',
+      fontSize: 35,
+    },
+    email: {
+      marginTop: 5,
+      color: '#555',
+    },
+    editContainer: {
+      alignItems: 'center',
+      justifyContent: 'start',
+      marginTop: 120,
+      height: '75%',
+      width: '75%',
+      gap: 10,
+    },
+    editPicContainer: {
+      ...FLEX_COL_CENTER,
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      borderColor: '#8B8B8B',
+      borderWidth: 2,
+      backgroundColor: 'white',
+      overflow: 'hidden',
+      marginBottom: 10,
+    },
+    editProfilePic: {
+      ...FILL_HEIGHT_WIDTH,
+      ...FLEX_COL_CENTER,
+    },
+    editProfilePicShade: {
+      position: 'absolute',
+      height: 150,
+      width: 150,
+      opacity: 0.5,
+      backgroundColor: '#aaa',
+    },
+    editProfilePicIcon: {
+      position: 'absolute',
+      paddingLeft: 52,
+      paddingTop: 50,
+      height: 150,
+      width: 150,
+    },
+    input: {
+      width: '110%',
+      height: 40,
+      backgroundColor: 'white',
+      borderWidth: 2,
+      borderColor: '#8B8B8B',
+      borderRadius: SIZES.borderRadius.large,
+      fontSize: 20,
+      paddingRight: 10,
+      paddingLeft: 10,
+    },
+    editButtons: {
+      width: '120%',
+      ...FLEX_ROW_CENTER,
+    },
+    button: {
+      width: 120,
+      height: 42,
+      margin: 10,
+      backgroundColor: COLORS.secondary,
+      borderRadius: SIZES.borderRadius.large,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   },
 });

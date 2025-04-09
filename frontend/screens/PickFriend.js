@@ -101,7 +101,6 @@ const LAYOUT = {
 };
 
 export default function PickFriend({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [combinedData, setCombinedData] = useState([]);
@@ -366,14 +365,23 @@ export default function PickFriend({ navigation, route }) {
           <List.Item
             title={item.name}
             description={item.email}
-            left={() => (
-              <Avatar.Text
-                size={36}
-                label={item.initials || '?'}
-                style={{ backgroundColor: '#ddd' }}
-                labelStyle={{ color: '#333' }}
-              />
-            )}
+            left={() =>
+              !item.profilePic ? (
+                <Avatar.Text
+                  size={36}
+                  label={item.initials || '?'}
+                  style={{ backgroundColor: '#ddd' }}
+                  labelStyle={{ color: '#333' }}
+                />
+              ) : (
+                <Avatar.Image
+                  size={36}
+                  source={{ uri: item.profilePic }}
+                  style={{ backgroundColor: '#ddd' }}
+                  labelStyle={{ color: '#333' }}
+                />
+              )
+            }
           />
         </View>
       );
@@ -387,12 +395,21 @@ export default function PickFriend({ navigation, route }) {
       <TouchableOpacity onPress={() => toggleSelection(item.id, 'friend')}>
         <View style={[styles.listItem, isSelected ? LAYOUT.selectedItem : {}]}>
           <View style={styles.listItemAvatar}>
-            <Avatar.Text
-              size={40}
-              label={item.initials || '?'}
-              style={{ backgroundColor: '#fff' }}
-              labelStyle={{ color: '#000' }}
-            />
+            {!item.profilePic ? (
+              <Avatar.Text
+                size={40}
+                label={item.initials || '?'}
+                style={{ backgroundColor: '#fff' }}
+                labelStyle={{ color: '#000' }}
+              />
+            ) : (
+              <Avatar.Image
+                size={40}
+                source={{ uri: item.profilePic }}
+                style={{ backgroundColor: '#fff' }}
+                labelStyle={{ color: '#000' }}
+              />
+            )}
           </View>
 
           <View style={styles.listItemContent}>
@@ -416,11 +433,7 @@ export default function PickFriend({ navigation, route }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Schedule Meal"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Schedule Meal" />
         <View
           style={[
             styles.content,
@@ -437,11 +450,7 @@ export default function PickFriend({ navigation, route }) {
   if (error) {
     return (
       <View style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Schedule Meal"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Schedule Meal" />
         <View
           style={[
             styles.content,
@@ -460,11 +469,7 @@ export default function PickFriend({ navigation, route }) {
   if (!combinedData || combinedData.length === 0) {
     return (
       <View style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Schedule Meal"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Schedule Meal" />
         <Text style={styles.header}>SCHEDULE A MEAL</Text>
         <Text style={styles.subheader}>
           Select friends or squads to schedule a meal with.
@@ -512,11 +517,7 @@ export default function PickFriend({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Schedule Meal"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Schedule Meal" />
 
       <Text style={styles.header}>SCHEDULE A MEAL</Text>
 

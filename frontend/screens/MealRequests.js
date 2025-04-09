@@ -19,7 +19,6 @@ import useStore from '../store';
 import styles from '../styles';
 
 export default function MealRequests({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [loading, setLoading] = useState(true);
   const [mealRequests, setMealRequests] = useState([]);
   const [hostedMeals, setHostedMeals] = useState([]);
@@ -356,11 +355,7 @@ export default function MealRequests({ navigation, route }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Meal Requests"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Meal Requests" />
         <View style={styles.content}>
           <ActivityIndicator size="large" color="#5C4D7D" />
           <Text style={localStyles.loadingText}>Loading meal requests...</Text>
@@ -371,13 +366,8 @@ export default function MealRequests({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Meal Requests"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Meal Requests" />
       <View style={{ height: 50 }} />
-
       <View style={styles.content}>
         <Text style={localStyles.sectionTitle}>Pending Invitations</Text>
         {mealRequests.length > 0 ? (
@@ -415,7 +405,7 @@ export default function MealRequests({ navigation, route }) {
           <Button
             mode="contained"
             style={localStyles.scheduleButton}
-            onPress={() => navigation.navigate('ScheduleMeal', { profilePic })}
+            onPress={() => navigation.navigate('ScheduleMeal')}
           >
             Schedule New Meal
           </Button>
@@ -423,7 +413,7 @@ export default function MealRequests({ navigation, route }) {
           <Button
             mode="outlined"
             style={localStyles.viewButton}
-            onPress={() => navigation.navigate('ViewMeals', { profilePic })}
+            onPress={() => navigation.navigate('ViewMeals')}
           >
             View All Meals
           </Button>

@@ -6,7 +6,6 @@ import createUserSlice from './user-slice';
 import createMealSlice from './meal-slice';
 import createSquadSlice from './squad-slice';
 
-
 const useStore = create(
   devtools(
     immer((...args) => ({
@@ -14,7 +13,6 @@ const useStore = create(
       userSlice: createUserSlice(...args),
       mealSlice: createMealSlice(...args),
       squadSlice: createSquadSlice(...args),
-
     })),
   ),
 );

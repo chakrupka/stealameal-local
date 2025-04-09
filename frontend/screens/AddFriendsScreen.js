@@ -41,8 +41,6 @@ const extractUserIdFromToken = (token) => {
 };
 
 const AddFriendsScreen = ({ navigation, route }) => {
-  const profilePic = route.params?.profilePic || null;
-
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const isLoggedIn = useStore((state) => state.userSlice.isLoggedIn);
   const searchResults = useStore((state) => state.userSlice.searchResults);
@@ -178,11 +176,7 @@ const AddFriendsScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Add Friends"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Add Friends" />
 
       <View style={styles.content}>
         <View style={styles.searchContainer}>
@@ -194,6 +188,8 @@ const AddFriendsScreen = ({ navigation, route }) => {
             placeholderTextColor="#888"
             onSubmitEditing={() => Keyboard.dismiss()}
             editable={true}
+            autoCorrect="none"
+            autoCapitalize="none"
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -237,10 +233,14 @@ const AddFriendsScreen = ({ navigation, route }) => {
                 disabled={alreadyFriend}
               >
                 <View style={styles.userCardInfo}>
-                  <Avatar.Text
-                    size={40}
-                    label={item.name ? item.name.charAt(0).toUpperCase() : ''}
-                  />
+                  {!item.profilePic ? (
+                    <Avatar.Text
+                      size={40}
+                      label={item.name ? item.name.charAt(0).toUpperCase() : ''}
+                    />
+                  ) : (
+                    <Avatar.Image size={40} source={{ uri: item.profilePic }} />
+                  )}
                   <View style={styles.userCardText}>
                     <Text style={styles.userName}>{item.name}</Text>
                     <Text style={styles.userEmail}>{item.email}</Text>

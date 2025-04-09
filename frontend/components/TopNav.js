@@ -1,12 +1,18 @@
 import React from 'react';
-import { Appbar, Avatar } from 'react-native-paper';
-import { SafeAreaView, View, Alert } from 'react-native';
+import {
+  SafeAreaView,
+  View,
+  Alert,
+  Text,
+  Button,
+  TouchableOpacity,
+} from 'react-native';
 import styles from '../styles';
 import useStore from '../store';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function TopNav({ navigation, title, profilePic }) {
-  const logout = useStore((state) => state.userSlice.logout);
+export default function TopNav({ navigation, title }) {
+  const { logout, currentUser } = useStore((state) => state.userSlice);
 
   const isWhatNowScreen = title === 'What Now?';
 
@@ -41,25 +47,22 @@ export default function TopNav({ navigation, title, profilePic }) {
 
   return (
     <SafeAreaView style={styles.topNav}>
-      {isWhatNowScreen ? (
-        <Appbar.Action icon="logout" color="white" onPress={handleBackAction} />
-      ) : (
-        <View style={{ paddingLeft: 10 }}>
-          <MaterialIcons
-            name="arrow-back"
-            size={24}
-            color="white"
-            onPress={handleBackAction}
-          />
-        </View>
-      )}
-      <Appbar.Content title={title} color="white" />
-      {profilePic && (
-        <Avatar.Image
-          size={4}
-          source={{ uri: profilePic }}
-          style={styles.avatar}
+      <TouchableOpacity onPress={handleBackAction} style={styles.navIcon}>
+        <MaterialIcons
+          name={isWhatNowScreen ? 'logout' : 'arrow-back'}
+          size={35}
         />
+      </TouchableOpacity>
+      <Text style={styles.navTitle}>{title}</Text>
+      {currentUser && isWhatNowScreen ? (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile')}
+          style={styles.accountIcon}
+        >
+          <MaterialIcons name="account-circle" size={35} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.navPlaceholder}></View>
       )}
     </SafeAreaView>
   );

@@ -5,9 +5,9 @@ import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
 import MapMarker from '../components/MapMarker';
+import { Avatar } from 'react-native-paper';
 
 export default function CampusMap({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [loading, setLoading] = useState(true);
   const [friendsByLocation, setFriendsByLocation] = useState({});
 
@@ -87,7 +87,7 @@ export default function CampusMap({ navigation, route }) {
             if (!details || !details.location || details.location === 'ghost') {
               continue;
             }
-            
+
             let isLocationExpired = true;
             if (details.locationUpdatedAt) {
               const timestamp = new Date(details.locationUpdatedAt);
@@ -102,7 +102,7 @@ export default function CampusMap({ navigation, route }) {
                 isLocationExpired = ageInMinutes >= 90;
               }
             }
-            
+
             if (isLocationExpired) {
               continue;
             }
@@ -130,6 +130,7 @@ export default function CampusMap({ navigation, route }) {
                 `${details.firstName?.charAt(0) || ''}${
                   details.lastName?.charAt(0) || ''
                 }`.toUpperCase() || '??',
+              profilePic: details.profilePic,
             });
           } catch (error) {
             console.error(`Error processing friend ${friend.friendID}:`, error);
@@ -153,7 +154,7 @@ export default function CampusMap({ navigation, route }) {
               isLocationExpired = ageInMinutes >= 90;
             }
           }
-          
+
           // Skip if location is expired
           if (!isLocationExpired) {
             const locationKey = normalizeLocationKey(currentUser.location);
@@ -165,7 +166,7 @@ export default function CampusMap({ navigation, route }) {
                   locationName: locationNames[locationKey] || locationKey,
                   friends: [],
                 };
-            }
+              }
 
               locationGroups[locationKey].friends.push({
                 id: 'current-user',
@@ -177,6 +178,7 @@ export default function CampusMap({ navigation, route }) {
                   `${currentUser.firstName?.charAt(0) || ''}${
                     currentUser.lastName?.charAt(0) || ''
                   }`.toUpperCase() || 'YU',
+                profilePic: currentUser.profilePic,
               });
             }
           }
@@ -247,11 +249,7 @@ export default function CampusMap({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Campus Map"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Campus Map" />
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -337,18 +335,26 @@ export default function CampusMap({ navigation, route }) {
                       description={`At ${locationGroup.locationName}`}
                       anchor={{ x: 0.5, y: 0.5 }}
                     >
-                      <View
-                        style={[
-                          styles.initialsBubble,
-                          friend.id === 'current-user'
-                            ? styles.currentUserBubble
-                            : null,
-                        ]}
-                      >
-                        <Text style={styles.initialsText}>
-                          {friend.initials}
-                        </Text>
-                      </View>
+                      {!friend.profilePic ? (
+                        <View
+                          style={[
+                            styles.initialsBubble,
+                            friend.id === 'current-user'
+                              ? styles.currentUserBubble
+                              : null,
+                          ]}
+                        >
+                          <Text style={styles.initialsText}>
+                            {friend.initials}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Avatar.Image
+                          size={28}
+                          style={styles.initialsBubble}
+                          source={{ uri: friend.profilePic }}
+                        />
+                      )}
                     </Marker>
                   );
                 })}

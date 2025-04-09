@@ -15,15 +15,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cosc98.projectstealameal",
+      "bundleIdentifier": "com.cosc98.stealameal",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
       }
     },
     "web": {
@@ -31,8 +25,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "02e0b3e5-ed26-4c97-b9e0-a4c3905e266c"
+        "projectId": "99ef029b-1913-4675-ac37-049eaabc46ac"
       }
-    }
+    },
+    "owner": "stealameal"
   }
 }

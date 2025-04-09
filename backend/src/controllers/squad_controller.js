@@ -283,7 +283,9 @@ const removeMemberFromSquad = async (req, res) => {
     }
 
     // Remove the user from the squad
-    squad.members = squad.members.filter((member) => member !== userID);
+    squad.members = squad.members.filter((member) => {
+      return member !== userID;
+    });
 
     squad.lastActive = new Date();
 

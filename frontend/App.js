@@ -22,6 +22,7 @@ import CampusMap from './screens/CampusMap';
 import EnterAvailability from './screens/EnterAvailability';
 import AddFriendsScreen from './screens/AddFriendsScreen';
 import FriendRequestsScreen from './screens/FriendRequestsScreen';
+import Profile from './screens/Profile';
 
 const Stack = createStackNavigator();
 
@@ -62,6 +63,7 @@ export default function App() {
           name="FriendRequestsScreen"
           component={FriendRequestsScreen}
         />
+        <Stack.Screen name="Profile" component={Profile} />
       </Stack.Navigator>
     </NavigationContainer>
   );

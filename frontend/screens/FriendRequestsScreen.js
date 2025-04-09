@@ -31,7 +31,6 @@ const extractUserIdFromToken = (token) => {
 };
 
 const FriendRequestsScreen = ({ navigation, route }) => {
-  const profilePic = route.params?.profilePic || null;
   const userSlice = useStore((state) => state.userSlice);
 
   const {
@@ -90,11 +89,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   if (!userSlice.isLoggedIn) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Friend Requests"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Friend Requests" />
         <View
           style={[
             styles.content,
@@ -127,11 +122,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   if (status === 'loading') {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Friend Requests"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Friend Requests" />
         <View
           style={[
             styles.content,
@@ -151,11 +142,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
   if (status === 'failed') {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Friend Requests"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Friend Requests" />
         <View
           style={[
             styles.content,
@@ -182,12 +169,16 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     return (
       <Card style={styles.userCard}>
         <View style={styles.userCardInfo}>
-          <Avatar.Text
-            size={40}
-            label={
-              item.senderName ? item.senderName.charAt(0).toUpperCase() : '?'
-            }
-          />
+          {!item.senderProfilePic ? (
+            <Avatar.Text
+              size={40}
+              label={
+                item.senderName ? item.senderName.charAt(0).toUpperCase() : '?'
+              }
+            />
+          ) : (
+            <Avatar.Image size={40} source={{ uri: item.senderProfilePic }} />
+          )}
           <View style={styles.userCardText}>
             <Text style={styles.userName}>
               {item.senderName || 'Unknown User'}
@@ -221,11 +212,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Friend Requests"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Friend Requests" />
       <View style={styles.content}>
         {!friendRequests || friendRequests.length === 0 ? (
           <View

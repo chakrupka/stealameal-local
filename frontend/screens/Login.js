@@ -14,7 +14,6 @@ import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 
 export default function Login({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -72,7 +71,7 @@ export default function Login({ navigation, route }) {
         });
 
         if (loginResult.success) {
-          navigation.navigate('WhatNow', { profilePic });
+          navigation.navigate('WhatNow');
         } else {
           setError(loginResult.error || 'Login failed');
         }
@@ -123,13 +122,12 @@ export default function Login({ navigation, route }) {
       <TopNav
         navigation={navigation}
         title="Log In"
-        profilePic={profilePic}
         onBackPress={handleBackPress}
       />
 
       <Text style={styles.loginHeader}>Log In</Text>
 
-      <View style={[styles.loginInputContainer, { top: 250, left: 90 }]}>
+      <View style={styles.loginInputContainer}>
         <TextInput
           style={styles.loginInput}
           placeholder="Email"
@@ -140,7 +138,7 @@ export default function Login({ navigation, route }) {
         />
       </View>
 
-      <View style={[styles.loginInputContainer, { top: 300, left: 90 }]}>
+      <View style={styles.loginInputContainer}>
         <TextInput
           style={styles.loginInput}
           placeholder="Password"
@@ -153,11 +151,7 @@ export default function Login({ navigation, route }) {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#096A2E"
-          style={{ position: 'absolute', top: 400, alignSelf: 'center' }}
-        />
+        <ActivityIndicator size="large" color="#096A2E" />
       ) : (
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text>Log In</Text>

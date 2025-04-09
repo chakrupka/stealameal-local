@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   TextInput,
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import styles from '../styles';
+import { ImageManipulator } from 'expo-image-manipulator';
+import styles, { FILL_HEIGHT_WIDTH, FLEX_ROW_CENTER } from '../styles';
 import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
-import { createUser, signInUser, signOutUser } from '../services/firebase-auth';
+import { signInUser } from '../services/firebase-auth';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useStore from '../store';
+import uploadImage from '../services/s3';
 
 export default function CreateAccount({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -53,13 +55,31 @@ export default function CreateAccount({ navigation }) {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
     if (result.assets && result.assets.length > 0) {
-      setProfilePic(result.assets[0].uri);
+      const asset = result.assets[0];
+      const context = ImageManipulator.manipulate(asset.uri);
+      context.resize({ width: 800 });
+      const image = await context.renderAsync();
+      const { uri } = await image.saveAsync({
+        format: 'jpeg',
+        compress: 0.6,
+      });
+      const fileName = `${uri.split('/').pop().split('.')[0]}.jpeg`;
+      const file = {
+        uri,
+        name: fileName,
+        type: 'image/jpeg',
+      };
+      setProfilePic({
+        fileName,
+        preview: uri,
+        file,
+      });
     }
   };
 
@@ -70,17 +90,19 @@ export default function CreateAccount({ navigation }) {
       setLoading(true);
       setError('');
 
-      // 1. First, if there's a current user, log them out
       await logout();
       console.log('Logged out any existing user');
 
-      // 2. Prepare the request payload
+      const profilePicUrl = profilePic
+        ? await uploadImage(profilePic.file)
+        : 'https://tripcoordinator.s3.amazonaws.com/7AF4A5DC-22C0-4D3F-8357-2DCC6DE85437.jpeg';
+
       const userData = {
         email,
         password,
         firstName,
         lastName,
-        profilePic,
+        profilePic: profilePicUrl,
       };
 
       const response = await fetch(`${USER_API_URL}/auth`, {
@@ -112,7 +134,7 @@ export default function CreateAccount({ navigation }) {
 
       if (loginResult.success) {
         console.log('Successfully logged in as new user');
-        navigation.navigate('WhatNow', { profilePic });
+        navigation.navigate('WhatNow');
       } else {
         setError(loginResult.error || 'Login after account creation failed');
       }
@@ -126,17 +148,33 @@ export default function CreateAccount({ navigation }) {
 
   return (
     <View style={styles.createAccountContainer}>
-      <TopNav
-        navigation={navigation}
-        title="Create Account"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Create Account" />
 
-      <Text style={styles.createAccountHeader}>Sign Up</Text>
+      <View style={styles.createAccountProfilePicContainer}>
+        <TouchableOpacity onPress={pickImage} style={{ ...FILL_HEIGHT_WIDTH }}>
+          {profilePic ? (
+            <Image
+              source={{ uri: profilePic.preview }}
+              style={styles.createAccountProfilePicImage}
+            />
+          ) : (
+            <View style={{ ...FLEX_ROW_CENTER, ...FILL_HEIGHT_WIDTH }}>
+              <MaterialCommunityIcons
+                name="account-edit"
+                color="lightgrey"
+                size={50}
+              ></MaterialCommunityIcons>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      <View style={{ ...FLEX_ROW_CENTER }}>
+        <Text style={styles.createAccountProfilePicSubheader}>
+          Profile Picture
+        </Text>
+      </View>
 
-      <View
-        style={[styles.createAccountInputContainer, { top: 200, left: 90 }]}
-      >
+      <View style={styles.createAccountInputContainer}>
         <TextInput
           style={styles.createAccountInput}
           placeholder="First Name"
@@ -145,9 +183,7 @@ export default function CreateAccount({ navigation }) {
         />
       </View>
 
-      <View
-        style={[styles.createAccountInputContainer, { top: 240, left: 90 }]}
-      >
+      <View style={styles.createAccountInputContainer}>
         <TextInput
           style={styles.createAccountInput}
           placeholder="Last Name"
@@ -156,9 +192,7 @@ export default function CreateAccount({ navigation }) {
         />
       </View>
 
-      <View
-        style={[styles.createAccountInputContainer, { top: 280, left: 90 }]}
-      >
+      <View style={styles.createAccountInputContainer}>
         <TextInput
           style={styles.createAccountInput}
           placeholder="Email"
@@ -170,9 +204,7 @@ export default function CreateAccount({ navigation }) {
         />
       </View>
 
-      <View
-        style={[styles.createAccountInputContainer, { top: 320, left: 90 }]}
-      >
+      <View style={styles.createAccountInputContainer}>
         <TextInput
           style={styles.createAccountInput}
           placeholder="Password"
@@ -188,7 +220,7 @@ export default function CreateAccount({ navigation }) {
         <ActivityIndicator
           size="large"
           color="#096A2E"
-          style={{ position: 'absolute', top: 593, alignSelf: 'center' }}
+          style={{ marginTop: 15 }}
         />
       ) : (
         <TouchableOpacity

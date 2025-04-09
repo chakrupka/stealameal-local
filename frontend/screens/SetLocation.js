@@ -16,7 +16,6 @@ import TopNav from '../components/TopNav';
 import useStore from '../store';
 
 export default function SetLocation({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [selectedLocation, setSelectedLocation] = useState('');
 
   const currentUser = useStore((state) => state.userSlice.currentUser);
@@ -96,7 +95,6 @@ export default function SetLocation({ navigation, route }) {
         selectedLocation;
 
       navigation.navigate('WhatNow', {
-        profilePic,
         message: `Your location has been updated to ${locationName}`,
       });
     } catch (error) {
@@ -119,11 +117,7 @@ export default function SetLocation({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Set Your Location"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Set Your Location" />
 
       <ScrollView style={localStyles.scrollView}>
         <View style={{ height: 80 }} />
