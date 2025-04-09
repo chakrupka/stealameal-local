@@ -23,6 +23,7 @@ const createPing = async (req, res) => {
     const newPing = new Ping({
       sender,
       senderName,
+      // eslint-disable-next-line quotes
       message: message || "Let's grab a meal!",
       expiresAt: expiresAt || new Date(Date.now() + 30 * 60 * 1000), // Default to 30 minutes from now
       recipients: recipients || [],
@@ -34,12 +35,16 @@ const createPing = async (req, res) => {
       const squadDocs = await Squad.find({ _id: { $in: squads } });
 
       const squadMembers = new Set();
-      for (const squad of squadDocs) {
-        squad.members.forEach((member) => squadMembers.add(member));
-      }
+      squadDocs.forEach((squad) => {
+        squad.members.forEach((member) => {
+          squadMembers.add(member);
+        });
+      });
 
       const uniqueRecipients = new Set(newPing.recipients);
-      squadMembers.forEach((member) => uniqueRecipients.add(member));
+      squadMembers.forEach((member) => {
+        return uniqueRecipients.add(member);
+      });
 
       newPing.recipients = Array.from(uniqueRecipients);
     }
@@ -62,7 +67,9 @@ const getActivePings = async (req, res) => {
     }
 
     const userSquads = await Squad.find({ members: userId });
-    const userSquadIds = userSquads.map((squad) => squad._id);
+    const userSquadIds = userSquads.map((squad) => {
+      return squad._id;
+    });
 
     const now = new Date();
 
@@ -71,13 +78,13 @@ const getActivePings = async (req, res) => {
       expiresAt: { $gt: now },
       status: 'active',
     })
-      .populate('sender', 'firstName lastName email')
+      .populate('sender', 'firstName lastName email profilePic')
       .populate('squads', 'squadName members');
 
     const unrespondedPings = activePings.filter((ping) => {
-      return !ping.responses.some(
-        (response) => response.recipientId === userId,
-      );
+      return !ping.responses.some((response) => {
+        return response.recipientId === userId;
+      });
     });
 
     return res.json(unrespondedPings);
@@ -114,9 +121,9 @@ const respondToPing = async (req, res) => {
       });
     }
 
-    const existingResponse = ping.responses.find(
-      (r) => r.recipientId === userId,
-    );
+    const existingResponse = ping.responses.find((r) => {
+      return r.recipientId === userId;
+    });
     if (existingResponse) {
       return res.status(400).json({
         error: 'Already responded',
@@ -161,9 +168,9 @@ const dismissPing = async (req, res) => {
       });
     }
 
-    const existingResponse = ping.responses.find(
-      (r) => r.recipientId === userId,
-    );
+    const existingResponse = ping.responses.find((r) => {
+      return r.recipientId === userId;
+    });
     if (existingResponse) {
       return res.status(400).json({
         error: 'Already responded',

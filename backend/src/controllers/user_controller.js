@@ -163,9 +163,9 @@ const sendFriendRequest = async (req, res) => {
     }
     console.log('Backend: Sender found:', sender.email);
 
-    const existingRequest = receiver.friendRequests.find(
-      (request) => request.senderID === senderID,
-    );
+    const existingRequest = receiver.friendRequests.find((request) => {
+      return request.senderID === senderID;
+    });
 
     if (existingRequest) {
       console.log('Friend request already exists');
@@ -175,9 +175,9 @@ const sendFriendRequest = async (req, res) => {
       });
     }
 
-    const alreadyFriends = receiver.friendsList.some(
-      (friend) => friend.friendID === senderID,
-    );
+    const alreadyFriends = receiver.friendsList.some((friend) => {
+      return friend.friendID === senderID;
+    });
 
     if (alreadyFriends) {
       console.log('Users are already friends');
@@ -228,9 +228,9 @@ const acceptFriendRequest = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const requestIndex = receiver.friendRequests.findIndex(
-      (request) => request.senderID === senderID,
-    );
+    const requestIndex = receiver.friendRequests.findIndex((request) => {
+      return request.senderID === senderID;
+    });
 
     if (requestIndex === -1) {
       return res.status(400).json({ error: 'No friend request found' });
@@ -259,9 +259,9 @@ const declineFriendRequest = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const requestIndex = receiver.friendRequests.findIndex(
-      (request) => request.senderID === senderID,
-    );
+    const requestIndex = receiver.friendRequests.findIndex((request) => {
+      return request.senderID === senderID;
+    });
 
     if (requestIndex === -1) {
       return res.status(400).json({ error: 'No friend request found' });
@@ -301,10 +301,12 @@ const getFriendRequests = async (req, res) => {
           const userByMongoId = await User.findById(userID);
           if (userByMongoId) {
             console.error(
-              `Found user by MongoDB _id instead of Firebase UID. This is incorrect usage.`,
+              'Found user by MongoDB _id instead of Firebase UID. This is incorrect usage.',
             );
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       return res.status(404).json({
@@ -318,8 +320,29 @@ const getFriendRequests = async (req, res) => {
     console.log(`Found user with email: ${user.email}`);
     console.log('Friend requests count:', user.friendRequests.length);
     console.log('Friend requests:', JSON.stringify(user.friendRequests));
+    const populatedFriendReqs = await Promise.all(
+      user.friendRequests.map(async (friend) => {
+        const friendInfo = await User.findOne(
+          { userID: friend.senderID },
+          {
+            firstName: 1,
+            lastName: 1,
+            email: 1,
+            profilePic: 1,
+            userID: 1,
+          },
+        );
+        return {
+          senderName: `${friendInfo.firstName} ${friendInfo.lastName}`,
+          senderEmail: friendInfo.email,
+          senderProfilePic: friendInfo.profilePic,
+          senderID: friendInfo.userID,
+          _id: friendInfo._id,
+        };
+      }),
+    );
 
-    return res.status(200).json(user.friendRequests);
+    return res.status(200).json(populatedFriendReqs);
   } catch (error) {
     console.error('Error in getFriendRequests:', error);
     return res.status(500).json({ error: error.message });
@@ -334,14 +357,23 @@ const searchByEmail = async (req, res) => {
 
     const users = await User.find(
       { email: { $regex: new RegExp(email, 'i') } },
-      { firstName: 1, lastName: 1, email: 1, userID: 1 },
+      {
+        firstName: 1,
+        lastName: 1,
+        email: 1,
+        profilePic: 1,
+        userID: 1,
+      },
     );
 
-    const results = users.map((u) => ({
-      userID: u.userID,
-      name: `${u.firstName} ${u.lastName}`.trim(),
-      email: u.email,
-    }));
+    const results = users.map((u) => {
+      return {
+        userID: u.userID,
+        name: `${u.firstName} ${u.lastName}`.trim(),
+        email: u.email,
+        profilePic: u.profilePic,
+      };
+    });
 
     return res.json(results);
   } catch (error) {
