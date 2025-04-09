@@ -10,6 +10,7 @@ import {
 import { Button, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
+import { USER_API_URL } from '../configs/api-config';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
@@ -17,16 +18,13 @@ import useStore from '../store';
 export default function SetLocation({ navigation, route }) {
   const [selectedLocation, setSelectedLocation] = useState('');
 
-  // Get user from store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const refreshUserProfile = useStore(
     (state) => state.userSlice.refreshUserProfile,
   );
 
-  // Status state for feedback
   const [loading, setLoading] = useState(false);
 
-  // Load user's current location if available
   useEffect(() => {
     if (currentUser && currentUser.location) {
       console.log('Current location:', currentUser.location);
@@ -76,7 +74,7 @@ export default function SetLocation({ navigation, route }) {
       console.log('New location:', selectedLocation);
 
       const response = await axios.patch(
-        `http://localhost:9090/api/users/${currentUser._id}`,
+        `${USER_API_URL}/users/${currentUser._id}`,
         { location: selectedLocation },
         {
           headers: {

@@ -88,6 +88,25 @@ export default function CampusMap({ navigation, route }) {
               continue;
             }
 
+            let isLocationExpired = true;
+            if (details.locationUpdatedAt) {
+              const timestamp = new Date(details.locationUpdatedAt);
+              if (!isNaN(timestamp.getTime())) {
+                const ageInMinutes = (new Date() - timestamp) / (1000 * 60);
+                isLocationExpired = ageInMinutes >= 90;
+              }
+            } else if (details.updatedAt) {
+              const timestamp = new Date(details.updatedAt);
+              if (!isNaN(timestamp.getTime())) {
+                const ageInMinutes = (new Date() - timestamp) / (1000 * 60);
+                isLocationExpired = ageInMinutes >= 90;
+              }
+            }
+
+            if (isLocationExpired) {
+              continue;
+            }
+
             const locationKey = normalizeLocationKey(details.location);
 
             if (!locationKey || !locationCoordinates[locationKey]) {
@@ -119,29 +138,49 @@ export default function CampusMap({ navigation, route }) {
         }
 
         if (currentUser.location && currentUser.location !== 'ghost') {
-          const locationKey = normalizeLocationKey(currentUser.location);
-
-          if (locationKey && locationCoordinates[locationKey]) {
-            if (!locationGroups[locationKey]) {
-              locationGroups[locationKey] = {
-                coordinate: locationCoordinates[locationKey],
-                locationName: locationNames[locationKey] || locationKey,
-                friends: [],
-              };
+          // Check if current user's location is expired (more than 90 minutes old)
+          let isLocationExpired = true;
+          if (currentUser.locationUpdatedAt) {
+            const timestamp = new Date(currentUser.locationUpdatedAt);
+            if (!isNaN(timestamp.getTime())) {
+              const ageInMinutes = (new Date() - timestamp) / (1000 * 60);
+              isLocationExpired = ageInMinutes >= 90;
             }
+          } else if (currentUser.updatedAt) {
+            // Fallback to updatedAt if locationUpdatedAt is missing
+            const timestamp = new Date(currentUser.updatedAt);
+            if (!isNaN(timestamp.getTime())) {
+              const ageInMinutes = (new Date() - timestamp) / (1000 * 60);
+              isLocationExpired = ageInMinutes >= 90;
+            }
+          }
 
-            locationGroups[locationKey].friends.push({
-              id: 'current-user',
-              name:
-                `${currentUser.firstName || ''} ${
-                  currentUser.lastName || ''
-                } (You)`.trim() || 'You',
-              initials:
-                `${currentUser.firstName?.charAt(0) || ''}${
-                  currentUser.lastName?.charAt(0) || ''
-                }`.toUpperCase() || 'YU',
-              profilePic: currentUser.profilePic,
-            });
+          // Skip if location is expired
+          if (!isLocationExpired) {
+            const locationKey = normalizeLocationKey(currentUser.location);
+
+            if (locationKey && locationCoordinates[locationKey]) {
+              if (!locationGroups[locationKey]) {
+                locationGroups[locationKey] = {
+                  coordinate: locationCoordinates[locationKey],
+                  locationName: locationNames[locationKey] || locationKey,
+                  friends: [],
+                };
+              }
+
+              locationGroups[locationKey].friends.push({
+                id: 'current-user',
+                name:
+                  `${currentUser.firstName || ''} ${
+                    currentUser.lastName || ''
+                  } (You)`.trim() || 'You',
+                initials:
+                  `${currentUser.firstName?.charAt(0) || ''}${
+                    currentUser.lastName?.charAt(0) || ''
+                  }`.toUpperCase() || 'YU',
+                profilePic: currentUser.profilePic,
+              });
+            }
           }
         }
 

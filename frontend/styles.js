@@ -152,6 +152,30 @@ export default StyleSheet.create({
     borderColor: COLORS.black,
   },
 
+  createAccountProfilePicContainer: {
+    height: 100,
+    width: 100,
+    borderColor: 'grey',
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderRadius: 50,
+    marginBottom: -10,
+    overflow: 'hidden',
+  },
+
+  createAccountProfilePicImage: {
+    height: '100%',
+    width: '100%',
+    borderRadius: 100,
+  },
+
+  createAccountProfilePicSubheader: {
+    color: '#bbb',
+    fontWeight: '600',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+
   createAccountInputContainer: {
     width: 247,
     height: 42,

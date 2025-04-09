@@ -367,8 +367,8 @@ export default function MealRequests({ navigation, route }) {
   return (
     <View style={styles.container}>
       <TopNav navigation={navigation} title="Meal Requests" />
+      <View style={{ height: 50 }} />
       <View style={styles.content}>
-        {/* Pending invitations section */}
         <Text style={localStyles.sectionTitle}>Pending Invitations</Text>
         {mealRequests.length > 0 ? (
           <FlatList
@@ -386,7 +386,6 @@ export default function MealRequests({ navigation, route }) {
 
         <Divider style={localStyles.sectionDivider} />
 
-        {/* Hosted meals section */}
         <Text style={localStyles.sectionTitle}>Your Hosted Meals</Text>
         {hostedMeals.length > 0 ? (
           <FlatList
@@ -432,7 +431,7 @@ const localStyles = StyleSheet.create({
     color: '#5C4D7D',
   },
   sectionDivider: {
-    marginVertical: 20,
+    marginVertical: 10,
   },
   card: {
     marginBottom: 15,

@@ -10,6 +10,7 @@ import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator } from 'expo-image-manipulator';
 import styles, { FILL_HEIGHT_WIDTH, FLEX_ROW_CENTER } from '../styles';
+import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 import { signInUser } from '../services/firebase-auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -104,7 +105,7 @@ export default function CreateAccount({ navigation }) {
         profilePic: profilePicUrl,
       };
 
-      const response = await fetch('http://localhost:9090/api/auth', {
+      const response = await fetch(`${USER_API_URL}/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -149,31 +150,15 @@ export default function CreateAccount({ navigation }) {
     <View style={styles.createAccountContainer}>
       <TopNav navigation={navigation} title="Create Account" />
 
-      <View
-        style={{
-          height: 100,
-          width: 100,
-          borderColor: 'grey',
-          backgroundColor: '#fff',
-          borderWidth: 2.5,
-          borderRadius: 50,
-          marginBottom: -10,
-          overflow: 'hidden',
-        }}
-      >
+      <View style={styles.createAccountProfilePicContainer}>
         <TouchableOpacity onPress={pickImage} style={{ ...FILL_HEIGHT_WIDTH }}>
           {profilePic ? (
             <Image
               source={{ uri: profilePic.preview }}
-              style={{ height: '100%', width: '100%', borderRadius: 100 }}
+              style={styles.createAccountProfilePicImage}
             />
           ) : (
-            <View
-              style={{
-                ...FLEX_ROW_CENTER,
-                ...FILL_HEIGHT_WIDTH,
-              }}
-            >
+            <View style={{ ...FLEX_ROW_CENTER, ...FILL_HEIGHT_WIDTH }}>
               <MaterialCommunityIcons
                 name="account-edit"
                 color="lightgrey"
@@ -184,14 +169,7 @@ export default function CreateAccount({ navigation }) {
         </TouchableOpacity>
       </View>
       <View style={{ ...FLEX_ROW_CENTER }}>
-        <Text
-          style={{
-            color: '#bbb',
-            fontWeight: '600',
-            fontSize: 12,
-            marginBottom: 10,
-          }}
-        >
+        <Text style={styles.createAccountProfilePicSubheader}>
           Profile Picture
         </Text>
       </View>
