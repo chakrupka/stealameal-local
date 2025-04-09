@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image } from 'react-native';
+import { View, Image, TouchableOpacity } from 'react-native';
 import { Button } from 'react-native-paper';
 import styles from '../styles';
 
@@ -9,30 +9,34 @@ export default function Starter({ navigation }) {
       <Image
         source={require('../assets/intrologo.png')}
         style={styles.starterBackgroundImage}
-        resizeMode="cover"
+        resizeMode="contain"
       />
 
-      <View style={styles.starterLoginButtonContainer}>
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('Login')}
+      >
         <Button
           mode="contained"
-          style={styles.starterAuthButton}
+          style={[styles.starterAuthButton, { marginTop: 30 }]}
           labelStyle={styles.starterButtonText}
-          onPress={() => navigation.navigate('Login')}
         >
           Log in
         </Button>
-      </View>
+      </TouchableOpacity>
 
-      <View style={styles.starterCreateAccountButtonContainer}>
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('CreateAccount')}
+      >
         <Button
           mode="contained"
-          style={styles.starterAuthButton}
+          style={[styles.starterAuthButton, { marginBottom: 100 }]}
           labelStyle={styles.starterButtonText}
-          onPress={() => navigation.navigate('CreateAccount')}
         >
           Create Account
         </Button>
-      </View>
+      </TouchableOpacity>
 
       <Image
         source={require('../assets/raccoon.png')}

@@ -43,7 +43,6 @@ const LAYOUT = {
   },
 };
 export default function BuildSquad({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   // Access Zustand store
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const createSquad = useStore((state) => state.squadSlice.createSquad);
@@ -80,6 +79,7 @@ export default function BuildSquad({ navigation, route }) {
                 id: friend.friendID,
                 name: `${details.firstName} ${details.lastName}`.trim(),
                 email: details.email,
+                profilePic: details.profilePic,
               };
             } catch (error) {
               console.error(
@@ -120,12 +120,21 @@ export default function BuildSquad({ navigation, route }) {
         ]}
       >
         <View style={styles.listItemAvatar}>
-          <Avatar.Text
-            size={40}
-            label={item.name ? item.name.charAt(0).toUpperCase() : '?'}
-            style={{ backgroundColor: '#fff' }}
-            labelStyle={{ color: '#000' }}
-          />
+          {!item.profilePic ? (
+            <Avatar.Text
+              size={40}
+              label={item.name ? item.name.charAt(0).toUpperCase() : '?'}
+              style={{ backgroundColor: '#fff' }}
+              labelStyle={{ color: '#000' }}
+            />
+          ) : (
+            <Avatar.Image
+              size={40}
+              source={{ uri: item.profilePic }}
+              style={{ backgroundColor: '#fff' }}
+              labelStyle={{ color: '#000' }}
+            />
+          )}
         </View>
         <View style={styles.listItemContent}>
           <Text>{item.name}</Text>
@@ -191,11 +200,7 @@ export default function BuildSquad({ navigation, route }) {
   }
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Build a Squad"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Build a Squad" />
       <View style={{ height: 130 }} />
       <View style={localStyles.headerContainer}>
         <Text style={localStyles.headerText}>Build your squad</Text>

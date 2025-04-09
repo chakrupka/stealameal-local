@@ -23,7 +23,6 @@ import useStore from '../store';
 import styles from '../styles';
 
 export default function ViewMeals({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const reloadMeals = route.params?.reloadMeals || false;
 
   const [loading, setLoading] = useState(true);
@@ -445,11 +444,7 @@ export default function ViewMeals({ navigation, route }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="All Meals"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="All Meals" />
         <View style={styles.content}>
           <ActivityIndicator size="large" color="#5C4D7D" />
           <Text style={localStyles.loadingText}>Loading meals...</Text>
@@ -460,11 +455,7 @@ export default function ViewMeals({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="All Meals"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="All Meals" />
       <View style={{ height: 50 }} />
       <View style={styles.content}>
         <View style={localStyles.searchContainer}>
@@ -631,7 +622,7 @@ export default function ViewMeals({ navigation, route }) {
         <Button
           mode="contained"
           style={localStyles.scheduleButton}
-          onPress={() => navigation.navigate('ScheduleMeal', { profilePic })}
+          onPress={() => navigation.navigate('ScheduleMeal')}
         >
           Schedule New Meal
         </Button>

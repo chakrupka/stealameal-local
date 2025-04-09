@@ -5,6 +5,7 @@ import {
   declineFriendRequest,
   searchUsersByEmail,
   fetchOwnUser,
+  updateUser,
 } from '../services/user-api';
 import { signInUser, signOutUser } from '../services/firebase-auth';
 
@@ -27,6 +28,10 @@ const createUserSlice = (set, get) => ({
       const idToken = await signInUser(email, password);
 
       const userData = await fetchOwnUser(idToken);
+      if (!userData.profilePic) {
+        userData.profilePic =
+          'https://tripcoordinator.s3.amazonaws.com/7AF4A5DC-22C0-4D3F-8357-2DCC6DE85437.jpeg';
+      }
 
       set((state) => {
         state.userSlice.status = 'succeeded';
@@ -289,6 +294,42 @@ const createUserSlice = (set, get) => ({
       return {
         success: false,
         error: error.response?.data || 'Failed to search users',
+      };
+    }
+  },
+
+  updateUserInfo: async (updatedInfo) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    set((state) => {
+      state.userSlice.status = 'loading';
+      state.userSlice.error = null;
+    });
+
+    try {
+      const { idToken, _id } = currentUser;
+      const userData = await updateUser(idToken, _id, updatedInfo);
+
+      set((state) => {
+        state.userSlice.status = 'succeeded';
+        state.userSlice.currentUser = {
+          ...userData,
+          idToken: idToken,
+        };
+      });
+      return { success: true, userData };
+    } catch (error) {
+      set((state) => {
+        state.userSlice.status = 'failed';
+        state.userSlice.error = error.response?.data || 'Failed to update user';
+      });
+      return {
+        success: false,
+        error: error.response?.data || 'Failed to update user',
       };
     }
   },

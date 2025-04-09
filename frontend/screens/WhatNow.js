@@ -16,7 +16,6 @@ import ActivePings from '../components/ActivePings';
 import useStore from '../store';
 
 export default function WhatNow({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const message = route.params?.message || null;
   const [showMessage, setShowMessage] = useState(!!message);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
@@ -88,11 +87,7 @@ export default function WhatNow({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="What Now?"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="What Now?" />
 
       <ScrollView
         style={localStyles.scrollContainer}
@@ -114,7 +109,7 @@ export default function WhatNow({ navigation, route }) {
           </Text>
           <TouchableOpacity
             style={localStyles.updateButton}
-            onPress={() => navigation.navigate('SetLocation', { profilePic })}
+            onPress={() => navigation.navigate('SetLocation')}
           >
             <Text style={localStyles.updateButtonText}>Update</Text>
           </TouchableOpacity>
@@ -151,9 +146,7 @@ export default function WhatNow({ navigation, route }) {
                 <TouchableOpacity
                   key={option.id}
                   style={localStyles.optionButton}
-                  onPress={() =>
-                    navigation.navigate(option.screen, { profilePic })
-                  }
+                  onPress={() => navigation.navigate(option.screen)}
                 >
                   <Text style={localStyles.optionText}>{option.label}</Text>
                 </TouchableOpacity>
@@ -194,9 +187,7 @@ export default function WhatNow({ navigation, route }) {
                 <TouchableOpacity
                   key={option.id}
                   style={localStyles.optionButton}
-                  onPress={() =>
-                    navigation.navigate(option.screen, { profilePic })
-                  }
+                  onPress={() => navigation.navigate(option.screen)}
                 >
                   <Text style={localStyles.optionText}>{option.label}</Text>
                 </TouchableOpacity>
@@ -209,7 +200,7 @@ export default function WhatNow({ navigation, route }) {
         <Card style={localStyles.mapCard}>
           <TouchableOpacity
             style={localStyles.mapButton}
-            onPress={() => navigation.navigate('CampusMap', { profilePic })}
+            onPress={() => navigation.navigate('CampusMap')}
           >
             <MaterialCommunityIcons name="map" size={20} color="#5C4D7D" />
             <Text style={localStyles.mapButtonText}>Campus Map</Text>

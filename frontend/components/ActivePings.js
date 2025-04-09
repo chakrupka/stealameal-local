@@ -151,14 +151,22 @@ export default function ActivePings({ navigation }) {
           <Card.Content>
             <View style={styles.headerRow}>
               <View style={styles.senderInfo}>
-                <Avatar.Text
-                  size={36}
-                  label={ping.senderName
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
-                  style={styles.avatar}
-                />
+                {!ping.sender.profilePic ? (
+                  <Avatar.Text
+                    size={36}
+                    label={ping.senderName
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <Avatar.Image
+                    size={36}
+                    source={{ uri: ping.sender.profilePic }}
+                    style={styles.avatar}
+                  />
+                )}
                 <View>
                   <Text style={styles.senderName}>{ping.senderName}</Text>
                   <Text style={styles.timeRemaining}>

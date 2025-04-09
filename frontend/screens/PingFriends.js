@@ -18,7 +18,6 @@ import { fetchFriendDetails } from '../services/user-api';
 import { sendPing } from '../services/ping-api';
 
 export default function PingFriends({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedSquads, setSelectedSquads] = useState([]);
   const [groupedFriends, setGroupedFriends] = useState([]);
@@ -84,6 +83,7 @@ export default function PingFriends({ navigation, route }) {
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
+                profilePic: details.profilePic,
               };
             } catch (error) {
               return {
@@ -93,6 +93,7 @@ export default function PingFriends({ navigation, route }) {
                 location: 'No Location',
                 locationAvailable: false,
                 initials: '??',
+                profilePic: null,
               };
             }
           }),
@@ -206,13 +207,21 @@ export default function PingFriends({ navigation, route }) {
     <List.Item
       title={item.name}
       description={item.email}
-      left={() => (
-        <Avatar.Text
-          size={40}
-          label={item.initials}
-          style={localStyles.avatar}
-        />
-      )}
+      left={() =>
+        !item.profilePic ? (
+          <Avatar.Text
+            size={40}
+            label={item.initials}
+            style={localStyles.avatar}
+          />
+        ) : (
+          <Avatar.Image
+            size={40}
+            source={{ uri: item.profilePic }}
+            style={localStyles.avatar}
+          />
+        )
+      }
       right={() => (
         <Checkbox
           status={
@@ -251,11 +260,7 @@ export default function PingFriends({ navigation, route }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -272,11 +277,7 @@ export default function PingFriends({ navigation, route }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -303,11 +304,7 @@ export default function PingFriends({ navigation, route }) {
   ) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
           <View style={localStyles.headerContainer}>
@@ -336,11 +333,7 @@ export default function PingFriends({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Ping Friends"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Ping Friends" />
       <View style={{ height: 50 }} />
 
       <View style={localStyles.contentContainer}>
