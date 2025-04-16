@@ -4,17 +4,23 @@ import { Button, Text, RadioButton, List, Card } from 'react-native-paper';
 import axios from 'axios';
 import { USER_API_URL } from '../configs/api-config';
 import useStore from '../store';
+import { useLocation } from '../contexts/LocationContext';
+import LocationToggle from '../components/LocationToggle';
 
 export const getFriendLocationInfo = (friend, users) => {
-  if (!friend || !users) return { available: false, lastUpdated: null, location: null };
-  
-  const friendUser = users.find(u => u.userID === friend.friendID);
-  if (!friendUser) return { available: false, lastUpdated: null, location: null };
-  
+  if (!friend || !users)
+    return { available: false, lastUpdated: null, location: null };
+
+  const friendUser = users.find((u) => u.userID === friend.friendID);
+  if (!friendUser)
+    return { available: false, lastUpdated: null, location: null };
+
   const available = friend.locationAvailable;
-  const lastUpdated = friendUser.locationUpdatedAt ? new Date(friendUser.locationUpdatedAt) : null;
+  const lastUpdated = friendUser.locationUpdatedAt
+    ? new Date(friendUser.locationUpdatedAt)
+    : null;
   const location = friendUser.location;
-  
+
   return { available, lastUpdated, location };
 };
 
@@ -26,6 +32,7 @@ export default function LocationUpdate({ navigation }) {
   const refreshUserProfile = useStore(
     (state) => state.userSlice.refreshUserProfile,
   );
+  const { getCurrentLocation } = useLocation();
 
   const [selectedLocation, setSelectedLocation] = useState(
     currentUser?.location || '',
@@ -44,12 +51,15 @@ export default function LocationUpdate({ navigation }) {
   ];
 
   useEffect(() => {
-    if (currentUser?.locationUpdatedAt) {      
+    if (currentUser?.locationUpdatedAt) {
       try {
         const date = new Date(currentUser.locationUpdatedAt);
-        
+
         if (isNaN(date.getTime())) {
-          console.error('Invalid date from timestamp:', currentUser.locationUpdatedAt);
+          console.error(
+            'Invalid date from timestamp:',
+            currentUser.locationUpdatedAt,
+          );
         } else {
           setLastUpdated(date);
         }
@@ -139,37 +149,58 @@ export default function LocationUpdate({ navigation }) {
     }
   };
 
+  // automatically detect current location
+  const handleDetectLocation = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const detectedLocation = await getCurrentLocation();
+
+      if (detectedLocation) {
+        setSelectedLocation(detectedLocation);
+      } else {
+        setError('Could not detect your location. Please select manually.');
+      }
+    } catch (err) {
+      setError('Failed to detect location: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // States for tracking friend location data
   const [friendsData, setFriendsData] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
-  
+
   // Function to fetch friend data
   const fetchFriendLocations = async () => {
-    if (!currentUser || !currentUser.friendsList || !currentUser.idToken) return;
-    
+    if (!currentUser || !currentUser.friendsList || !currentUser.idToken)
+      return;
+
     setLoadingFriends(true);
     try {
       // Get all users from the API using environment-aware config
       const usersResponse = await axios.get(`${USER_API_URL}/users`, {
         headers: {
-          'Authorization': `Bearer ${currentUser.idToken}`
-        }
+          Authorization: `Bearer ${currentUser.idToken}`,
+        },
       });
-      
+
       if (usersResponse.status === 200) {
         const users = usersResponse.data;
         setAllUsers(users);
-        
+
         // Process friend location data
-        const friendsWithLocation = currentUser.friendsList.map(friend => {
+        const friendsWithLocation = currentUser.friendsList.map((friend) => {
           const locationInfo = getFriendLocationInfo(friend, users);
           return {
             ...friend,
-            locationInfo
+            locationInfo,
           };
         });
-        
+
         setFriendsData(friendsWithLocation);
       }
     } catch (error) {
@@ -178,7 +209,7 @@ export default function LocationUpdate({ navigation }) {
       setLoadingFriends(false);
     }
   };
-  
+
   useEffect(() => {
     fetchFriendLocations();
   }, [currentUser]);
@@ -188,11 +219,24 @@ export default function LocationUpdate({ navigation }) {
       <Text style={styles.headerText}>Update Your Location</Text>
 
       <Text style={styles.subtitle}>
-        Select where you are now. Your location will be visible to friends for 90
-        minutes.
+        Select where you are now. Your location will be visible to friends for
+        90 minutes.
       </Text>
 
+      <LocationToggle />
+
       {error && <Text style={styles.errorText}>{error}</Text>}
+
+      <Button
+        mode="outlined"
+        onPress={handleDetectLocation}
+        loading={loading}
+        disabled={loading}
+        style={styles.detectButton}
+        icon="crosshairs-gps"
+      >
+        Detect My Location
+      </Button>
 
       <View style={styles.locationContainer}>
         <RadioButton.Group
@@ -240,25 +284,28 @@ export default function LocationUpdate({ navigation }) {
           )}
         </View>
       )}
-      
+
       {currentUser?.friendsList?.length > 0 && (
         <View style={styles.friendsSection}>
           <Text style={styles.sectionTitle}>Friend Locations</Text>
-          
+
           {loadingFriends ? (
             <Text style={styles.loadingText}>Loading friend locations...</Text>
           ) : (
-            friendsData.map(friend => {
+            friendsData.map((friend) => {
               const { available, lastUpdated, location } = friend.locationInfo;
-              const locationLabel = locations.find(loc => loc.key === location)?.label || location;
-              
+              const locationLabel =
+                locations.find((loc) => loc.key === location)?.label ||
+                location;
+
               return (
                 <Card key={friend.friendID} style={styles.friendCard}>
                   <Card.Content>
                     <Text style={styles.friendName}>
-                      {allUsers.find(u => u.userID === friend.friendID)?.firstName || 'Friend'}
+                      {allUsers.find((u) => u.userID === friend.friendID)
+                        ?.firstName || 'Friend'}
                     </Text>
-                    
+
                     {available && location ? (
                       <>
                         <Text style={styles.friendLocation}>
@@ -280,9 +327,9 @@ export default function LocationUpdate({ navigation }) {
               );
             })
           )}
-          
-          <Button 
-            mode="outlined" 
+
+          <Button
+            mode="outlined"
             onPress={fetchFriendLocations}
             style={styles.refreshButton}
           >
@@ -392,5 +439,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
     alignSelf: 'center',
     marginBottom: 20,
+  },
+  detectButton: {
+    marginTop: 15,
+    marginBottom: 5,
   },
 });

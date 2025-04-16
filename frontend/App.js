@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import * as Font from 'expo-font';
 import { HammersmithOne_400Regular } from '@expo-google-fonts/hammersmith-one';
 import { DMSans_400Regular } from '@expo-google-fonts/dm-sans';
+import { LocationProvider } from './contexts/LocationContext';
 
 import Starter from './screens/Starter';
 import Login from './screens/Login';
@@ -23,6 +24,7 @@ import EnterAvailability from './screens/EnterAvailability';
 import AddFriendsScreen from './screens/AddFriendsScreen';
 import FriendRequestsScreen from './screens/FriendRequestsScreen';
 import Profile from './screens/Profile';
+import LocationSettings from './screens/LocationSettings';
 
 const Stack = createStackNavigator();
 
@@ -43,28 +45,34 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Starter" component={Starter} />
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="CreateAccount" component={CreateAccount} />
-        <Stack.Screen name="WhatNow" component={WhatNow} />
-        <Stack.Screen name="ScheduleMeal" component={ScheduleMeal} />
-        <Stack.Screen name="PingFriends" component={PingFriends} />
-        <Stack.Screen name="PickFriend" component={PickFriend} />
-        <Stack.Screen name="BuildSquad" component={BuildSquad} />
-        <Stack.Screen name="CampusMap" component={CampusMap} />
-        <Stack.Screen name="MealRequests" component={MealRequests} />
-        <Stack.Screen name="SetLocation" component={SetLocation} />
-        <Stack.Screen name="ViewMeals" component={ViewMeals} />
-        <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
-        <Stack.Screen name="AddFriendsScreen" component={AddFriendsScreen} />
-        <Stack.Screen
-          name="FriendRequestsScreen"
-          component={FriendRequestsScreen}
-        />
-        <Stack.Screen name="Profile" component={Profile} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <LocationProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Starter" component={Starter} />
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="CreateAccount" component={CreateAccount} />
+          <Stack.Screen name="WhatNow" component={WhatNow} />
+          <Stack.Screen name="ScheduleMeal" component={ScheduleMeal} />
+          <Stack.Screen name="PingFriends" component={PingFriends} />
+          <Stack.Screen name="PickFriend" component={PickFriend} />
+          <Stack.Screen name="BuildSquad" component={BuildSquad} />
+          <Stack.Screen name="CampusMap" component={CampusMap} />
+          <Stack.Screen name="MealRequests" component={MealRequests} />
+          <Stack.Screen name="SetLocation" component={SetLocation} />
+          <Stack.Screen name="ViewMeals" component={ViewMeals} />
+          <Stack.Screen name="LocationSettings" component={LocationSettings} />
+          <Stack.Screen
+            name="EnterAvailability"
+            component={EnterAvailability}
+          />
+          <Stack.Screen name="AddFriendsScreen" component={AddFriendsScreen} />
+          <Stack.Screen
+            name="FriendRequestsScreen"
+            component={FriendRequestsScreen}
+          />
+          <Stack.Screen name="Profile" component={Profile} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </LocationProvider>
   );
 }

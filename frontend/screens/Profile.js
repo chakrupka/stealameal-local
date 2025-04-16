@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import uploadImage from '../services/s3';
+import { Button } from 'react-native-paper';
 
 // Need to make it so only certain fields are updatable
 const Profile = ({ navigation, route }) => {
@@ -138,6 +139,15 @@ const Profile = ({ navigation, route }) => {
           >
             <Text style={{ fontSize: 20, color: '#333' }}>Edit</Text>
           </TouchableOpacity>
+
+          <Button
+            mode="outlined"
+            icon="map-marker"
+            onPress={() => navigation.navigate('LocationSettings')}
+            style={styles.profileButton}
+          >
+            Location Settings
+          </Button>
         </View>
       ) : (
         <View style={styles.profileView.editContainer}>
