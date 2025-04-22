@@ -623,7 +623,7 @@ export default function ViewMeals({ navigation, route }) {
         <Button
           mode="outlined"
           style={[localStyles.calendarButton, localStyles.button]}
-          onPress={() => navigation.navigate('ScheduleMeal')}
+          onPress={() => navigation.navigate('CalendarView')}
           icon="calendar"
         >
           View Calendar 
@@ -631,7 +631,7 @@ export default function ViewMeals({ navigation, route }) {
         <Button
           mode="contained"
           style={localStyles.scheduleButton}
-          onPress={() => navigation.navigate('CalendarView')}
+          onPress={() => navigation.navigate('ScheduleMeal')}
         >
           Schedule New Meal
         </Button>

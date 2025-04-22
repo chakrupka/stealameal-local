@@ -1,16 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import TopNav from '../components/TopNav';
 
-const CalendarView = () => {
+
+const CalendarView = ({navigation }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.helloText}>Hello Calendar View! 📅</Text>
+        <TopNav navigation={navigation} title="Your Calendar 📅" />
+        <View style={styles.contentContainer}>
+            <Text style={styles.helloText}>Hello Calendar View! 📅</Text>
+        </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
