@@ -631,7 +631,7 @@ export default function ViewMeals({ navigation, route }) {
         <Button
           mode="contained"
           style={localStyles.scheduleButton}
-          onPress={() => navigation.navigate('ScheduleMeal')}
+          onPress={() => navigation.navigate('CalendarView')}
         >
           Schedule New Meal
         </Button>
