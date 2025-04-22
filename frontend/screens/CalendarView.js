@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingTop: 60, 
+    paddingTop: 50, // Adjust based on your TopNav height
     marginTop: 10,
   },
   weekHeader: {
@@ -256,8 +256,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 15,
-    alignItems: 'center',
+    paddingVertical: 9,
+    
   },
   dayContainer: {
     alignItems: 'center',
