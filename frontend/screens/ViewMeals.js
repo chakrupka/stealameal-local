@@ -36,7 +36,7 @@ export default function ViewMeals({ navigation, route }) {
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const getAllMeals = useStore((state) => state.mealSlice.getAllMeals);
   const deleteMeal = useStore((state) => state.mealSlice.deleteMeal);
-
+  
   useEffect(() => {
     loadMeals();
   }, [currentUser, reloadMeals]);
@@ -312,6 +312,7 @@ export default function ViewMeals({ navigation, route }) {
     const isPastMeal = new Date(item.date) < new Date();
 
     return (
+      
       <Card style={[localStyles.card, statusColor, { borderLeftWidth: 4 }]}>
         <Card.Content>
           <View style={localStyles.cardHeader}>
@@ -620,12 +621,21 @@ export default function ViewMeals({ navigation, route }) {
         )}
 
         <Button
+          mode="outlined"
+          style={[localStyles.calendarButton, localStyles.button]}
+          onPress={() => navigation.navigate('ScheduleMeal')}
+          icon="calendar"
+        >
+          View Calendar 
+        </Button>
+        <Button
           mode="contained"
           style={localStyles.scheduleButton}
           onPress={() => navigation.navigate('ScheduleMeal')}
         >
           Schedule New Meal
         </Button>
+        
       </View>
     </View>
   );
@@ -779,6 +789,10 @@ const localStyles = StyleSheet.create({
   scheduleButton: {
     marginVertical: 20,
     backgroundColor: '#5C4D7D',
+    paddingVertical: 6,
+  },
+  calendarButton: {
+    borderColor: '#5C4D7D',
     paddingVertical: 6,
   },
 });
