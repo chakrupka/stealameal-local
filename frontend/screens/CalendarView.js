@@ -8,85 +8,98 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  Dimensions
+  Dimensions,
+  ScrollView
 } from 'react-native';
 
 const CalendarView = ({navigation}) => {
-  // starting date (January 1, 2025)
-  const START_DATE = new Date(2025, 0, 1);
   const [currentDate] = useState(new Date());
   const flatListRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const screenWidth = Dimensions.get('window').width;
-
-  // generate array of weeks starting from 2025
-  const generateWeeks = useCallback((startWeekIndex) => {
-    const weeks = [];
-    // generate weeks before and after the current week for infinite scroll effect
-    for (let i = -10; i <= 10; i++) {
-      const weekStart = new Date(START_DATE);
-      weekStart.setDate(weekStart.getDate() + (startWeekIndex + i) * 7);
-      weeks.push(getWeekDates(weekStart));
+  
+  // Generate time slots from 7:30 AM to 8:30 PM
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 7; hour <= 20; hour++) {
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour > 12 ? hour - 12 : hour;
+      
+      // Add half hour
+      if (hour === 7) {
+        slots.push({
+          time: `${displayHour}:30 ${period}`,
+          hour: hour,
+          minute: 30
+        });
+      } 
+      // Add full hour
+      else {
+        slots.push({
+          time: `${displayHour}:00 ${period}`,
+          hour: hour,
+          minute: 0
+        });
+        
+        // Add half hour except for the last entry (8:30 PM)
+        if (hour < 20) {
+          slots.push({
+            time: `${displayHour}:30 ${period}`,
+            hour: hour,
+            minute: 30
+          });
+        }
+      }
     }
-    return weeks;
-  }, []);
+    return slots;
+  };
 
-  // get all dates for a week starting from the given date
-  const getWeekDates = (date) => {
-    const weekStart = new Date(date);
-    // adjust to start of week (Sunday)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const timeSlots = generateTimeSlots();
+
+  // Get dates for a week
+  const getWeekDates = (baseDate) => {
+    const date = new Date(baseDate);
+    // Set to start of the week (Sunday)
+    date.setDate(date.getDate() - date.getDay());
     
     const weekDates = [];
     for (let i = 0; i < 7; i++) {
-      const day = new Date(weekStart);
+      const day = new Date(date);
       day.setDate(day.getDate() + i);
       weekDates.push(day);
     }
     return weekDates;
   };
 
-  // calculate initial week index (how many weeks from START_DATE)
-  const getWeekIndex = useCallback((date) => {
-    const diffTime = Math.abs(date - START_DATE);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.floor(diffDays / 7);
-  }, []);
-
-  const initialWeekIndex = getWeekIndex(currentDate);
-  const [weeks, setWeeks] = useState(() => generateWeeks(initialWeekIndex));
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(10); // Middle of our array (we generate -10 to +10)
-
-  // handle scroll to maintain infinite scroll illusion
-  const handleScroll = useCallback((event) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const viewSize = event.nativeEvent.layoutMeasurement.width;
+  // Generate array of week arrays for paging
+  const generateWeeks = useCallback(() => {
+    const weeks = [];
     
-    // Calculate which item is in the center of the view
-    const newIndex = Math.round(contentOffsetX / viewSize);
+    // Previous week
+    const prevWeekDate = new Date(currentDate);
+    prevWeekDate.setDate(prevWeekDate.getDate() - 7);
+    weeks.push(getWeekDates(prevWeekDate));
     
-    if (newIndex !== currentWeekIndex && newIndex >= 0 && newIndex < weeks.length) {
-      setCurrentWeekIndex(newIndex);
-      
-      // Load more weeks when approaching the end
-      if (newIndex > weeks.length - 5) {
-        const newWeeks = [...weeks, ...generateWeeks(initialWeekIndex + newIndex + 1)];
-        setWeeks(newWeeks);
-      } else if (newIndex < 5) {
-        const newWeeks = [...generateWeeks(initialWeekIndex - (10 - newIndex)), ...weeks];
-        setWeeks(newWeeks);
-        // Adjust the scroll position after adding new items
-        setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: newIndex + (10 - newIndex),
-            animated: false
-          });
-        }, 0);
-      }
-    }
-  }, [weeks, currentWeekIndex, initialWeekIndex, generateWeeks]);
+    // Current week
+    weeks.push(getWeekDates(currentDate));
+    
+    // Next week
+    const nextWeekDate = new Date(currentDate);
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    weeks.push(getWeekDates(nextWeekDate));
+    
+    // Next 2 weeks (for more pagination)
+    const nextTwoWeeksDate = new Date(nextWeekDate);
+    nextTwoWeeksDate.setDate(nextTwoWeeksDate.getDate() + 7);
+    weeks.push(getWeekDates(nextTwoWeeksDate));
+    
+    return weeks;
+  }, [currentDate]);
 
-  // format week range for header
+  const [weeks, setWeeks] = useState(() => generateWeeks());
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(1); // Start with current week
+
+  // Format the week range display
   const formatWeekRange = useCallback((weekDates) => {
     if (!weekDates || weekDates.length < 7) return "Loading...";
     
@@ -102,7 +115,7 @@ const CalendarView = ({navigation}) => {
     }
   }, []);
 
-  // check if date is today
+  // Check if the date is today
   const isToday = useCallback((date) => {
     const today = new Date();
     return date.getDate() === today.getDate() && 
@@ -110,44 +123,65 @@ const CalendarView = ({navigation}) => {
            date.getFullYear() === today.getFullYear();
   }, []);
 
-  // check if date is selected
+  // Check if date is selected
   const isSelected = useCallback((date) => {
     return date.getDate() === selectedDate.getDate() && 
            date.getMonth() === selectedDate.getMonth() && 
            date.getFullYear() === selectedDate.getFullYear();
   }, [selectedDate]);
 
-  // Make sure the FlatList starts at the middle index
+  // Handle FlatList scroll for pagination
+  const handleScroll = useCallback((event) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const viewSize = event.nativeEvent.layoutMeasurement.width;
+    const newIndex = Math.round(contentOffsetX / viewSize);
+    
+    if (newIndex !== currentWeekIndex) {
+      setCurrentWeekIndex(newIndex);
+      
+      // Add more weeks if needed
+      if (newIndex === weeks.length - 1) {
+        // Add next week
+        const lastWeek = weeks[weeks.length - 1];
+        const nextWeekStart = new Date(lastWeek[6]);
+        nextWeekStart.setDate(nextWeekStart.getDate() + 1);
+        const nextWeek = getWeekDates(nextWeekStart);
+        setWeeks([...weeks, nextWeek]);
+      }
+    }
+  }, [weeks, currentWeekIndex]);
+
+  // Calculate day column width
+  const getDayWidth = useCallback(() => {
+    const containerPadding = 16 * 2; // Horizontal padding
+    const timeColumnWidth = 60; // Width for time labels column
+    const availableWidth = screenWidth - containerPadding - timeColumnWidth;
+    return Math.floor(availableWidth / 7); // Divide by 7 days
+  }, [screenWidth]);
+
+  // Initial scroll to current week
   useEffect(() => {
     if (flatListRef.current) {
-      const timeout = setTimeout(() => {
+      setTimeout(() => {
         flatListRef.current.scrollToIndex({
-          index: 10, // Middle index
+          index: 1, // Current week index
           animated: false
         });
       }, 100);
-      
-      return () => clearTimeout(timeout);
     }
   }, []);
 
-  // Handle out-of-bounds scroll indices
-  const onScrollToIndexFailed = useCallback((info) => {
-    const wait = new Promise(resolve => setTimeout(resolve, 500));
-    wait.then(() => {
-      flatListRef.current?.scrollToIndex({ 
-        index: info.index, 
-        animated: false 
-      });
-    });
+  // Handle scroll failures
+  const onScrollToIndexFailed = useCallback(() => {
+    setTimeout(() => {
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({
+          index: 1,
+          animated: false
+        });
+      }
+    }, 100);
   }, []);
-
-  // Calculate day width based on screen width
-  const getDayWidth = useCallback(() => {
-    const containerPadding = 16 * 2; // Left and right padding
-    const availableWidth = screenWidth - containerPadding;
-    return Math.floor(availableWidth / 7); // Divide by 7 days
-  }, [screenWidth]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -155,22 +189,30 @@ const CalendarView = ({navigation}) => {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
       <View style={styles.contentContainer}>
+        {/* Week header with dates */}
         <View style={styles.weekHeader}>
           <Text style={styles.weekRangeText}>
             {formatWeekRange(weeks[currentWeekIndex])}
           </Text>
         </View>
 
+        {/* Day labels (Sun, Mon, etc.) */}
         <FlatList
           ref={flatListRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           data={weeks}
-          initialScrollIndex={10}
+          initialScrollIndex={1}
           keyExtractor={(item, index) => `week-${index}`}
           renderItem={({ item: weekDates }) => (
-            <View style={[styles.weekContainer, { width: screenWidth - 32 }]}>
+            <View style={[styles.weekContainer, { width: screenWidth }]}>
+              {/* Time column label (empty) */}
+              <View style={styles.timeColumnHeader}>
+                <Text style={styles.timeColumnLabel}></Text>
+              </View>
+              
+              {/* Day labels */}
               {weekDates.map((date, dayIndex) => {
                 const dayWidth = getDayWidth();
                 return (
@@ -189,7 +231,7 @@ const CalendarView = ({navigation}) => {
                       isToday(date) && styles.todayText,
                       isSelected(date) && styles.selectedText
                     ]}>
-                      {date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}
+                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
                     </Text>
                     <Text 
                       style={[
@@ -197,7 +239,6 @@ const CalendarView = ({navigation}) => {
                         isToday(date) && styles.todayText,
                         isSelected(date) && styles.selectedText
                       ]}
-                      numberOfLines={1}
                     >
                       {date.getDate()}
                     </Text>
@@ -209,13 +250,14 @@ const CalendarView = ({navigation}) => {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           getItemLayout={(data, index) => ({
-            length: screenWidth - 32,
-            offset: (screenWidth - 32) * index,
+            length: screenWidth,
+            offset: screenWidth * index,
             index,
           })}
           onScrollToIndexFailed={onScrollToIndexFailed}
         />
-
+        
+        {/* Selected date display */}
         <View style={styles.selectedDateContainer}>
           <Text style={styles.selectedDateText}>
             {selectedDate.toLocaleDateString('en-US', { 
@@ -226,6 +268,31 @@ const CalendarView = ({navigation}) => {
             })}
           </Text>
         </View>
+        
+        {/* Time slots and schedule grid */}
+        <ScrollView style={styles.scheduleContainer}>
+          {timeSlots.map((slot, index) => (
+            <View key={`time-${index}`} style={styles.timeSlotRow}>
+              {/* Time label */}
+              <View style={styles.timeColumn}>
+                <Text style={styles.timeText}>{slot.time}</Text>
+              </View>
+              
+              {/* Day columns */}
+              <View style={styles.dayColumnsContainer}>
+                {Array(7).fill(0).map((_, dayIndex) => (
+                  <View 
+                    key={`slot-${index}-day-${dayIndex}`} 
+                    style={[
+                      styles.scheduleSlot,
+                      { width: getDayWidth() }
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -238,8 +305,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingTop: 50, // Adjust based on your TopNav height
-    marginTop: 10,
+    paddingTop: 20,
   },
   weekHeader: {
     paddingVertical: 15,
@@ -254,10 +320,19 @@ const styles = StyleSheet.create({
   },
   weekContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    
+    paddingHorizontal: 0,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  timeColumnHeader: {
+    width: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeColumnLabel: {
+    fontSize: 12,
+    color: '#999',
   },
   dayContainer: {
     alignItems: 'center',
@@ -292,16 +367,45 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   selectedDateContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   selectedDateText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#5C4D7D',
     textAlign: 'center',
   },
+  scheduleContainer: {
+    flex: 1,
+  },
+  timeSlotRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(240, 240, 240, 0.5)',
+    height: 60,
+  },
+  timeColumn: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+  },
+  timeText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  dayColumnsContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  scheduleSlot: {
+    height: 60,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(240, 240, 240, 0.5)',
+  }
 });
 
 export default CalendarView;
