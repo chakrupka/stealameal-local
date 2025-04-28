@@ -18,14 +18,14 @@ const CalendarView = ({navigation}) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const screenWidth = Dimensions.get('window').width;
   
-  // Generate time slots from 7:30 AM to 8:30 PM
+  // generate time slots from 7:30 am to 8:30 pm
   const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 7; hour <= 20; hour++) {
       const period = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour > 12 ? hour - 12 : hour;
       
-      // Add half hour
+      // add half hour
       if (hour === 7) {
         slots.push({
           time: `${displayHour}:30 ${period}`,
@@ -33,7 +33,7 @@ const CalendarView = ({navigation}) => {
           minute: 30
         });
       } 
-      // Add full hour
+      // add full hour
       else {
         slots.push({
           time: `${displayHour}:00 ${period}`,
@@ -41,7 +41,7 @@ const CalendarView = ({navigation}) => {
           minute: 0
         });
         
-        // Add half hour except for the last entry (8:30 PM)
+        // add half hour except for the last entry (8:30 PM)
         if (hour < 20) {
           slots.push({
             time: `${displayHour}:30 ${period}`,
@@ -56,10 +56,10 @@ const CalendarView = ({navigation}) => {
 
   const timeSlots = generateTimeSlots();
 
-  // Get dates for a week
+  // get dates for a week
   const getWeekDates = (baseDate) => {
     const date = new Date(baseDate);
-    // Set to start of the week (Sunday)
+    // set to start of the week (sunday)
     date.setDate(date.getDate() - date.getDay());
     
     const weekDates = [];
@@ -71,24 +71,20 @@ const CalendarView = ({navigation}) => {
     return weekDates;
   };
 
-  // Generate array of week arrays for paging
+  // generate array of week arrays 
   const generateWeeks = useCallback(() => {
     const weeks = [];
     
-    // Previous week
     const prevWeekDate = new Date(currentDate);
     prevWeekDate.setDate(prevWeekDate.getDate() - 7);
     weeks.push(getWeekDates(prevWeekDate));
     
-    // Current week
     weeks.push(getWeekDates(currentDate));
     
-    // Next week
     const nextWeekDate = new Date(currentDate);
     nextWeekDate.setDate(nextWeekDate.getDate() + 7);
     weeks.push(getWeekDates(nextWeekDate));
-    
-    // Next 2 weeks (for more pagination)
+
     const nextTwoWeeksDate = new Date(nextWeekDate);
     nextTwoWeeksDate.setDate(nextTwoWeeksDate.getDate() + 7);
     weeks.push(getWeekDates(nextTwoWeeksDate));
@@ -97,9 +93,9 @@ const CalendarView = ({navigation}) => {
   }, [currentDate]);
 
   const [weeks, setWeeks] = useState(() => generateWeeks());
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(1); // Start with current week
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(1); // start with current week
 
-  // Format the week range display
+  // format the week range display
   const formatWeekRange = useCallback((weekDates) => {
     if (!weekDates || weekDates.length < 7) return "Loading...";
     
@@ -115,7 +111,7 @@ const CalendarView = ({navigation}) => {
     }
   }, []);
 
-  // Check if the date is today
+  // check if the date is today
   const isToday = useCallback((date) => {
     const today = new Date();
     return date.getDate() === today.getDate() && 
@@ -123,14 +119,14 @@ const CalendarView = ({navigation}) => {
            date.getFullYear() === today.getFullYear();
   }, []);
 
-  // Check if date is selected
+  // check if date is selected
   const isSelected = useCallback((date) => {
     return date.getDate() === selectedDate.getDate() && 
            date.getMonth() === selectedDate.getMonth() && 
            date.getFullYear() === selectedDate.getFullYear();
   }, [selectedDate]);
 
-  // Handle FlatList scroll for pagination
+  // handle flatList scroll for weeks
   const handleScroll = useCallback((event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const viewSize = event.nativeEvent.layoutMeasurement.width;
@@ -139,9 +135,9 @@ const CalendarView = ({navigation}) => {
     if (newIndex !== currentWeekIndex) {
       setCurrentWeekIndex(newIndex);
       
-      // Add more weeks if needed
+      // add more weeks if needed
       if (newIndex === weeks.length - 1) {
-        // Add next week
+        // add next week
         const lastWeek = weeks[weeks.length - 1];
         const nextWeekStart = new Date(lastWeek[6]);
         nextWeekStart.setDate(nextWeekStart.getDate() + 1);
@@ -151,27 +147,27 @@ const CalendarView = ({navigation}) => {
     }
   }, [weeks, currentWeekIndex]);
 
-  // Calculate day column width
+  // calculate day column width
   const getDayWidth = useCallback(() => {
-    const containerPadding = 16 * 2; // Horizontal padding
-    const timeColumnWidth = 60; // Width for time labels column
+    const containerPadding = 16 * 2; // horizontal padding
+    const timeColumnWidth = 60; // width for time labels column
     const availableWidth = screenWidth - containerPadding - timeColumnWidth;
-    return Math.floor(availableWidth / 7); // Divide by 7 days
+    return Math.floor(availableWidth / 7); // divide by 7 days
   }, [screenWidth]);
 
-  // Initial scroll to current week
+  // initial scroll to current week
   useEffect(() => {
     if (flatListRef.current) {
       setTimeout(() => {
         flatListRef.current.scrollToIndex({
-          index: 1, // Current week index
+          index: 1, // current week index
           animated: false
         });
       }, 100);
     }
   }, []);
 
-  // Handle scroll failures
+  // handle scroll failures
   const onScrollToIndexFailed = useCallback(() => {
     setTimeout(() => {
       if (flatListRef.current) {
@@ -189,14 +185,14 @@ const CalendarView = ({navigation}) => {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
       <View style={styles.contentContainer}>
-        {/* Week header with dates */}
+        {/* week header with dates */}
         <View style={styles.weekHeader}>
           <Text style={styles.weekRangeText}>
             {formatWeekRange(weeks[currentWeekIndex])}
           </Text>
         </View>
 
-        {/* Day labels (Sun, Mon, etc.) */}
+        {/* day labels */}
         <FlatList
           ref={flatListRef}
           horizontal
@@ -207,12 +203,12 @@ const CalendarView = ({navigation}) => {
           keyExtractor={(item, index) => `week-${index}`}
           renderItem={({ item: weekDates }) => (
             <View style={[styles.weekContainer, { width: screenWidth }]}>
-              {/* Time column label (empty) */}
+              {/* time column label (empty) */}
               <View style={styles.timeColumnHeader}>
                 <Text style={styles.timeColumnLabel}></Text>
               </View>
               
-              {/* Day labels */}
+              {/* day labels */}
               {weekDates.map((date, dayIndex) => {
                 const dayWidth = getDayWidth();
                 return (
@@ -257,28 +253,16 @@ const CalendarView = ({navigation}) => {
           onScrollToIndexFailed={onScrollToIndexFailed}
         />
         
-        {/* Selected date display */}
-        <View style={styles.selectedDateContainer}>
-          <Text style={styles.selectedDateText}>
-            {selectedDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric', 
-              year: 'numeric' 
-            })}
-          </Text>
-        </View>
-        
-        {/* Time slots and schedule grid */}
+        {/* time slots and schedule grid */}
         <ScrollView style={styles.scheduleContainer}>
           {timeSlots.map((slot, index) => (
             <View key={`time-${index}`} style={styles.timeSlotRow}>
-              {/* Time label */}
+              {/* time label */}
               <View style={styles.timeColumn}>
                 <Text style={styles.timeText}>{slot.time}</Text>
               </View>
               
-              {/* Day columns */}
+              {/* day columns */}
               <View style={styles.dayColumnsContainer}>
                 {Array(7).fill(0).map((_, dayIndex) => (
                   <View 
@@ -293,6 +277,19 @@ const CalendarView = ({navigation}) => {
             </View>
           ))}
         </ScrollView>
+
+        {/* selected date display */}
+        <View style={styles.selectedDateContainer}>
+          <Text style={styles.selectedDateText}>
+            {selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })}
+          </Text>
+        </View>
+        
       </View>
     </SafeAreaView>
   );
