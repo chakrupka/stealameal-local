@@ -691,7 +691,6 @@ const CalendarView = ({navigation}) => {
                       style={styles.viewMealButton}
                       onPress={() => navigateToMealDetails(selectedMeal)}
                     >
-                      <Text style={styles.viewMealButtonText}>View Full Details</Text>
                     </TouchableOpacity>
                   </View>
                 </>
