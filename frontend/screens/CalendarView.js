@@ -25,6 +25,7 @@ const CalendarView = ({navigation}) => {
  const screenWidth = Dimensions.get('window').width;
  const [modalVisible, setModalVisible] = useState(false);
  const [selectedMeal, setSelectedMeal] = useState(null);
+ const [isScrolling, setIsScrolling] = useState(false); 
 
 
  // add meals state and fetch function
@@ -56,7 +57,7 @@ const CalendarView = ({navigation}) => {
          minute: 0
        });
       
-       // add half hour except for the last entry (8:30 PM)
+       // add half hour 
        if (hour < 20) {
          slots.push({
            time: `${displayHour}:30 ${period}`,
@@ -76,7 +77,7 @@ const CalendarView = ({navigation}) => {
  // get dates for a week
  const getWeekDates = (baseDate) => {
    const date = new Date(baseDate);
-   // set to start of the week (sunday)
+   // set to start of the week
    date.setDate(date.getDate() - date.getDay());
   
    const weekDates = [];
@@ -89,20 +90,22 @@ const CalendarView = ({navigation}) => {
  };
 
 
- // generate array of week arrays
+ // generate array of week arrays with more past weeks
  const generateWeeks = useCallback(() => {
    const weeks = [];
-  
-   const prevWeekDate = new Date(currentDate);
-   prevWeekDate.setDate(prevWeekDate.getDate() - 7);
-   weeks.push(getWeekDates(prevWeekDate));
+   
+   // add 4 previous weeks instead of just 1
+   for (let i = 4; i >= 1; i--) {
+     const prevWeekDate = new Date(currentDate);
+     prevWeekDate.setDate(prevWeekDate.getDate() - (7 * i));
+     weeks.push(getWeekDates(prevWeekDate));
+   }
   
    weeks.push(getWeekDates(currentDate));
   
    const nextWeekDate = new Date(currentDate);
    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
    weeks.push(getWeekDates(nextWeekDate));
-
 
    const nextTwoWeeksDate = new Date(nextWeekDate);
    nextTwoWeeksDate.setDate(nextTwoWeeksDate.getDate() + 7);
@@ -113,7 +116,7 @@ const CalendarView = ({navigation}) => {
 
 
  const [weeks, setWeeks] = useState(() => generateWeeks());
- const [currentWeekIndex, setCurrentWeekIndex] = useState(1); // start with current week
+ const [currentWeekIndex, setCurrentWeekIndex] = useState(4); 
 
 
  // format the week range display
@@ -149,9 +152,10 @@ const CalendarView = ({navigation}) => {
          date.getFullYear() === selectedDate.getFullYear();
  }, [selectedDate]);
 
-
- // handle flatList scroll for weeks
  const handleScroll = useCallback((event) => {
+
+   if (isScrolling) return;
+   
    const contentOffsetX = event.nativeEvent.contentOffset.x;
    const viewSize = event.nativeEvent.layoutMeasurement.width;
    const newIndex = Math.round(contentOffsetX / viewSize);
@@ -159,7 +163,6 @@ const CalendarView = ({navigation}) => {
    if (newIndex !== currentWeekIndex) {
      setCurrentWeekIndex(newIndex);
     
-     // add more weeks if needed
      if (newIndex === weeks.length - 1) {
        // add next week
        const lastWeek = weeks[weeks.length - 1];
@@ -168,11 +171,39 @@ const CalendarView = ({navigation}) => {
        const nextWeek = getWeekDates(nextWeekStart);
        setWeeks(prevWeeks => [...prevWeeks, nextWeek]);
        
-       // updated: fetch meals when adding new weeks
+       // fetch meals when adding new weeks
+       fetchMeals();
+     }
+     
+     // add more weeks if needed when scrolling backward
+     else if (newIndex === 0) {
+
+       setIsScrolling(true);
+       
+       const firstWeek = weeks[0];
+       const prevWeekStart = new Date(firstWeek[0]);
+       prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+       const prevWeek = getWeekDates(prevWeekStart);
+       
+       setWeeks(prevWeeks => [prevWeek, ...prevWeeks]);
+       
+       setTimeout(() => {
+         if (flatListRef.current) {
+           flatListRef.current.scrollToIndex({
+             index: 1,
+             animated: false
+           });
+           
+           setTimeout(() => {
+             setIsScrolling(false);
+           }, 100);
+         }
+       }, 10);
+       
        fetchMeals();
      }
    }
- }, [weeks, currentWeekIndex]);
+ }, [weeks, currentWeekIndex, isScrolling, fetchMeals]);
 
 
  // calculate day column width
@@ -183,34 +214,29 @@ const CalendarView = ({navigation}) => {
    return Math.floor(availableWidth / 7); // divide by 7 days
  }, [screenWidth]);
 
-
- // initial scroll to current week
  useEffect(() => {
    if (flatListRef.current) {
      setTimeout(() => {
        flatListRef.current.scrollToIndex({
-         index: 1, // current week index
+         index: 4, 
          animated: false
        });
      }, 100);
    }
  }, []);
 
-
- // handle scroll failures
  const onScrollToIndexFailed = useCallback(() => {
    setTimeout(() => {
      if (flatListRef.current) {
        flatListRef.current.scrollToIndex({
-         index: 1,
+         index: 4,
          animated: false
        });
      }
    }, 100);
  }, []);
 
-
- // updated: Moved the fetch function outside of useEffect to be reusable
+ // fetch function for meals
  const fetchMeals = useCallback(async () => {
    try {
      const allMeals = await getAllMeals();
@@ -248,7 +274,6 @@ const CalendarView = ({navigation}) => {
      fetchMeals();
      
      // add a refresh interval to periodically check for new meals
-     // this ensures newly scheduled meals will appear without requiring navigation
      const refreshInterval = setInterval(() => {
        fetchMeals();
      }, 60000); // refresh every minute
@@ -278,9 +303,8 @@ const CalendarView = ({navigation}) => {
      const timeStr = meal.time;
      let mealHour, mealMinute;
     
-     // handle format "2:30 PM" or "14:30"
+     // handle format 
      if (timeStr.includes(':')) {
-       // check if it has AM/PM
        if (timeStr.includes('AM') || timeStr.includes('PM')) {
          const [time, period] = timeStr.split(' ');
          [mealHour, mealMinute] = time.split(':').map(Number);
@@ -288,7 +312,6 @@ const CalendarView = ({navigation}) => {
          if (period === 'PM' && mealHour < 12) mealHour += 12;
          if (period === 'AM' && mealHour === 12) mealHour = 0;
        } else {
-         // 24-hour format
          [mealHour, mealMinute] = timeStr.split(':').map(Number);
        }
      } else {
@@ -360,25 +383,24 @@ const CalendarView = ({navigation}) => {
  // get background color for meal based on user's status
  const getMealBackgroundColor = (meal) => {
    if (new Date(meal.date) < new Date()) {
-     return '#f5f5f550'; // past meal (semi-transparent)
+     return '#f5f5f550'; // past meal
    }
 
 
    const status = getUserStatus(meal);
    switch (status) {
      case 'host':
-       return '#2196f380'; // blue with transparency
+       return '#2196f380'; 
      case 'confirmed':
-       return '#4caf5080'; // green with transparency
+       return '#4caf5080'; 
      case 'invited':
-       return '#fbc02d80'; // yellow with transparency
+       return '#fbc02d80'; 
      case 'declined':
-       return '#f4433680'; // red with transparency
+       return '#f4433680';
      default:
-       return '#9e9e9e50'; // grey with transparency
+       return '#9e9e9e50';
    }
  };
-
 
  // get border color for meal based on user's status
  const getMealBorderColor = (meal) => {
@@ -386,22 +408,20 @@ const CalendarView = ({navigation}) => {
      return '#9e9e9e'; // past meal
    }
 
-
    const status = getUserStatus(meal);
    switch (status) {
      case 'host':
-       return '#2196f3'; // blue
+       return '#2196f3';
      case 'confirmed':
-       return '#4caf50'; // green
+       return '#4caf50'; 
      case 'invited':
-       return '#fbc02d'; // yellow
+       return '#fbc02d'; 
      case 'declined':
-       return '#f44336'; // red
+       return '#f44336'; 
      default:
-       return '#9e9e9e'; // grey
+       return '#9e9e9e';
    }
  };
-
 
  // get host name display
  const getHostName = (meal) => {
@@ -423,7 +443,7 @@ const CalendarView = ({navigation}) => {
    return 'Unknown Host';
  };
 
- // added: Manual refresh button
+ // manual refresh button
  const handleRefresh = () => {
    fetchMeals();
    Alert.alert('Calendar Refreshed', 'Your meal calendar has been refreshed.');
@@ -436,37 +456,28 @@ const CalendarView = ({navigation}) => {
      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
     
      <View style={styles.contentContainer}>
-       {/* week header with dates and refresh button */}
        <View style={styles.weekHeader}>
          <Text style={styles.weekRangeText}>
            {formatWeekRange(weeks[currentWeekIndex])}
          </Text>
-         <TouchableOpacity 
-           style={styles.refreshButton} 
-           onPress={handleRefresh}
-         >
-           <MaterialCommunityIcons name="refresh" size={20} color="#5C4D7D" />
-         </TouchableOpacity>
+
        </View>
 
 
-       {/* day labels */}
        <FlatList
          ref={flatListRef}
          horizontal
          pagingEnabled
          showsHorizontalScrollIndicator={false}
          data={weeks}
-         initialScrollIndex={1}
+         initialScrollIndex={4} 
          keyExtractor={(item, index) => `week-${index}`}
          renderItem={({ item: weekDates }) => (
            <View style={[styles.weekContainer, { width: screenWidth }]}>
-             {/* time column label (empty) */}
              <View style={styles.timeColumnHeader}>
                <Text style={styles.timeColumnLabel}></Text>
              </View>
             
-             {/* day labels */}
              {weekDates.map((date, dayIndex) => {
                const dayWidth = getDayWidth();
                return (
@@ -510,8 +521,7 @@ const CalendarView = ({navigation}) => {
          })}
          onScrollToIndexFailed={onScrollToIndexFailed}
        />
-      
-       {/* time slots and schedule grid with meals */}
+
        <ScrollView style={styles.scheduleContainer}>
          {timeSlots.map((slot, index) => (
            <View key={`time-${index}`} style={styles.timeSlotRow}>
@@ -520,7 +530,6 @@ const CalendarView = ({navigation}) => {
                <Text style={styles.timeText}>{slot.time}</Text>
              </View>
             
-             {/* day columns with meals */}
              <View style={styles.dayColumnsContainer}>
                {weeks[currentWeekIndex].map((date, dayIndex) => {
                  const slotMeals = getMealsForSlot(date, slot.hour, slot.minute);
@@ -560,8 +569,6 @@ const CalendarView = ({navigation}) => {
          ))}
        </ScrollView>
 
-
-       {/* selected date display */}
        <View style={styles.selectedDateContainer}>
          <Text style={styles.selectedDateText}>
            {selectedDate.toLocaleDateString('en-US', {
@@ -573,7 +580,6 @@ const CalendarView = ({navigation}) => {
          </Text>
        </View>
       
-       {/* meal details modal */}
        <Modal
          animationType="slide"
          transparent={true}
