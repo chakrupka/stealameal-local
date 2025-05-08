@@ -1,7 +1,5 @@
 import axios from 'axios';
-import { USER_API_URL } from '../configs/api-config';
-
-const BASE_URL = USER_API_URL;
+const BASE_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
 
 export const createUser = async (userData) => {
   // no token is needed as it's a public route
@@ -86,7 +84,7 @@ export const updateUser = async (idToken, userID, updatedUserData) => {
 
 export const updateUserLocation = async (idToken, userID, location) => {
   console.log(`API: Updating location for user ${userID} to ${location}`);
-  
+
   try {
     const response = await axios.patch(
       `${BASE_URL}/users/${userID}/location`,
@@ -99,7 +97,7 @@ export const updateUserLocation = async (idToken, userID, location) => {
         timeout: 10000,
       },
     );
-    
+
     return response.data;
   } catch (error) {
     console.error(
@@ -203,11 +201,11 @@ export const fetchFriendDetails = async (idToken, friendID) => {
         timeout: 10000,
       },
     );
-    
+
     if (response.data.locationUpdatedAt) {
       try {
         const date = new Date(response.data.locationUpdatedAt);
-        
+
         if (isNaN(date.getTime())) {
           delete response.data.locationUpdatedAt;
         } else {
@@ -218,7 +216,7 @@ export const fetchFriendDetails = async (idToken, friendID) => {
         delete response.data.locationUpdatedAt;
       }
     }
-    
+
     return response.data;
   } catch (error) {
     console.error(
@@ -230,7 +228,7 @@ export const fetchFriendDetails = async (idToken, friendID) => {
 };
 export const getFriendRequests = async (idToken, userID) => {
   const response = await axios.get(
-    `${BASE_URL}/users/${userID}/friend-requests`, 
+    `${BASE_URL}/users/${userID}/friend-requests`,
     {
       headers: {
         'Content-Type': 'application/json',
@@ -245,7 +243,7 @@ export const getFriendRequests = async (idToken, userID) => {
 export const fixLocationTimestamps = async (idToken) => {
   try {
     console.log('API: Fixing missing location timestamps');
-    
+
     const response = await axios.post(
       `${BASE_URL}/fix-location-timestamps`,
       {},
@@ -254,10 +252,10 @@ export const fixLocationTimestamps = async (idToken) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
         },
-        timeout: 30000, 
+        timeout: 30000,
       },
     );
-    
+
     console.log('API: Fix response:', response.data);
     return response.data;
   } catch (error) {

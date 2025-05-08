@@ -3,7 +3,7 @@ PODS:
   - DoubleConversion (1.1.6)
   - EXApplication (6.0.2):
     - ExpoModulesCore
-  - EXConstants (17.0.7):
+  - EXConstants (17.0.8):
     - ExpoModulesCore
   - EXImageLoader (5.0.0):
     - ExpoModulesCore
@@ -13,7 +13,7 @@ PODS:
     - ExpoModulesCore
   - EXNotifications (0.29.13):
     - ExpoModulesCore
-  - Expo (52.0.36):
+  - Expo (52.0.46):
     - ExpoModulesCore
   - expo-dev-client (5.0.20):
     - EXManifests
@@ -222,7 +222,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - ExpoAsset (11.0.4):
+  - ExpoAsset (11.0.5):
     - ExpoModulesCore
   - ExpoDevice (7.0.2):
     - ExpoModulesCore
@@ -238,7 +238,7 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (14.0.3):
     - ExpoModulesCore
-  - ExpoModulesCore (2.2.2):
+  - ExpoModulesCore (2.2.3):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2424,24 +2424,24 @@ SPEC CHECKSUMS:
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
   DoubleConversion: f16ae600a246532c4020132d54af21d0ddb2a385
   EXApplication: 4c72f6017a14a65e338c5e74fca418f35141e819
-  EXConstants: 30c43b9ca8391c31bab9cc45c97f16eddcf11042
+  EXConstants: fcfc75800824ac2d5c592b5bc74130bad17b146b
   EXImageLoader: e5da974e25b13585c196b658a440720c075482d5
   EXJSONUtils: 01fc7492b66c234e395dcffdd5f53439c5c29c93
   EXManifests: a19d50504b8826546a4782770317bc83fffec87d
   EXNotifications: a762c9647d87682e9822f5798ca6666b5a81e213
-  Expo: 761b71aa05939776b5ad3ee934619a6957bfe496
+  Expo: a6ff273c618506b12129a0d06f2a08201bfbcf43
   expo-dev-client: db44302cdbe0ec55b0ef1849c9a23a76dec6dbac
   expo-dev-launcher: 792cd1c83fbec4a1a66fe91a0c283368dbad851c
   expo-dev-menu: dd3197d2b0107ee036ffd85f95e75a950ab52ada
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
-  ExpoAsset: 4033893dfb333b444bf45e951351254137b658d5
+  ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
   ExpoDevice: 1662ecdf42a8b5b2cf60ef7cecaf5a297639dd63
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
   ExpoImageManipulator: 4aca9cc1d84e31f62a7e8075c19026d3ad62f852
   ExpoImagePicker: 24e5ba8da111f74519b1e6dc556e0b438b2b8464
   ExpoKeepAwake: b0171a73665bfcefcfcc311742a72a956e6aa680
-  ExpoModulesCore: 70d7925d594149b266d3ec7f97213bd30ec09a32
+  ExpoModulesCore: c25d77625038b1968ea1afefc719862c0d8dd993
   EXUpdatesInterface: 7c977640bdd8b85833c19e3959ba46145c5719db
   fast_float: 06eeec4fe712a76acc9376682e4808b05ce978b6
   FBLazyVector: 7605ea4810e0e10ae4815292433c09bf4324ba45
