@@ -225,8 +225,6 @@ const localStyles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderRadius: 8,
-    borderLeftWidth: 5,
-    borderLeftColor: '#096A2E',
   },
   messageText: {
     color: '#096A2E',
@@ -247,20 +245,21 @@ const localStyles = StyleSheet.create({
   locationValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#6750a4',
     flex: 1,
   },
   updateButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 20,
-    paddingVertical: 6,
+    borderRadius: 10,
+    paddingVertical: 7,
     paddingHorizontal: 15,
   },
   updateButtonText: {
     color: '#5C4D7D',
     fontSize: 14,
+    fontWeight: '600',
   },
   categoryCard: {
     marginBottom: 15,

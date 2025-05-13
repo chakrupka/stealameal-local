@@ -6,8 +6,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  StyleSheet,
 } from 'react-native';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +16,6 @@ import { ImageManipulator } from 'expo-image-manipulator';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import uploadImage from '../services/s3';
 
-// Need to make it so only certain fields are updatable
 const Profile = ({ navigation, route }) => {
   const { currentUser, updateUserInfo } = useStore((state) => state.userSlice);
   const [editing, setEditing] = useState(false);
@@ -130,13 +130,10 @@ const Profile = ({ navigation, route }) => {
           </Text>
           <Text style={styles.profileView.email}>{currentUser?.email}</Text>
           <TouchableOpacity
-            style={[
-              styles.profileView.button,
-              { height: 35, width: 100, marginTop: 30 },
-            ]}
+            style={[styles.profileView.button, localStyles.smallButton]}
             onPress={() => setEditing(true)}
           >
-            <Text style={{ fontSize: 20, color: '#333' }}>Edit</Text>
+            <Text style={localStyles.buttonText}>Edit</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -152,7 +149,7 @@ const Profile = ({ navigation, route }) => {
               />
               {!profilePic.file && (
                 <>
-                  <View style={styles.profileView.editProfilePicShade}></View>
+                  <View style={styles.profileView.editProfilePicShade} />
                   <MaterialCommunityIcons
                     name="account-edit"
                     size={50}
@@ -174,37 +171,28 @@ const Profile = ({ navigation, route }) => {
             value={lastName}
             onChangeText={setLastName}
           />
-          {/* disabling email changes for now- requires verified emails */}
-          {/* <TextInput
-            style={styles.profileView.input}
-            placeholder="Email"
-            value={email}
-            autoCapitalize="none"
-            onChangeText={setEmail}
-          /> */}
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           {loading ? (
             <ActivityIndicator
               size="large"
               color="#096A2E"
-              style={{ marginTop: 15 }}
+              style={localStyles.marginTop15}
             />
           ) : (
             <View style={styles.profileView.editButtons}>
               <TouchableOpacity
-                style={[
-                  styles.profileView.button,
-                  { backgroundColor: 'lightcoral' },
-                ]}
+                style={[styles.profileView.button, localStyles.cancelButton]}
                 onPress={handleStopEditing}
               >
-                <Text style={{ fontSize: 20, color: '#333' }}>Cancel</Text>
+                <Text style={localStyles.buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.profileView.button}
+                style={[styles.profileView.button, localStyles.updateButton]}
                 onPress={handleUpdateAccount}
               >
-                <Text style={{ fontSize: 20, color: '#333' }}>Update</Text>
+                <Text style={[localStyles.buttonText, { color: 'white' }]}>
+                  Update
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -213,5 +201,29 @@ const Profile = ({ navigation, route }) => {
     </View>
   );
 };
+
+const localStyles = StyleSheet.create({
+  smallButton: {
+    height: 35,
+    width: 100,
+    marginTop: 30,
+    ...BOX_SHADOW,
+  },
+  buttonText: {
+    fontSize: 20,
+    color: 'white',
+  },
+  marginTop15: {
+    marginTop: 15,
+  },
+  updateButton: {
+    backgroundColor: '#6750a4',
+    ...BOX_SHADOW,
+  },
+  cancelButton: {
+    backgroundColor: 'lightcoral',
+    ...BOX_SHADOW,
+  },
+});
 
 export default Profile;

@@ -168,22 +168,24 @@ const localStyles = StyleSheet.create({
   contentContainer: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 30,
+
+    gap: 15,
   },
   locationCard: {
     width: '100%',
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
-    padding: 20,
-    marginVertical: 10,
+    padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 1,
+    borderWidth: 2,
+    borderColor: 'white',
   },
   selectedCard: {
-    backgroundColor: '#e6f2e9',
+    backgroundColor: '#e9e6ff',
     borderWidth: 2,
-    borderColor: '#096A2E',
+    borderColor: '#6750a4',
     elevation: 3,
   },
   iconContainer: {
@@ -192,18 +194,17 @@ const localStyles = StyleSheet.create({
   locationName: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 0,
   },
   buttonContainer: {
     width: '100%',
-    marginTop: 20,
+    marginTop: 10,
     alignItems: 'center',
   },
   updateButton: {
     width: '80%',
-    padding: 5,
-    borderRadius: 30,
-    backgroundColor: 'rgba(174,207,117,0.75)',
+    borderRadius: 15,
+    backgroundColor: '#6750a4',
   },
   buttonLabel: {
     fontSize: 16,

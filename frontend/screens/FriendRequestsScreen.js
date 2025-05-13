@@ -1,9 +1,16 @@
 import React, { useEffect } from 'react';
-import { SafeAreaView, View, FlatList, ActivityIndicator } from 'react-native';
+import {
+  SafeAreaView,
+  View,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Text, Avatar, Button, Card } from 'react-native-paper';
 import useStore from '../store';
 import styles from '../styles';
 import TopNav from '../components/TopNav';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const extractUserIdFromToken = (token) => {
   try {
@@ -41,7 +48,6 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     fetchFriendRequests,
     acceptRequest,
     declineRequest,
-    refreshUserProfile,
   } = userSlice;
 
   let userID = currentUser?.userID;
@@ -86,29 +92,8 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     return unsubscribe;
   }, [navigation, idToken, userID]);
 
-  if (!userSlice.isLoggedIn) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav navigation={navigation} title="Friend Requests" />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ fontSize: 16, marginBottom: 20 }}>
-            Please log in to view friend requests
-          </Text>
-          <Button mode="contained" onPress={() => navigation.navigate('Login')}>
-            Go to Login
-          </Button>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const handleAccept = async (senderID) => {
-    const result = await acceptRequest({
+    await acceptRequest({
       idToken,
       userID,
       senderID,
@@ -121,19 +106,16 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   if (status === 'loading') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, localStyles.fullWidth]}>
         <TopNav navigation={navigation} title="Friend Requests" />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
+        <View style={[styles.content, localStyles.centerContent]}>
           <ActivityIndicator
             size="large"
             color={styles.COLORS?.primary || '#096A2E'}
           />
-          <Text style={{ marginTop: 20 }}>Loading friend requests...</Text>
+          <Text style={localStyles.loadingText}>
+            Loading friend requests...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -141,15 +123,10 @@ const FriendRequestsScreen = ({ navigation, route }) => {
 
   if (status === 'failed') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, localStyles.fullWidth]}>
         <TopNav navigation={navigation} title="Friend Requests" />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: 'red', marginBottom: 20 }}>Error: {error}</Text>
+        <View style={[styles.content, localStyles.centerContent]}>
+          <Text style={localStyles.errorText}>Error: {error}</Text>
           <Button
             mode="contained"
             onPress={() => {
@@ -165,63 +142,72 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     );
   }
 
-  const renderRequest = ({ item, index }) => {
+  const renderRequest = ({ item }) => {
     return (
-      <Card style={styles.userCard}>
-        <View style={styles.userCardInfo}>
-          {!item.senderProfilePic ? (
-            <Avatar.Text
-              size={40}
-              label={
-                item.senderName ? item.senderName.charAt(0).toUpperCase() : '?'
-              }
-            />
-          ) : (
-            <Avatar.Image size={40} source={{ uri: item.senderProfilePic }} />
-          )}
-          <View style={styles.userCardText}>
-            <Text style={styles.userName}>
-              {item.senderName || 'Unknown User'}
-            </Text>
-            <Text style={styles.userEmail}>
-              {item.senderEmail || 'No email'}
-            </Text>
+      <Card style={[styles.userCard, { width: '100%' }]}>
+        <View style={localStyles.headerRow}>
+          <View style={[styles.userCardInfo, localStyles.cardInfoRow]}>
+            {!item.senderProfilePic ? (
+              <Avatar.Text
+                size={40}
+                label={
+                  item.senderName
+                    ? item.senderName.charAt(0).toUpperCase()
+                    : '?'
+                }
+              />
+            ) : (
+              <Avatar.Image size={40} source={{ uri: item.senderProfilePic }} />
+            )}
+            <View style={[styles.userCardText, localStyles.cardTextFullWidth]}>
+              <Text style={styles.userName}>
+                {item.senderName || 'Unknown User'}
+              </Text>
+              <Text
+                style={[styles.userEmail, localStyles.cardTextFullWidth]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.senderEmail || 'No email'}
+              </Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.buttonGroup}>
-          <Button
-            mode="contained"
-            onPress={() => handleAccept(item.senderID)}
-            color="#096A2E"
-            style={styles.acceptButton}
-          >
-            Accept
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => handleDecline(item.senderID)}
-            color="#FF3B30"
-            style={styles.declineButton}
-          >
-            Decline
-          </Button>
+          <View style={localStyles.actionButtonsRow}>
+            <Button
+              onPress={() => handleDecline(item.senderID)}
+              style={localStyles.actionButton}
+              compact
+              labelStyle={localStyles.actionButtonLabel}
+            >
+              <MaterialIcons name="person-off" size={35} color={'gray'} />
+            </Button>
+            <Button
+              onPress={() => handleAccept(item.senderID)}
+              style={localStyles.actionButton}
+              compact
+              labelStyle={localStyles.actionButtonLabel}
+            >
+              <MaterialIcons name="person-add-alt-1" size={35} />
+            </Button>
+          </View>
         </View>
       </Card>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, localStyles.fullWidth]}>
       <TopNav navigation={navigation} title="Friend Requests" />
-      <View style={styles.content}>
+      <View
+        style={[
+          styles.content,
+          localStyles.fullWidth,
+          localStyles.noPaddingHorizontal,
+        ]}
+      >
         {!friendRequests || friendRequests.length === 0 ? (
-          <View
-            style={[
-              styles.content,
-              { justifyContent: 'center', alignItems: 'center' },
-            ]}
-          >
-            <Text style={{ fontSize: 16, marginBottom: 20 }}>
+          <View style={[styles.content, localStyles.centerContent]}>
+            <Text style={localStyles.text16MarginBottom20}>
               No friend requests at the moment.
             </Text>
             <Button
@@ -241,8 +227,9 @@ const FriendRequestsScreen = ({ navigation, route }) => {
             keyExtractor={(item, index) => item.senderID || `request-${index}`}
             renderItem={renderRequest}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.resultsContentContainer}
+            contentContainerStyle={localStyles.flatlistContent}
             refreshing={status === 'loading'}
+            style={localStyles.fullWidth}
             onRefresh={() => {
               if (idToken && userID) {
                 fetchFriendRequests({ idToken, userID });
@@ -254,5 +241,58 @@ const FriendRequestsScreen = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
+
+const localStyles = StyleSheet.create({
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 20,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '65%',
+  },
+  cardTextFullWidth: {
+    width: '100%',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginRight: -10,
+  },
+  actionButton: {
+    width: 55,
+    height: 55,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonLabel: {
+    lineHeight: 35,
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  noPaddingHorizontal: {
+    paddingHorizontal: 0,
+  },
+  flatlistContent: {
+    alignItems: 'center',
+    paddingHorizontal: 25,
+  },
+});
 
 export default FriendRequestsScreen;

@@ -125,7 +125,7 @@ export default function Login({ navigation, route }) {
         onBackPress={handleBackPress}
       />
 
-      <Text style={styles.loginHeader}>Log In</Text>
+      {/* <Text style={styles.loginHeader}>Log In</Text> */}
 
       <View style={styles.loginInputContainer}>
         <TextInput
@@ -154,12 +154,12 @@ export default function Login({ navigation, route }) {
         <ActivityIndicator size="large" color="#096A2E" />
       ) : (
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text>Log In</Text>
+          <Text style={{ color: 'white', fontWeight: '600' }}>Log In</Text>
         </TouchableOpacity>
       )}
 
       <Image
-        source={require('../assets/raccoonnobackground.png')}
+        source={require('../assets/raccoon.png')}
         style={styles.createAccountLogo}
       />
     </View>
