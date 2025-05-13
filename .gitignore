@@ -42,3 +42,4 @@ yarn-error.*
 android/
 
 .xcode.env.local
+project.pbxproj
