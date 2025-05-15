@@ -40,6 +40,7 @@
     "react-native-vector-icons": "^10.2.0",
     "react-redux": "^9.2.0",
     "zustand": "^5.0.3",
+    "expo-linear-gradient": "~14.0.2",
     "expo-image-manipulator": "~13.0.6"
   },
   "devDependencies": {

@@ -10,9 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { Button, List, Checkbox, Text, Avatar } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useStore from '../store';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 import TopNav from '../components/TopNav';
 import { fetchFriendDetails } from '../services/user-api';
 import { sendPing } from '../services/ping-api';
@@ -508,7 +507,6 @@ export default function PingFriends({ navigation, route }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -555,9 +553,6 @@ export default function PingFriends({ navigation, route }) {
         <TopNav navigation={navigation} title="Ping Friends" />
         <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
-          <View style={localStyles.headerContainer}>
-            <Text style={localStyles.headerText}>PING FRIENDS</Text>
-          </View>
           <Text style={localStyles.subheaderText}>
             Select friends or squads to ping.
           </Text>
@@ -585,10 +580,6 @@ export default function PingFriends({ navigation, route }) {
       <View style={{ height: 50 }} />
 
       <View style={localStyles.contentContainer}>
-        <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>PING FRIENDS</Text>
-        </View>
-
         <Text style={localStyles.subheaderText}>
           Select friends or squads to ping.
         </Text>
@@ -597,6 +588,7 @@ export default function PingFriends({ navigation, route }) {
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.leftTab,
               activeTab === 'friends' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('friends')}
@@ -610,9 +602,11 @@ export default function PingFriends({ navigation, route }) {
               Friends
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.rightTab,
               activeTab === 'squads' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('squads')}
@@ -675,20 +669,15 @@ export default function PingFriends({ navigation, route }) {
       </View>
 
       <View style={localStyles.bottomContainer}>
-        <TouchableOpacity
-          style={[
-            localStyles.pingButton,
-            selectedFriends.length === 0 && selectedSquads.length === 0
-              ? { opacity: 0.5 }
-              : {},
-          ]}
-          onPress={handleSendPing}
+        <Button
+          mode="contained"
           disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
+          style={localStyles.pingButton}
+          onPress={handleSendPing}
+          labelStyle={{ fontSize: 16 }}
         >
-          <Text style={localStyles.pingButtonLabel}>
-            Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
-          </Text>
-        </TouchableOpacity>
+          Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
+        </Button>
       </View>
     </SafeAreaView>
   );
@@ -699,49 +688,49 @@ const localStyles = StyleSheet.create({
     flex: 1,
     width: '100%',
     paddingTop: 5,
-  },
-  headerContainer: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#000',
-    padding: 10,
     alignItems: 'center',
-    marginBottom: 5,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '400',
+    marginBottom: 15,
+    gap: 5,
   },
   subheaderText: {
     textAlign: 'center',
     fontSize: 16,
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 10,
   },
   tabContainer: {
     flexDirection: 'row',
+    width: '100%',
     marginBottom: 10,
-    paddingHorizontal: 20,
+    borderRadius: 10,
+    paddingHorizontal: '12.5%',
+    overflow: 'hidden',
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f8ff',
     borderWidth: 1,
     borderColor: '#ddd',
   },
+  leftTab: {
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  rightTab: {
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
   activeTab: {
-    backgroundColor: '#E8F5D9',
-    borderBottomWidth: 2,
-    borderBottomColor: '#5C4D7D',
+    backgroundColor: '#e9e6ff',
   },
   tabText: {
     fontWeight: '500',
     color: '#555',
   },
   activeTabText: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontWeight: 'bold',
   },
   buttonRow: {
@@ -752,17 +741,15 @@ const localStyles = StyleSheet.create({
     paddingVertical: 5,
     backgroundColor: 'white',
     zIndex: 1,
-    marginBottom: 10,
   },
   listContainer: {
     flex: 1,
-    width: '100%',
+    width: '90%',
     overflow: 'visible',
   },
   sendButton: {
     width: 100,
     height: 52,
-    backgroundColor: 'rgba(174,207,117,0.75)',
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
@@ -783,29 +770,15 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: '#f8f8ff',
   },
   selectedItem: {
-    backgroundColor: '#A4C67D',
-  },
-  bottomContainer: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#CBDBA7',
-    alignItems: 'center',
+    backgroundColor: '#e9e6ff',
   },
   pingButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#5C4D7D',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pingButtonLabel: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    borderRadius: 15,
+    padding: 5,
+    ...BOX_SHADOW,
   },
   emptyContainer: {
     flex: 1,

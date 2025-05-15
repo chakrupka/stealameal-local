@@ -230,12 +230,14 @@ export default function CreateAccount({ navigation }) {
           style={styles.createAccountButton}
           onPress={handleCreateAccount}
         >
-          <Text>Create Account</Text>
+          <Text style={{ color: 'white', fontWeight: '600' }}>
+            Create Account
+          </Text>
         </TouchableOpacity>
       )}
 
       <Image
-        source={require('../assets/raccoonnobackground.png')}
+        source={require('../assets/raccoon.png')}
         style={styles.createAccountLogo}
       />
     </View>
