@@ -4,7 +4,6 @@
     "slug": "project-stealameal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "entryPoint": "./index.js",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -28,6 +27,9 @@
         "projectId": "99ef029b-1913-4675-ac37-049eaabc46ac"
       }
     },
-    "owner": "stealameal"
+    "owner": "stealameal",
+    "android": {
+      "package": "com.cosc98.stealameal"
+    }
   }
 }

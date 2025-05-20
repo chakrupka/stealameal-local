@@ -10,7 +10,6 @@ import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator } from 'expo-image-manipulator';
 import styles, { FILL_HEIGHT_WIDTH, FLEX_ROW_CENTER } from '../styles';
-import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 import { signInUser } from '../services/firebase-auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -59,6 +58,7 @@ export default function CreateAccount({ navigation }) {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      z,
     });
     if (result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
@@ -105,13 +105,16 @@ export default function CreateAccount({ navigation }) {
         profilePic: profilePicUrl,
       };
 
-      const response = await fetch(`${USER_API_URL}/auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
         },
-        body: JSON.stringify(userData),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -227,12 +230,14 @@ export default function CreateAccount({ navigation }) {
           style={styles.createAccountButton}
           onPress={handleCreateAccount}
         >
-          <Text>Create Account</Text>
+          <Text style={{ color: 'white', fontWeight: '600' }}>
+            Create Account
+          </Text>
         </TouchableOpacity>
       )}
 
       <Image
-        source={require('../assets/raccoonnobackground.png')}
+        source={require('../assets/raccoon.png')}
         style={styles.createAccountLogo}
       />
     </View>

@@ -17,12 +17,10 @@ import {
   Button,
   TextInput,
   RadioButton,
-  Checkbox,
-  Divider,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
@@ -254,11 +252,6 @@ export default function ScheduleMeal({ navigation, route }) {
     >
       <View style={localStyles.squadHeader}>
         <Text style={localStyles.squadName}>{item.squadName}</Text>
-        <Checkbox
-          status={selectedSquads.includes(item._id) ? 'checked' : 'unchecked'}
-          onPress={() => toggleSquadSelection(item._id)}
-          color="#5C4D7D"
-        />
       </View>
       <Text style={localStyles.squadMembersCount}>
         {item.members.length} members
@@ -317,6 +310,7 @@ export default function ScheduleMeal({ navigation, route }) {
       Alert.alert('Error', 'Please select at least one friend or squad');
       return;
     }
+
     setShowDetailsModal(true);
   };
 
@@ -364,6 +358,7 @@ export default function ScheduleMeal({ navigation, route }) {
       setSelectedFriends([]);
       setSelectedSquads([]);
       setLocation(LOCATION_OPTIONS[0]);
+      setShowDatePicker(false);
       setNotes('');
 
       Alert.alert('Success', `Meal "${mealName}" scheduled successfully`, [
@@ -381,19 +376,6 @@ export default function ScheduleMeal({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const scheduleNow = () => {
-    if (selectedFriends.length === 0 && selectedSquads.length === 0) {
-      Alert.alert('Error', 'Please select at least one friend or squad');
-      return;
-    }
-
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 30);
-    setSelectedDate(now);
-    setSelectedTime(now);
-    setShowDetailsModal(true);
   };
 
   const renderLocationOption = (locationName) => (
@@ -420,7 +402,7 @@ export default function ScheduleMeal({ navigation, route }) {
             .toUpperCase()}${timeOfDay.slice(1)} at ${locationName}`;
           setMealName(defaultName);
         }}
-        color="#5C4D7D"
+        color="#6750a4"
       />
       <Text style={localStyles.locationOptionText}>{locationName}</Text>
     </TouchableOpacity>
@@ -437,7 +419,7 @@ export default function ScheduleMeal({ navigation, route }) {
             { justifyContent: 'center', alignItems: 'center' },
           ]}
         >
-          <ActivityIndicator size="large" color="#5C4D7D" />
+          <ActivityIndicator size="large" color="#6750a4" />
           <Text style={{ marginTop: 20 }}>Loading...</Text>
         </View>
       </SafeAreaView>
@@ -449,10 +431,6 @@ export default function ScheduleMeal({ navigation, route }) {
       <TopNav navigation={navigation} title="Schedule Meal" />
       <View style={{ height: 50 }} />
       <View style={localStyles.contentContainer}>
-        <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>MEAL</Text>
-        </View>
-
         <Text style={localStyles.subheaderText}>
           Select friends or squads to schedule a meal with.
         </Text>
@@ -461,6 +439,7 @@ export default function ScheduleMeal({ navigation, route }) {
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.leftTab,
               activeTab === 'friends' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('friends')}
@@ -474,9 +453,11 @@ export default function ScheduleMeal({ navigation, route }) {
               Friends
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.rightTab,
               activeTab === 'squads' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('squads')}
@@ -489,35 +470,6 @@ export default function ScheduleMeal({ navigation, route }) {
             >
               Squads
             </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={localStyles.actionButtonsContainer}>
-          <TouchableOpacity
-            style={localStyles.dateTimeButton}
-            onPress={showMealDetails}
-          >
-            <Text style={localStyles.dateTimeText}>Date/Time</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              localStyles.sendButton,
-              selectedFriends.length === 0 &&
-                selectedSquads.length === 0 &&
-                localStyles.disabledButton,
-            ]}
-            disabled={
-              selectedFriends.length === 0 && selectedSquads.length === 0
-            }
-            onPress={showMealDetails}
-          >
-            <Text style={localStyles.sendText}>Send</Text>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={20}
-              color="#5C4D7D"
-            />
           </TouchableOpacity>
         </View>
 
@@ -550,21 +502,24 @@ export default function ScheduleMeal({ navigation, route }) {
             />
           )}
         </View>
-      </View>
-
-      <View style={localStyles.bottomButton}>
-        <TouchableOpacity
-          style={[
-            localStyles.scheduleNowButton,
-            selectedFriends.length === 0 &&
-              selectedSquads.length === 0 &&
-              localStyles.disabledButton,
-          ]}
-          onPress={scheduleNow}
-          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
-        >
-          <Text style={localStyles.scheduleNowText}>Schedule Meal Now</Text>
-        </TouchableOpacity>
+        <View style={localStyles.actionButtonsContainer}>
+          <TouchableOpacity
+            style={[
+              localStyles.dateTimeButton,
+              selectedFriends.length === 0 && selectedSquads.length === 0
+                ? localStyles.dtbInactive
+                : localStyles.dtbActive,
+            ]}
+            onPress={showMealDetails}
+          >
+            <Text style={localStyles.dateTimeText}>Schedule Meal</Text>
+            <MaterialCommunityIcons
+              name="arrow-right"
+              size={20}
+              style={localStyles.arrowRight}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {Platform.OS === 'android' && showDatePicker && (
@@ -598,10 +553,14 @@ export default function ScheduleMeal({ navigation, route }) {
             <ScrollView style={localStyles.modalScroll}>
               <Text style={localStyles.modalLabel}>Meal Name:</Text>
               <TextInput
-                style={localStyles.textInput}
                 placeholder="Give your meal a name"
                 value={mealName}
                 onChangeText={setMealName}
+                style={localStyles.textInput}
+                contentStyle={localStyles.textInputContent}
+                outlineStyle={localStyles.textInputBorder}
+                mode="outlined"
+                dense
               />
 
               <Text style={localStyles.modalLabel}>Date:</Text>
@@ -690,12 +649,16 @@ export default function ScheduleMeal({ navigation, route }) {
 
               <Text style={localStyles.modalLabel}>Notes (optional):</Text>
               <TextInput
-                style={[localStyles.textInput, localStyles.textArea]}
+                style={[localStyles.textInput, { height: 80 }]}
+                contentStyle={localStyles.textInputContent}
+                outlineStyle={localStyles.textInputBorder}
                 placeholder="Add notes about the meal"
                 value={notes}
                 onChangeText={setNotes}
                 multiline={true}
                 numberOfLines={4}
+                mode="outlined"
+                dense
               />
 
               {selectedFriends.length > 0 && (
@@ -743,16 +706,16 @@ export default function ScheduleMeal({ navigation, route }) {
               <Button
                 mode="outlined"
                 onPress={() => setShowDetailsModal(false)}
-                style={localStyles.cancelButton}
+                style={localStyles.modalButton}
               >
                 Cancel
               </Button>
               <Button
                 mode="contained"
                 onPress={scheduleMeal}
-                style={localStyles.scheduleButton}
+                style={localStyles.modalButton}
                 loading={loading}
-                disabled={!mealName}
+                disabled={!mealName || showDatePicker || showTimePicker}
               >
                 Schedule Meal
               </Button>
@@ -766,94 +729,88 @@ export default function ScheduleMeal({ navigation, route }) {
 
 const localStyles = StyleSheet.create({
   contentContainer: {
-    flex: 1,
-    width: '100%',
-    paddingTop: 5,
-  },
-  headerContainer: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#000',
-    padding: 10,
     alignItems: 'center',
-    marginBottom: 5,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '400',
+    width: '100%',
+    minHeight: '100%',
+    gap: 5,
   },
   subheaderText: {
     textAlign: 'center',
     fontSize: 16,
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 10,
   },
   tabContainer: {
     flexDirection: 'row',
+    width: '75%',
     marginBottom: 10,
-    paddingHorizontal: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#ddd',
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f8ff',
     borderWidth: 1,
     borderColor: '#ddd',
   },
+  leftTab: {
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  rightTab: {
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
   activeTab: {
-    backgroundColor: '#E8F5D9',
-    borderBottomWidth: 2,
-    borderBottomColor: '#5C4D7D',
+    backgroundColor: '#e9e6ff',
   },
   tabText: {
     fontWeight: '500',
     color: '#555',
   },
   activeTabText: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontWeight: 'bold',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginBottom: 10,
-    width: '100%',
   },
   dateTimeButton: {
-    backgroundColor: '#CBDBA7',
     paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    flex: 1,
-    marginRight: 10,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    marginTop: 5,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 5,
+  },
+  dtbInactive: {
+    backgroundColor: 'lightgray',
+    pointerEvents: 'none',
+  },
+  dtbActive: {
+    backgroundColor: '#6750a4',
+    ...BOX_SHADOW,
   },
   dateTimeText: {
     fontSize: 16,
-    color: '#000',
+    color: 'white',
+    fontWeight: '500',
   },
-  sendButton: {
-    backgroundColor: '#E8F5D9',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendText: {
-    fontSize: 16,
-    color: '#5C4D7D',
-    marginRight: 5,
-  },
-  disabledButton: {
-    opacity: 0.5,
+  arrowRight: {
+    paddingLeft: 5,
+    color: 'white',
   },
   friendsList: {
-    flex: 1,
     width: '100%',
+    borderRadius: 10,
   },
   friendsListContent: {
     paddingHorizontal: 0,
@@ -861,18 +818,14 @@ const localStyles = StyleSheet.create({
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#CBDBA7',
+    backgroundColor: '#f8f8ff',
     paddingVertical: 10,
     paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
   squadItem: {
-    backgroundColor: '#CBDBA7',
-    paddingVertical: 10,
+    backgroundColor: '#f8f8ff',
+    paddingVertical: 12,
     paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
   squadHeader: {
     flexDirection: 'row',
@@ -886,19 +839,16 @@ const localStyles = StyleSheet.create({
   squadMembersCount: {
     fontSize: 14,
     color: '#555',
-    marginTop: 5,
+    marginVertical: 5,
   },
   selectedItem: {
-    backgroundColor: '#A4C67D',
+    backgroundColor: '#e9e6ff',
   },
   avatarContainer: {
     marginRight: 15,
   },
   avatar: {
     backgroundColor: 'white',
-  },
-  friendInfo: {
-    flex: 1,
   },
   friendName: {
     fontSize: 16,
@@ -921,7 +871,7 @@ const localStyles = StyleSheet.create({
   },
   scheduleNowText: {
     fontSize: 16,
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   modalOverlay: {
     flex: 1,
@@ -931,72 +881,72 @@ const localStyles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 15,
     padding: 20,
     width: '90%',
-    maxHeight: '80%',
+    height: '65%',
+    justifyContent: 'space-between',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
     textAlign: 'center',
   },
   modalScroll: {
-    maxHeight: 400,
+    maxHeight: '90%%',
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: 15,
     marginBottom: 5,
   },
   inputField: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 10,
     padding: 10,
-    marginBottom: 10,
   },
   textInput: {
+    height: 40,
+  },
+  textInputContent: {
+    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingLeft: 10,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+  textInputBorder: {
+    borderRadius: 10,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
     marginTop: 20,
   },
-  cancelButton: {
+  modalButton: {
     flex: 1,
-    marginRight: 10,
-  },
-  scheduleButton: {
-    flex: 1,
-    marginLeft: 10,
-    backgroundColor: '#5C4D7D',
+    borderRadius: 15,
+    ...BOX_SHADOW,
   },
   selectedList: {
+    paddingTop: 10,
     marginBottom: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 10,
   },
   selectedItemChip: {
-    backgroundColor: '#A4C67D',
-    borderRadius: 15,
+    backgroundColor: '#e9e6ff',
+    borderRadius: 10,
     paddingVertical: 5,
     paddingHorizontal: 10,
-    margin: 5,
+    marginVertical: -5,
   },
   locationOptionsContainer: {
-    marginBottom: 15,
+    marginBottom: 5,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
@@ -1027,7 +977,7 @@ const localStyles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   pickerContainer: {
     backgroundColor: 'white',
@@ -1036,6 +986,7 @@ const localStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     marginBottom: 15,
+    marginTop: 5,
   },
   pickerHeader: {
     flexDirection: 'row',
@@ -1050,20 +1001,18 @@ const localStyles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pickerCancel: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontSize: 16,
   },
   pickerDone: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  picker: {
-    height: 200,
-    width: '100%',
-  },
   listContainer: {
-    flex: 1,
-    width: '100%',
+    width: '90%',
+    maxHeight: '70%',
+    borderRadius: 15,
+    marginBottom: 10,
   },
 });
