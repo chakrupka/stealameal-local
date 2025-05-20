@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import TopNav from '../components/TopNav';
@@ -6,12 +6,15 @@ import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
 import MapMarker from '../components/MapMarker';
 import { Avatar } from 'react-native-paper';
+import { Polygon } from 'react-native-maps';
 
 export default function CampusMap({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [friendsByLocation, setFriendsByLocation] = useState({});
 
   const currentUser = useStore((state) => state.userSlice.currentUser);
+
+  const mapRef = useRef(null);
 
   const locationCoordinates = {
     foco: { latitude: 43.7030422, longitude: -72.2909885 },
@@ -20,6 +23,71 @@ export default function CampusMap({ navigation, route }) {
     fern: { latitude: 43.70488, longitude: -72.294709 },
     novack: { latitude: 43.7057, longitude: -72.2887 },
     ghost: null,
+  };
+
+  const bounding_box = {
+    //43.711009915839725, -72.27567996401395
+    northEast: {
+      latitude: 43.711009915839725,
+      longitude: -72.27567996401395,
+    },
+    //43.69552859480068, -72.3029097501126
+    southWest: {
+      latitude: 43.69552859480068,
+      longitude: -72.3029097501126,
+    },
+  };
+  const max_delta = 0.03;
+  const centerLat =
+    (bounding_box.northEast.latitude + bounding_box.southWest.latitude) / 2;
+  const centerLng =
+    (bounding_box.northEast.longitude + bounding_box.southWest.longitude) / 2;
+
+  const clamp = (val, lower, upper) => Math.max(lower, Math.min(val, upper));
+
+  const handleRegionChangeComplete = (region) => {
+    const { latitude, longitude, latitudeDelta, longitudeDelta } = region;
+
+    const isZoomTooFar =
+      latitudeDelta > max_delta || longitudeDelta > max_delta;
+
+    if (isZoomTooFar && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: centerLat,
+          longitude: centerLng,
+          latitudeDelta: max_delta,
+          longitudeDelta: max_delta,
+        },
+        300,
+      );
+      return;
+    }
+
+    const clampedLat = clamp(
+      latitude,
+      bounding_box.southWest.latitude,
+      bounding_box.northEast.latitude,
+    );
+    const clampedLng = clamp(
+      longitude,
+      bounding_box.southWest.longitude,
+      bounding_box.northEast.longitude,
+    );
+
+    const isOutOfBounds = clampedLat !== latitude || clampedLng !== longitude;
+
+    if (isOutOfBounds && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: clampedLat,
+          longitude: clampedLng,
+          latitudeDelta,
+          longitudeDelta,
+        },
+        300,
+      );
+    }
   };
 
   const locationNames = {
@@ -258,14 +326,16 @@ export default function CampusMap({ navigation, route }) {
         </View>
       ) : (
         <MapView
+          ref={mapRef}
           style={styles.map}
           initialRegion={{
-            latitude: 43.7044,
-            longitude: -72.2887,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
+            latitude: 43.7032692553202,
+            longitude: -72.28929485706327,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
           }}
           mapType="hybrid"
+          onRegionChangeComplete={handleRegionChangeComplete}
         >
           <Marker
             coordinate={locationCoordinates.foco}
