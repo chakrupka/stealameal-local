@@ -15,7 +15,13 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "distribution": "app-store",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://stealameal-backend.onrender.com"
+      }
     },
     "development-simulator": {
       "developmentClient": true,
