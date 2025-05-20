@@ -6,11 +6,13 @@ import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
 import MapMarker from '../components/MapMarker';
 import { Avatar } from 'react-native-paper';
+import { useLocation } from '../contexts/LocationContext';
 import { Polygon } from 'react-native-maps';
 
 export default function CampusMap({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [friendsByLocation, setFriendsByLocation] = useState({});
+  const { updateLocationInBackground } = useLocation();
 
   const currentUser = useStore((state) => state.userSlice.currentUser);
 
@@ -134,6 +136,16 @@ export default function CampusMap({ navigation, route }) {
 
     return lowerCase;
   };
+
+  useEffect(() => {
+    updateLocationInBackground();
+
+    const locationTimer = setInterval(() => {
+      updateLocationInBackground();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(locationTimer);
+  }, []);
 
   useEffect(() => {
     const loadFriendLocations = async () => {
