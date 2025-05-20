@@ -235,11 +235,6 @@ export default function CreateAccount({ navigation }) {
           </Text>
         </TouchableOpacity>
       )}
-
-      <Image
-        source={require('../assets/raccoon.png')}
-        style={styles.createAccountLogo}
-      />
     </View>
   );
 }

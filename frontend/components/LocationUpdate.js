@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   updateButton: {
     marginTop: 20,
     paddingVertical: 8,
-    backgroundColor: '#5C4D7D',
+    backgroundColor: '#6750a4',
   },
   errorText: {
     color: 'red',

@@ -144,7 +144,7 @@ export default StyleSheet.create({
   createAccountContainer: {
     ...FLEX_COL_CENTER,
     ...FILL_HEIGHT_WIDTH,
-    paddingTop: '50%',
+    paddingBottom: 75,
     backgroundColor: COLORS.white,
     gap: 20,
   },
@@ -193,10 +193,10 @@ export default StyleSheet.create({
   },
 
   loginContainer: {
-    paddingTop: 100,
     ...FLEX_COL_CENTER,
     ...FILL_HEIGHT_WIDTH,
     backgroundColor: COLORS.white,
+    paddingBottom: 75,
     gap: 20,
   },
 
@@ -644,11 +644,11 @@ export default StyleSheet.create({
     fontWeight: 'bold',
   },
   pickerCancel: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontSize: 16,
   },
   pickerDone: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontSize: 16,
     fontWeight: 'bold',
   },

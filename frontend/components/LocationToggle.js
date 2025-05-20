@@ -73,7 +73,7 @@ export default function LocationToggle() {
           onValueChange={handleToggle}
           disabled={isTogglingLocation}
           trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={isTracking ? '#5C4D7D' : '#f4f3f4'}
+          thumbColor={isTracking ? '#6750a4' : '#f4f3f4'}
         />
       </View>
 
