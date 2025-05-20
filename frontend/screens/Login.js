@@ -147,6 +147,7 @@ export default function Login({ navigation, route }) {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleLogin}
         />
       </View>
 

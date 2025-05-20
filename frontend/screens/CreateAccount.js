@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import { ImageManipulator } from 'expo-image-manipulator';
+import * as ImageManipulator from 'expo-image-manipulator';
 import styles, { FILL_HEIGHT_WIDTH, FLEX_ROW_CENTER } from '../styles';
 import TopNav from '../components/TopNav';
 import { signInUser } from '../services/firebase-auth';
@@ -53,28 +53,24 @@ export default function CreateAccount({ navigation }) {
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
-      z,
     });
-    if (result.assets && result.assets.length > 0) {
+
+    if (!result.canceled && result.assets?.length) {
       const asset = result.assets[0];
-      const context = ImageManipulator.manipulate(asset.uri);
-      context.resize({ width: 800 });
-      const image = await context.renderAsync();
-      const { uri } = await image.saveAsync({
-        format: 'jpeg',
-        compress: 0.6,
-      });
+      const manipResult = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      const uri = manipResult.uri;
       const fileName = `${uri.split('/').pop().split('.')[0]}.jpeg`;
-      const file = {
-        uri,
-        name: fileName,
-        type: 'image/jpeg',
-      };
+      const file = { uri, name: fileName, type: 'image/jpeg' };
+
       setProfilePic({
         fileName,
         preview: uri,
@@ -89,9 +85,7 @@ export default function CreateAccount({ navigation }) {
     try {
       setLoading(true);
       setError('');
-
       await logout();
-      console.log('Logged out any existing user');
 
       const profilePicUrl = profilePic
         ? await uploadImage(profilePic.file)
@@ -109,9 +103,7 @@ export default function CreateAccount({ navigation }) {
         `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userData),
         },
       );
@@ -121,28 +113,14 @@ export default function CreateAccount({ navigation }) {
         throw new Error(errorData.error || 'Failed to create account');
       }
 
-      const newUserData = await response.json();
-      console.log('Account created successfully:', newUserData);
-
-      console.log('Attempting to log in with new account');
-
+      await response.json();
       const idToken = await signInUser(email, password);
-      console.log('Obtained ID Token for new user:', idToken);
 
-      const loginResult = await login({
-        email,
-        password,
-        idToken,
-      });
+      const loginResult = await login({ email, password, idToken });
 
-      if (loginResult.success) {
-        console.log('Successfully logged in as new user');
-        navigation.navigate('WhatNow');
-      } else {
-        setError(loginResult.error || 'Login after account creation failed');
-      }
+      if (loginResult.success) navigation.navigate('WhatNow');
+      else setError(loginResult.error || 'Login after account creation failed');
     } catch (err) {
-      console.error('Error creating account:', err.message);
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
@@ -166,11 +144,12 @@ export default function CreateAccount({ navigation }) {
                 name="account-edit"
                 color="lightgrey"
                 size={50}
-              ></MaterialCommunityIcons>
+              />
             </View>
           )}
         </TouchableOpacity>
       </View>
+
       <View style={{ ...FLEX_ROW_CENTER }}>
         <Text style={styles.createAccountProfilePicSubheader}>
           Profile Picture
@@ -214,6 +193,7 @@ export default function CreateAccount({ navigation }) {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleCreateAccount}
         />
       </View>
 
