@@ -144,9 +144,9 @@ export default StyleSheet.create({
   createAccountContainer: {
     ...FLEX_COL_CENTER,
     ...FILL_HEIGHT_WIDTH,
-    paddingBottom: 75,
+    paddingBottom: 100,
     backgroundColor: COLORS.white,
-    gap: 20,
+    gap: 10,
   },
 
   createAccountHeader: {
@@ -165,7 +165,6 @@ export default StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 2.5,
     borderRadius: 50,
-    marginBottom: -10,
     overflow: 'hidden',
   },
 
@@ -197,7 +196,7 @@ export default StyleSheet.create({
     ...FILL_HEIGHT_WIDTH,
     backgroundColor: COLORS.white,
     paddingBottom: 75,
-    gap: 20,
+    gap: 15,
   },
 
   loginHeader: {
@@ -393,6 +392,7 @@ export default StyleSheet.create({
     borderRadius: SIZES.borderRadius.large,
     ...BOX_SHADOW,
     elevation: 3,
+    marginTop: 5,
     justifyContent: 'center',
     alignItems: 'center',
   },
