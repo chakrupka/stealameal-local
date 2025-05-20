@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import uploadImage from '../services/s3';
+import { Button } from 'react-native-paper';
 
 const Profile = ({ navigation, route }) => {
   const { currentUser, updateUserInfo } = useStore((state) => state.userSlice);
@@ -135,6 +136,15 @@ const Profile = ({ navigation, route }) => {
           >
             <Text style={localStyles.buttonText}>Edit</Text>
           </TouchableOpacity>
+
+          <Button
+            mode="outlined"
+            icon="map-marker"
+            onPress={() => navigation.navigate('LocationSettings')}
+            style={styles.profileButton}
+          >
+            Location Settings
+          </Button>
         </View>
       ) : (
         <View style={styles.profileView.editContainer}>

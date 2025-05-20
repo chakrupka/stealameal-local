@@ -16,7 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cosc98.stealameal",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to show where you are on campus.",
+        "NSLocationAlwaysUsageDescription": "This app uses your location to help your friends find you on campus, even when the app is running in the background."
       }
     },
     "web": {
