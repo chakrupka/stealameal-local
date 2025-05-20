@@ -13,7 +13,7 @@ import TopNav from '../components/TopNav';
 import useStore from '../store';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator } from 'expo-image-manipulator';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import uploadImage from '../services/s3';
 import { Button } from 'react-native-paper';
 
@@ -130,21 +130,20 @@ const Profile = ({ navigation, route }) => {
             {currentUser?.firstName} {currentUser?.lastName}
           </Text>
           <Text style={styles.profileView.email}>{currentUser?.email}</Text>
-          <TouchableOpacity
-            style={[styles.profileView.button, localStyles.smallButton]}
-            onPress={() => setEditing(true)}
-          >
-            <Text style={localStyles.buttonText}>Edit</Text>
-          </TouchableOpacity>
-
-          <Button
-            mode="outlined"
-            icon="map-marker"
-            onPress={() => navigation.navigate('LocationSettings')}
-            style={styles.profileButton}
-          >
-            Location Settings
-          </Button>
+          <View style={localStyles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.profileView.button, localStyles.smallButton]}
+              onPress={() => setEditing(true)}
+            >
+              <Text style={localStyles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('LocationSettings')}
+              style={[styles.profileView.button, localStyles.smallButton]}
+            >
+              <Text style={localStyles.buttonText}>Location Settings</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <View style={styles.profileView.editContainer}>
@@ -213,14 +212,22 @@ const Profile = ({ navigation, route }) => {
 };
 
 const localStyles = StyleSheet.create({
-  smallButton: {
-    height: 35,
-    width: 100,
+  buttonContainer: {
     marginTop: 30,
+    gap: 10,
+    flexDirection: 'column',
+  },
+  smallButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: -5,
+    height: 'auto',
+    width: 'auto',
     ...BOX_SHADOW,
   },
   buttonText: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: 500,
     color: 'white',
   },
   marginTop15: {

@@ -13,11 +13,6 @@ export default function Starter({ navigation }) {
       style={localStyles.root}
     >
       <View style={localStyles.content}>
-        {/* <Image
-          source={require('../assets/intrologo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        /> */}
         <Text style={localStyles.header}>STEAL A MEAL</Text>
         <Text style={localStyles.subheader}>Dine with friends</Text>
 
@@ -49,17 +44,11 @@ export default function Starter({ navigation }) {
           </Button>
         </TouchableOpacity>
 
-        <Image
-          source={require('../assets/raccoon.png')}
+        {/* <Image
+          source={require('../assets/raccoon-logo.png')}
           style={localStyles.raccoon}
           resizeMode="contain"
-        />
-
-        <Image
-          source={require('../assets/hamburger.png')}
-          style={localStyles.hamburger}
-          resizeMode="contain"
-        />
+        /> */}
       </View>
     </LinearGradient>
   );
@@ -76,7 +65,7 @@ const localStyles = StyleSheet.create({
     paddingBottom: 32,
   },
   authButton: {
-    backgroundColor: '#D9D9D9',
+    backgroundColor: '#e9e6ff',
     width: 268,
     borderRadius: 10,
     ...BOX_SHADOW,
@@ -88,27 +77,15 @@ const localStyles = StyleSheet.create({
   buttonContent: {
     paddingVertical: 6,
   },
-  logo: {
-    width: 220,
-    height: 220,
-    marginBottom: 48,
-  },
   raccoon: {
     position: 'absolute',
     bottom: 60,
-    right: 110,
-    width: 90,
-    height: 90,
-  },
-  hamburger: {
-    position: 'absolute',
-    bottom: 140,
-    right: 20,
+    left: 50,
     width: 120,
     height: 120,
   },
   header: {
-    fontSize: 44,
+    fontSize: 47,
     fontWeight: '900',
   },
   subheader: {

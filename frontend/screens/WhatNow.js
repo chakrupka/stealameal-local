@@ -125,7 +125,7 @@ export default function WhatNow({ navigation, route }) {
                 <MaterialCommunityIcons
                   name="food-fork-drink"
                   size={24}
-                  color="#5C4D7D"
+                  color="#6750a4"
                 />
                 <Text style={localStyles.categoryTitle}>Meals</Text>
               </View>
@@ -134,7 +134,7 @@ export default function WhatNow({ navigation, route }) {
                   activeCategoryId === 'meals' ? 'chevron-up' : 'chevron-down'
                 }
                 size={24}
-                color="#5C4D7D"
+                color="#6750a4"
               />
             </Card.Content>
           </TouchableOpacity>
@@ -166,7 +166,7 @@ export default function WhatNow({ navigation, route }) {
                 <MaterialCommunityIcons
                   name="account-group"
                   size={24}
-                  color="#5C4D7D"
+                  color="#6750a4"
                 />
                 <Text style={localStyles.categoryTitle}>Friends</Text>
               </View>
@@ -175,7 +175,7 @@ export default function WhatNow({ navigation, route }) {
                   activeCategoryId === 'friends' ? 'chevron-up' : 'chevron-down'
                 }
                 size={24}
-                color="#5C4D7D"
+                color="#6750a4"
               />
             </Card.Content>
           </TouchableOpacity>
@@ -202,7 +202,7 @@ export default function WhatNow({ navigation, route }) {
             style={localStyles.mapButton}
             onPress={() => navigation.navigate('CampusMap')}
           >
-            <MaterialCommunityIcons name="map" size={20} color="#5C4D7D" />
+            <MaterialCommunityIcons name="map" size={20} color="#6750a4" />
             <Text style={localStyles.mapButtonText}>Campus Map</Text>
           </TouchableOpacity>
         </Card>
@@ -257,7 +257,7 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   updateButtonText: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -281,7 +281,7 @@ const localStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   divider: {
     backgroundColor: '#E0E0E0',
@@ -298,7 +298,7 @@ const localStyles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   mapCard: {
     marginTop: 5,
@@ -307,7 +307,7 @@ const localStyles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#5C4D7D',
+    borderColor: '#6750a4',
     backgroundColor: '#f8f8ff',
   },
   mapButton: {
@@ -319,7 +319,7 @@ const localStyles = StyleSheet.create({
   mapButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#5C4D7D',
+    color: '#6750a4',
     marginLeft: 10,
   },
 });

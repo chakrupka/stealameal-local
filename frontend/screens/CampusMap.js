@@ -352,27 +352,27 @@ export default function CampusMap({ navigation, route }) {
           <Marker
             coordinate={locationCoordinates.foco}
             title="Class of 1953 Commons (FOCO)"
-            pinColor="#5C4D7D"
+            pinColor="#6750a4"
           />
           <Marker
             coordinate={locationCoordinates.collis}
             title="Collis Center"
-            pinColor="#5C4D7D"
+            pinColor="#6750a4"
           />
           <Marker
             coordinate={locationCoordinates.hop}
             title="Hopkins Center (HOP)"
-            pinColor="#5C4D7D"
+            pinColor="#6750a4"
           />
           <Marker
             coordinate={locationCoordinates.fern}
             title="Fern Coffee & Tea"
-            pinColor="#5C4D7D"
+            pinColor="#6750a4"
           />
           <Marker
             coordinate={locationCoordinates.novack}
             title="Novack Cafe"
-            pinColor="#5C4D7D"
+            pinColor="#6750a4"
           />
 
           {Object.keys(friendsByLocation).map((locationKey) => {
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   initialsBubble: {
-    backgroundColor: '#5C4D7D',
+    backgroundColor: '#6750a4',
     borderRadius: 15,
     width: 30,
     height: 30,

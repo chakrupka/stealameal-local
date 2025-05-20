@@ -58,60 +58,62 @@ export default function LocationSettings({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={localStyles.container}>
       <TopNav navigation={navigation} title="Location Settings" />
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+        style={localStyles.scrollView}
+        contentContainerStyle={localStyles.scrollViewContent}
       >
-        <View style={styles.contentContainer}>
-          <Text style={styles.headerText}></Text>
-          <Card style={styles.card}>
+        <View style={localStyles.contentContainer}>
+          <Text style={localStyles.headerText}></Text>
+          <Card style={localStyles.card}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>Share My Location</Text>
-              <Text style={styles.description}>
+              <Text style={localStyles.sectionTitle}>Share My Location</Text>
+              <Text style={localStyles.description}>
                 When enabled, your friends can see where you are on campus. Your
                 location will be visible for 90 minutes after each update.
               </Text>
 
               <LocationToggle />
 
-              <Divider style={styles.divider} />
+              <Divider style={localStyles.divider} />
 
-              <Text style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Status: </Text>
+              <Text style={localStyles.infoItem}>
+                <Text style={localStyles.infoLabel}>Status: </Text>
                 <Text
                   style={
-                    isTracking ? styles.activeStatus : styles.inactiveStatus
+                    isTracking
+                      ? localStyles.activeStatus
+                      : localStyles.inactiveStatus
                   }
                 >
                   {isTracking ? 'Active' : 'Inactive'}
                 </Text>
               </Text>
 
-              <Text style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Last updated: </Text>
+              <Text style={localStyles.infoItem}>
+                <Text style={localStyles.infoLabel}>Last updated: </Text>
                 {getLastUpdateTime()}
               </Text>
 
-              <Text style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Current location: </Text>
+              <Text style={localStyles.infoItem}>
+                <Text style={localStyles.infoLabel}>Current location: </Text>
                 {currentUser?.location && currentUser.location !== 'ghost'
                   ? currentUser.location
                   : 'Not sharing'}
               </Text>
 
-              <Text style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Permission status: </Text>
+              <Text style={localStyles.infoItem}>
+                <Text style={localStyles.infoLabel}>Permission status: </Text>
                 {hasPermission ? 'Granted' : 'Not granted'}
               </Text>
             </Card.Content>
           </Card>
-          <Card style={styles.card}>
+          <Card style={localStyles.card}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>Location Permissions</Text>
-              <Text style={styles.description}>
+              <Text style={localStyles.sectionTitle}>Location Permissions</Text>
+              <Text style={localStyles.description}>
                 Location permissions are required to share your location with
                 friends.
               </Text>
@@ -121,7 +123,8 @@ export default function LocationSettings({ navigation }) {
                 onPress={handleRequestPermissions}
                 loading={loading}
                 disabled={loading || hasPermission}
-                style={styles.button}
+                style={localStyles.button}
+                labelStyle={localStyles.requestButtonText}
               >
                 {hasPermission
                   ? 'Permissions Already Granted'
@@ -132,7 +135,8 @@ export default function LocationSettings({ navigation }) {
           <Button
             mode="contained"
             onPress={() => navigation.navigate('SetLocation')}
-            style={styles.updateLocationButton}
+            style={localStyles.updateLocationButton}
+            labelStyle={localStyles.locationButtonText}
           >
             Update My Location
           </Button>
@@ -142,10 +146,9 @@ export default function LocationSettings({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -188,11 +191,19 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   button: {
+    borderRadius: 15,
     marginTop: 8,
   },
   updateLocationButton: {
-    marginVertical: 16,
-    backgroundColor: '#5C4D7D',
+    borderRadius: 15,
     padding: 4,
+  },
+  requestButtonText: {
+    fontSize: 15,
+    fontWeight: 500,
+  },
+  locationButtonText: {
+    fontSize: 16,
+    fontWeight: 600,
   },
 });

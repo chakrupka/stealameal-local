@@ -40,13 +40,16 @@ export default function Login({ navigation, route }) {
         );
         console.log('Using ID Token:', idToken);
 
-        const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${idToken}`,
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
           },
-        });
+        );
 
         console.log('Response status:', response.status);
         console.log('Response headers:', response.headers);
@@ -156,11 +159,6 @@ export default function Login({ navigation, route }) {
           <Text style={{ color: 'white', fontWeight: '600' }}>Log In</Text>
         </TouchableOpacity>
       )}
-
-      <Image
-        source={require('../assets/raccoon.png')}
-        style={styles.createAccountLogo}
-      />
     </View>
   );
 }

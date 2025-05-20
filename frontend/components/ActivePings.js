@@ -142,7 +142,7 @@ export default function ActivePings({ navigation }) {
           style={styles.refreshButton}
           disabled={loading}
         >
-          <MaterialCommunityIcons name="refresh" size={20} color="#5C4D7D" />
+          <MaterialCommunityIcons name="refresh" size={20} color="#6750a4" />
         </TouchableOpacity>
       </View>
 
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   refreshButton: {
     padding: 5,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     marginRight: 10,
-    backgroundColor: '#5C4D7D',
+    backgroundColor: '#6750a4',
   },
   declineButton: {
     borderColor: '#f44336',
