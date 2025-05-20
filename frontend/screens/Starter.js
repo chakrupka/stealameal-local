@@ -13,6 +13,18 @@ export default function Starter({ navigation }) {
       style={localStyles.root}
     >
       <View style={localStyles.content}>
+        <View style={localStyles.imageContainer}>
+          <Image
+            source={require('../assets/raccoon-burger.png')}
+            style={localStyles.raccoonBurger}
+            resizeMode="contain"
+          />
+          <Image
+            source={require('../assets/raccoon-friend.png')}
+            style={localStyles.raccoonFriend}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={localStyles.header}>STEAL A MEAL</Text>
         <Text style={localStyles.subheader}>Dine with friends</Text>
 
@@ -43,12 +55,6 @@ export default function Starter({ navigation }) {
             Create Account
           </Button>
         </TouchableOpacity>
-
-        {/* <Image
-          source={require('../assets/raccoon-logo.png')}
-          style={localStyles.raccoon}
-          resizeMode="contain"
-        /> */}
       </View>
     </LinearGradient>
   );
@@ -64,6 +70,10 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 32,
   },
+  imageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   authButton: {
     backgroundColor: '#e9e6ff',
     width: 268,
@@ -77,12 +87,13 @@ const localStyles = StyleSheet.create({
   buttonContent: {
     paddingVertical: 6,
   },
-  raccoon: {
-    position: 'absolute',
-    bottom: 60,
-    left: 50,
-    width: 120,
-    height: 120,
+  raccoonBurger: {
+    width: 90,
+    height: 90,
+  },
+  raccoonFriend: {
+    width: 80,
+    height: 80,
   },
   header: {
     fontSize: 47,
