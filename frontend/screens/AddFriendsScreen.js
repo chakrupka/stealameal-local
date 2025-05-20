@@ -4,25 +4,20 @@ import {
   View,
   FlatList,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
-  Keyboard,
   Alert,
+  StyleSheet,
 } from 'react-native';
-import { Text, Avatar, Button } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Text, Avatar, Button, Searchbar } from 'react-native-paper';
 import useStore from '../store';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 import TopNav from '../components/TopNav';
-import { searchUsersByEmail, sendFriendRequest } from '../services/user-api';
+import { sendFriendRequest } from '../services/user-api';
 
 const extractUserIdFromToken = (token) => {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) {
-      return null;
-    }
-
+    if (parts.length !== 3) return null;
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -31,42 +26,34 @@ const extractUserIdFromToken = (token) => {
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join(''),
     );
-
     const payload = JSON.parse(jsonPayload);
-    const uid = payload.user_id || payload.sub;
-    return uid;
-  } catch (error) {
+    return payload.user_id || payload.sub;
+  } catch {
     return null;
   }
 };
 
-const AddFriendsScreen = ({ navigation, route }) => {
+const AddFriendsScreen = ({ navigation }) => {
   const currentUser = useStore((state) => state.userSlice.currentUser);
   const isLoggedIn = useStore((state) => state.userSlice.isLoggedIn);
   const searchResults = useStore((state) => state.userSlice.searchResults);
-  const status = useStore((state) => state.userSlice.status);
   const searchUsers = useStore((state) => state.userSlice.searchUsers);
 
   const [email, setEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
-
   const [selectedUserID, setSelectedUserID] = useState(null);
   const [firebaseUid, setFirebaseUid] = useState(null);
 
   useEffect(() => {
     if (currentUser?.idToken && !currentUser.userID) {
-      const extractedUid = extractUserIdFromToken(currentUser.idToken);
-      setFirebaseUid(extractedUid);
+      setFirebaseUid(extractUserIdFromToken(currentUser.idToken));
     }
   }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser || !isLoggedIn) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     }
   }, [currentUser, isLoggedIn, navigation]);
 
@@ -75,7 +62,6 @@ const AddFriendsScreen = ({ navigation, route }) => {
       setEmail('');
       setSelectedUserID(null);
     });
-
     return unsubscribe;
   }, [navigation]);
 
@@ -83,206 +69,229 @@ const AddFriendsScreen = ({ navigation, route }) => {
     if (currentUser?.idToken && email) {
       setSearching(true);
       setSearchError(null);
-
-      const delayDebounceFn = setTimeout(() => {
+      const handler = setTimeout(() => {
         searchUsers({ idToken: currentUser.idToken, email })
-          .then(() => {})
-          .catch((error) => {
-            setSearchError('Failed to search. Please try again.');
-          })
-          .finally(() => {
-            setSearching(false);
-          });
+          .catch(() => setSearchError('Failed to search. Please try again.'))
+          .finally(() => setSearching(false));
       }, 500);
-
-      return () => clearTimeout(delayDebounceFn);
+      return () => clearTimeout(handler);
     }
   }, [currentUser, email, searchUsers]);
 
   const handleSelectUser = (userID) => {
-    setSelectedUserID(userID === selectedUserID ? null : userID);
+    setSelectedUserID((prev) => (prev === userID ? null : userID));
   };
 
-  const isAlreadyFriend = (userId) => {
-    if (!currentUser?.friendsList) return false;
-    return currentUser.friendsList.some((friend) => friend.friendID === userId);
-  };
+  const isAlreadyFriend = (userId) =>
+    currentUser?.friendsList?.some((f) => f.friendID === userId);
 
   const handleAddFriend = async () => {
     if (!selectedUserID) {
       Alert.alert('Please select a user first.');
       return;
     }
-
-    try {
-      const selectedUser = searchResults.find(
-        (user) => user.userID === selectedUserID,
+    const selectedUser = searchResults.find((u) => u.userID === selectedUserID);
+    if (!selectedUser) {
+      Alert.alert('Selected user not found in search results.');
+      return;
+    }
+    const senderID =
+      currentUser.userID ||
+      firebaseUid ||
+      (currentUser.idToken && extractUserIdFromToken(currentUser.idToken));
+    if (!senderID) {
+      Alert.alert(
+        'Error',
+        'Could not determine your user ID. Please log out and log back in.',
       );
-
-      if (!selectedUser) {
-        Alert.alert('Selected user not found in search results.');
-        return;
-      }
-
-      const senderID =
-        currentUser.userID ||
-        firebaseUid ||
-        (currentUser.idToken
-          ? extractUserIdFromToken(currentUser.idToken)
-          : null);
-
-      if (!senderID) {
-        Alert.alert(
-          'Error',
-          'Could not determine your user ID. Please log out and log back in.',
-        );
-        return;
-      }
-
-      const senderName = `${currentUser.firstName} ${currentUser.lastName}`;
-      const senderEmail = currentUser.email;
-
+      return;
+    }
+    try {
       const response = await sendFriendRequest(
         currentUser.idToken,
         senderID,
-        senderName,
-        senderEmail,
+        `${currentUser.firstName} ${currentUser.lastName}`,
+        currentUser.email,
         selectedUserID,
       );
-
-      const message = response.userFriendlyMessage || 'Friend request sent!';
-      Alert.alert('Success', message);
-
+      Alert.alert(
+        'Success',
+        response.userFriendlyMessage || 'Friend request sent!',
+      );
       setSelectedUserID(null);
       setEmail('');
     } catch (error) {
-      let errorMessage = 'Please try again.';
-
-      if (error.response && error.response.data) {
-        errorMessage =
-          error.response.data.userFriendlyMessage ||
-          error.response.data.message ||
-          error.message ||
-          errorMessage;
-      }
-
-      Alert.alert('Friend Request Status', errorMessage);
+      const msg =
+        error.response?.data?.userFriendlyMessage ||
+        error.response?.data?.message ||
+        error.message ||
+        'Please try again.';
+      Alert.alert('Friend Request Status', msg);
     }
   };
 
-  if (!currentUser || !isLoggedIn) {
-    return null;
-  }
+  if (!currentUser || !isLoggedIn) return null;
 
   return (
     <SafeAreaView style={styles.container}>
       <TopNav navigation={navigation} title="Add Friends" />
-
-      <View style={styles.content}>
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            value={email}
-            onChangeText={setEmail}
+      <View style={[styles.content, localStyles.fullWidth]}>
+        <View style={localStyles.searchContainer}>
+          <Searchbar
             placeholder="Search by email"
-            placeholderTextColor="#888"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            editable={true}
-            autoCorrect="none"
+            onChangeText={setEmail}
+            value={email}
+            style={localStyles.searchBar}
             autoCapitalize="none"
           />
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={() => Keyboard.dismiss()}
-          >
-            <MaterialCommunityIcons name="magnify" size={24} color="white" />
-          </TouchableOpacity>
         </View>
 
         {searchError && <Text style={styles.errorText}>{searchError}</Text>}
 
         {searching && (
-          <View style={styles.inlineLoadingContainer}>
+          <View style={localStyles.searchingContainer}>
             <ActivityIndicator
               size="small"
-              color={styles.COLORS?.primary || '#096A2E'}
+              color={styles.COLORS?.primary || '#f8f8ff'}
             />
             <Text style={styles.inlineLoadingText}>Searching...</Text>
           </View>
         )}
 
-        <FlatList
-          data={searchResults}
-          keyExtractor={(item) => item.userID}
-          renderItem={({ item }) => {
-            const isSelected = item.userID === selectedUserID;
-            const alreadyFriend = isAlreadyFriend(item.userID);
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.userCard,
-                  {
-                    backgroundColor: isSelected
-                      ? '#e0ffe0'
-                      : alreadyFriend
-                      ? '#f0f0f0'
-                      : '#fff',
-                  },
-                ]}
-                onPress={() => handleSelectUser(item.userID)}
-                disabled={alreadyFriend}
-              >
-                <View style={styles.userCardInfo}>
-                  {!item.profilePic ? (
-                    <Avatar.Text
-                      size={40}
-                      label={item.name ? item.name.charAt(0).toUpperCase() : ''}
-                    />
-                  ) : (
-                    <Avatar.Image size={40} source={{ uri: item.profilePic }} />
-                  )}
-                  <View style={styles.userCardText}>
-                    <Text style={styles.userName}>{item.name}</Text>
-                    <Text style={styles.userEmail}>{item.email}</Text>
-                  </View>
-                </View>
-                {isSelected && (
-                  <Text style={{ color: '#096A2E', fontWeight: '600' }}>
-                    Selected
+        {!searching && (
+          <View style={localStyles.resultsContainer}>
+            <FlatList
+              style={{ width: '100%' }}
+              data={searchResults}
+              keyExtractor={(item) => item.userID}
+              renderItem={({ item }) => {
+                const isSelected = item.userID === selectedUserID;
+                const already = isAlreadyFriend(item.userID);
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.userCard,
+                      {
+                        backgroundColor: isSelected
+                          ? '#e9e6ff'
+                          : already
+                          ? '#f0f0f0'
+                          : '#fff',
+                      },
+                    ]}
+                    onPress={() => handleSelectUser(item.userID)}
+                    disabled={already}
+                  >
+                    <View style={styles.userCardInfo}>
+                      {!item.profilePic ? (
+                        <Avatar.Text
+                          size={40}
+                          label={item.name?.charAt(0).toUpperCase()}
+                        />
+                      ) : (
+                        <Avatar.Image
+                          size={40}
+                          source={{ uri: item.profilePic }}
+                        />
+                      )}
+                      <View style={[styles.userCardText, localStyles.cardText]}>
+                        <Text style={styles.userName}>{item.name}</Text>
+                        <Text
+                          style={[styles.userEmail, localStyles.cardText]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {item.email}
+                        </Text>
+                      </View>
+                    </View>
+                    {isSelected && (
+                      <Text style={localStyles.selectedText}>Selected</Text>
+                    )}
+                    {already && (
+                      <Text style={localStyles.alreadyText}>
+                        Already Friends
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              showsVerticalScrollIndicator
+              contentContainerStyle={styles.resultsContentContainer}
+              ListEmptyComponent={
+                email &&
+                !searching && (
+                  <Text style={localStyles.noResultsText}>
+                    No users found matching "{email}"
                   </Text>
-                )}
-                {alreadyFriend && (
-                  <Text style={{ color: '#888', fontWeight: '600' }}>
-                    Already Friends
-                  </Text>
-                )}
-              </TouchableOpacity>
-            );
-          }}
-          showsVerticalScrollIndicator={true}
-          contentContainerStyle={styles.resultsContentContainer}
-          ListEmptyComponent={
-            email.length > 0 && !searching ? (
-              <Text style={styles.noResultsText}>
-                No users found matching "{email}"
-              </Text>
-            ) : null
-          }
-        />
+                )
+              }
+            />
+          </View>
+        )}
 
-        {selectedUserID && (
+        {selectedUserID ? (
           <Button
             mode="contained"
             onPress={handleAddFriend}
-            color="#096A2E"
-            style={[styles.addButton, { marginTop: 16 }]}
+            textColor="white"
+            style={localStyles.confirmButton}
           >
             Confirm Add Friend
           </Button>
+        ) : (
+          <View style={localStyles.emptySpace} />
         )}
       </View>
     </SafeAreaView>
   );
 };
 
+const localStyles = StyleSheet.create({
+  fullWidth: { width: '95%' },
+  searchContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  searchBar: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 15,
+  },
+  searchingContainer: {
+    height: '80%',
+  },
+  resultsContainer: {
+    height: '80%',
+    width: '110%',
+    alignItems: 'center',
+  },
+  cardText: {
+    width: '65%',
+  },
+  selectedText: {
+    color: '#6750a4',
+    fontWeight: '600',
+    marginLeft: -5,
+  },
+  alreadyText: {
+    color: '#888',
+    fontWeight: '600',
+    width: 60,
+  },
+  confirmButton: {
+    marginTop: 10,
+    borderRadius: 15,
+    paddingVertical: 5,
+    ...BOX_SHADOW,
+  },
+  emptySpace: { height: 60 },
+  noResultsText: {
+    textAlign: 'center',
+  },
+});
+
 export default AddFriendsScreen;
+
+//rgb(132, 124, 196)

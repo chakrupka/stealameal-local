@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { PING_API_URL } from '../configs/api-config';
+const BASE_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pings`;
 
-const BASE_URL = PING_API_URL;
 
 export const sendPing = async (idToken, pingData) => {
   try {

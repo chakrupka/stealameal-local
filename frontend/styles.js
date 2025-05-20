@@ -90,6 +90,13 @@ const TYPOGRAPHY = {
   },
 };
 
+export const BOX_SHADOW = {
+  shadowColor: COLORS.black,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 3.2,
+};
+
 export const FLEX_ROW_CENTER = {
   flexDirection: 'row',
   alignItems: 'center',
@@ -130,7 +137,6 @@ export default StyleSheet.create({
   },
 
   starterScreenContainer: {
-    backgroundColor: COLORS.primary,
     ...FLEX_COL_CENTER,
     gap: 20,
   },
@@ -218,13 +224,13 @@ export default StyleSheet.create({
     left: 0,
     height: 115,
     width: '100%',
-    backgroundColor: COLORS.primary,
     ...FLEX_ROW_CENTER,
     justifyContent: 'space-between',
     zIndex: 1000,
+    // backgroundColor: '#6750a4',
   },
 
-  navIcon: { paddingBottom: 5, paddingLeft: 15 },
+  navIcon: { paddingBottom: 5, paddingLeft: 15, color: 'white' },
 
   accountIcon: {
     paddingRight: 10,
@@ -235,6 +241,7 @@ export default StyleSheet.create({
     paddingBottom: 5,
     marginLeft: -15,
     marginRight: -20,
+    fontWeight: '700',
   },
 
   navPlaceholder: {
@@ -353,21 +360,17 @@ export default StyleSheet.create({
 
   starterAuthButton: {
     backgroundColor: COLORS.lightgrey,
-    borderWidth: 1,
     width: 268,
-    borderColor: COLORS.black,
     borderRadius: SIZES.borderRadius.large,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    ...BOX_SHADOW,
   },
 
   starterButtonText: {
     fontFamily: TYPOGRAPHY.button.fontFamily,
     fontWeight: '400',
-    fontSize: 24,
+    fontSize: 22,
     lineHeight: 32,
-    color: COLORS.textDark,
+    color: 'black',
     textAlign: 'center',
   },
 
@@ -375,12 +378,9 @@ export default StyleSheet.create({
     width: 247,
     height: 42,
     marginTop: 10,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: '#6750a4',
     borderRadius: SIZES.borderRadius.large,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.2,
+    ...BOX_SHADOW,
     elevation: 3,
     justifyContent: 'center',
     alignItems: 'center',
@@ -389,12 +389,9 @@ export default StyleSheet.create({
   loginButton: {
     width: 247,
     height: 42,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: '#6750a4',
     borderRadius: SIZES.borderRadius.large,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.2,
+    ...BOX_SHADOW,
     elevation: 3,
     justifyContent: 'center',
     alignItems: 'center',
@@ -535,25 +532,19 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
 
-  resultsContentContainer: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.lg,
-  },
-
   // ========= USER CARD STYLES =========
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.white,
     borderRadius: SIZES.borderRadius.medium,
     padding: SPACING.md,
-    marginBottom: SPACING.sm,
+    marginVertical: 5,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     elevation: 2,
+    marginHorizontal: '5%',
   },
 
   userCardInfo: {
@@ -576,6 +567,7 @@ export default StyleSheet.create({
     color: COLORS.textDark,
     opacity: 0.7,
     fontSize: TYPOGRAPHY.body.fontSize - 2,
+    width: 100,
   },
 
   // ========= CONTAINER POSITIONING =========
@@ -688,7 +680,7 @@ export default StyleSheet.create({
       width: 150,
       height: 150,
       borderRadius: 75,
-      borderColor: COLORS.primary,
+      borderColor: '#6750a4',
       borderWidth: 5,
     },
     name: {
@@ -742,7 +734,7 @@ export default StyleSheet.create({
       width: '110%',
       height: 40,
       backgroundColor: 'white',
-      borderWidth: 2,
+      borderWidth: 1.5,
       borderColor: '#8B8B8B',
       borderRadius: SIZES.borderRadius.large,
       fontSize: 20,
@@ -757,7 +749,7 @@ export default StyleSheet.create({
       width: 120,
       height: 42,
       margin: 10,
-      backgroundColor: COLORS.secondary,
+      backgroundColor: '#6750a4',
       borderRadius: SIZES.borderRadius.large,
       justifyContent: 'center',
       alignItems: 'center',

@@ -10,7 +10,6 @@ import { Text } from 'react-native-paper';
 import { signInUser } from '../services/firebase-auth';
 import useStore from '../store';
 import styles from '../styles';
-import { USER_API_URL } from '../configs/api-config';
 import TopNav from '../components/TopNav';
 
 export default function Login({ navigation, route }) {
@@ -37,11 +36,11 @@ export default function Login({ navigation, route }) {
       try {
         console.log(
           'Attempting to fetch user data from:',
-          `${USER_API_URL}/auth`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`,
         );
         console.log('Using ID Token:', idToken);
 
-        const response = await fetch(`${USER_API_URL}/auth`, {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -125,7 +124,7 @@ export default function Login({ navigation, route }) {
         onBackPress={handleBackPress}
       />
 
-      <Text style={styles.loginHeader}>Log In</Text>
+      {/* <Text style={styles.loginHeader}>Log In</Text> */}
 
       <View style={styles.loginInputContainer}>
         <TextInput
@@ -154,12 +153,12 @@ export default function Login({ navigation, route }) {
         <ActivityIndicator size="large" color="#096A2E" />
       ) : (
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text>Log In</Text>
+          <Text style={{ color: 'white', fontWeight: '600' }}>Log In</Text>
         </TouchableOpacity>
       )}
 
       <Image
-        source={require('../assets/raccoonnobackground.png')}
+        source={require('../assets/raccoon.png')}
         style={styles.createAccountLogo}
       />
     </View>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Button, Text, RadioButton, List, Card } from 'react-native-paper';
 import axios from 'axios';
-import { USER_API_URL } from '../configs/api-config';
 import useStore from '../store';
 import { useLocation } from '../contexts/LocationContext';
 import LocationToggle from '../components/LocationToggle';

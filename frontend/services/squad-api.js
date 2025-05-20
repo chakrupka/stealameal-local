@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { SQUAD_API_URL } from '../configs/api-config';
 
-const BASE_URL = SQUAD_API_URL;
+const BASE_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/squads`;
 
 export const createSquad = async (idToken, squadData) => {
   try {

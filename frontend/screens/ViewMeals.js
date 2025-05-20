@@ -17,10 +17,10 @@ import {
   Searchbar,
   Menu,
 } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 
 export default function ViewMeals({ navigation, route }) {
   const reloadMeals = route.params?.reloadMeals || false;
@@ -81,20 +81,21 @@ export default function ViewMeals({ navigation, route }) {
 
       const relevantMeals = allMeals.filter(
         (meal) =>
-          (meal.host &&
+          new Date(meal.date) >= new Date() &&
+          ((meal.host &&
             ((typeof meal.host === 'object' &&
               meal.host._id === currentUser._id) ||
               (typeof meal.host === 'string' &&
                 meal.host === currentUser._id))) ||
-          (meal.participants &&
-            meal.participants.some(
-              (p) =>
-                p.userID &&
-                (p.userID._id === currentUser._id ||
-                  p.userID === currentUser._id ||
-                  (typeof p.userID === 'string' &&
-                    p.userID === currentUser.userID)),
-            )),
+            (meal.participants &&
+              meal.participants.some(
+                (p) =>
+                  p.userID &&
+                  (p.userID._id === currentUser._id ||
+                    p.userID === currentUser._id ||
+                    (typeof p.userID === 'string' &&
+                      p.userID === currentUser.userID)),
+              ))),
       );
 
       relevantMeals.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -139,9 +140,6 @@ export default function ViewMeals({ navigation, route }) {
                 p.status === 'confirmed',
             ),
         );
-        break;
-      case 'past':
-        result = result.filter((meal) => new Date(meal.date) < new Date());
         break;
       case 'upcoming':
         result = result.filter((meal) => new Date(meal.date) >= new Date());
@@ -195,13 +193,11 @@ export default function ViewMeals({ navigation, route }) {
     if (!date) return 'No date specified';
 
     let result = formatDate(date);
+    result = result.split(',');
+    result = `${result[0]},${result[1]}`;
 
     if (time) {
       result += ` at ${time}`;
-    }
-
-    if (new Date(date) < new Date()) {
-      result += ' (Past)';
     }
 
     return result;
@@ -286,10 +282,6 @@ export default function ViewMeals({ navigation, route }) {
   };
 
   const getMealStatusColor = (meal) => {
-    if (new Date(meal.date) < new Date()) {
-      return { backgroundColor: '#f5f5f5', borderLeftColor: '#9e9e9e' };
-    }
-
     const status = getUserStatus(meal);
 
     switch (status) {
@@ -309,21 +301,21 @@ export default function ViewMeals({ navigation, route }) {
   const renderMealItem = ({ item }) => {
     const statusColor = getMealStatusColor(item);
     const userStatus = getUserStatus(item);
-    const isPastMeal = new Date(item.date) < new Date();
 
     return (
-      <Card style={[localStyles.card, statusColor, { borderLeftWidth: 4 }]}>
+      <Card style={localStyles.card}>
         <Card.Content>
           <View style={localStyles.cardHeader}>
             <Text style={localStyles.cardTitle}>
               {item.mealName || 'Unnamed Meal'}
             </Text>
-            {isUserHost(item) && !isPastMeal && (
+            {isUserHost(item) && (
               <TouchableOpacity onPress={() => handleDeleteMeal(item._id)}>
-                <MaterialCommunityIcons
-                  name="delete"
-                  size={20}
-                  color="#f44336"
+                <MaterialIcons
+                  name="cancel"
+                  size={25}
+                  color="rgb(255, 99, 99)"
+                  style={localStyles.trashIcon}
                 />
               </TouchableOpacity>
             )}
@@ -340,12 +332,9 @@ export default function ViewMeals({ navigation, route }) {
                 userStatus === 'confirmed' && localStyles.confirmedText,
                 userStatus === 'invited' && localStyles.invitedText,
                 userStatus === 'declined' && localStyles.declinedText,
-                isPastMeal && localStyles.pastText,
               ]}
             >
-              {isPastMeal
-                ? 'Past meal'
-                : userStatus === 'host'
+              {userStatus === 'host'
                 ? 'You are hosting'
                 : userStatus === 'confirmed'
                 ? 'You are attending'
@@ -446,7 +435,7 @@ export default function ViewMeals({ navigation, route }) {
       <View style={styles.container}>
         <TopNav navigation={navigation} title="All Meals" />
         <View style={styles.content}>
-          <ActivityIndicator size="large" color="#5C4D7D" />
+          <ActivityIndicator size="large" color="#6750a4" />
           <Text style={localStyles.loadingText}>Loading meals...</Text>
         </View>
       </View>
@@ -457,7 +446,7 @@ export default function ViewMeals({ navigation, route }) {
     <View style={styles.container}>
       <TopNav navigation={navigation} title="All Meals" />
       <View style={{ height: 50 }} />
-      <View style={styles.content}>
+      <View style={[styles.content, localStyles.content]}>
         <View style={localStyles.searchContainer}>
           <Searchbar
             placeholder="Search meals"
@@ -466,16 +455,16 @@ export default function ViewMeals({ navigation, route }) {
             style={localStyles.searchBar}
           />
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={localStyles.filterButton}
             onPress={() => setMenuVisible(true)}
           >
             <MaterialCommunityIcons
               name="filter-variant"
               size={24}
-              color="#5C4D7D"
+              color="#6750a4"
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <Menu
             visible={menuVisible}
@@ -508,11 +497,6 @@ export default function ViewMeals({ navigation, route }) {
               titleStyle={
                 filter === 'upcoming' ? localStyles.activeFilter : null
               }
-            />
-            <Menu.Item
-              onPress={() => setActiveFilter('past')}
-              title="Past"
-              titleStyle={filter === 'past' ? localStyles.activeFilter : null}
             />
           </Menu>
         </View>
@@ -576,19 +560,6 @@ export default function ViewMeals({ navigation, route }) {
                 Upcoming
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                localStyles.filterChip,
-                filter === 'past' && localStyles.activeChip,
-              ]}
-              onPress={() => setActiveFilter('past')}
-            >
-              <Text
-                style={filter === 'past' ? localStyles.activeChipText : null}
-              >
-                Past
-              </Text>
-            </TouchableOpacity>
           </ScrollView>
         </View>
 
@@ -618,20 +589,32 @@ export default function ViewMeals({ navigation, route }) {
             )}
           </View>
         )}
-
-        <Button
-          mode="contained"
-          style={localStyles.scheduleButton}
-          onPress={() => navigation.navigate('ScheduleMeal')}
-        >
-          Schedule New Meal
-        </Button>
+        <View style={localStyles.buttonGroup}>
+          <Button
+            mode="outlined"
+            style={localStyles.scheduleButton}
+            onPress={() => navigation.navigate('CalendarView')}
+            icon="calendar"
+          >
+            View Calendar
+          </Button>
+          <Button
+            mode="contained"
+            style={localStyles.scheduleButton}
+            onPress={() => navigation.navigate('ScheduleMeal')}
+          >
+            Schedule Meal
+          </Button>
+        </View>
       </View>
     </View>
   );
 }
 
 const localStyles = StyleSheet.create({
+  content: {
+    width: '100%',
+  },
   searchContainer: {
     flexDirection: 'row',
     marginBottom: 10,
@@ -640,19 +623,23 @@ const localStyles = StyleSheet.create({
   searchBar: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    marginRight: 10,
+    borderRadius: 15,
   },
   filterButton: {
-    padding: 8,
+    padding: 15,
     backgroundColor: '#f0f0f0',
-    borderRadius: 5,
+    borderRadius: 15,
+    shadowColor: 'gray',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
   },
   menu: {
     marginTop: 45,
     marginLeft: -120,
   },
   activeFilter: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontWeight: 'bold',
   },
   filterChipsContainer: {
@@ -669,17 +656,19 @@ const localStyles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     backgroundColor: '#f0f0f0',
-    borderRadius: 16,
+    borderRadius: 10,
   },
   activeChip: {
-    backgroundColor: '#5C4D7D',
+    backgroundColor: '#6750a4',
   },
   activeChipText: {
     color: 'white',
   },
   card: {
+    width: 300,
     marginBottom: 15,
     elevation: 2,
+    backgroundColor: '#f8f8ff',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -689,7 +678,7 @@ const localStyles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#5C4D7D',
+    color: '#6750a4',
     marginBottom: 5,
   },
   divider: {
@@ -723,10 +712,6 @@ const localStyles = StyleSheet.create({
     color: '#f44336',
     fontWeight: 'bold',
   },
-  pastText: {
-    color: '#9e9e9e',
-    fontWeight: 'bold',
-  },
   notesSection: {
     marginTop: 5,
     marginBottom: 10,
@@ -745,14 +730,14 @@ const localStyles = StyleSheet.create({
   },
   chip: {
     margin: 3,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   list: {
     width: '100%',
-    flex: 1,
   },
   listContent: {
-    paddingBottom: 10,
+    paddingTop: 5,
+    alignItems: 'center',
   },
   emptyContainer: {
     flex: 1,
@@ -774,11 +759,24 @@ const localStyles = StyleSheet.create({
   loadingText: {
     marginTop: 15,
     textAlign: 'center',
-    color: '#5C4D7D',
+    color: '#6750a4',
   },
   scheduleButton: {
     marginVertical: 20,
-    backgroundColor: '#5C4D7D',
-    paddingVertical: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 0,
+    borderRadius: 15,
+    width: 160,
+    ...BOX_SHADOW,
+  },
+  trashIcon: {
+    paddingBottom: 7,
+    marginRight: -5,
+    marginTop: -5,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
   },
 });

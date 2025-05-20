@@ -25,6 +25,7 @@ import AddFriendsScreen from './screens/AddFriendsScreen';
 import FriendRequestsScreen from './screens/FriendRequestsScreen';
 import Profile from './screens/Profile';
 import LocationSettings from './screens/LocationSettings';
+import CalendarView from './screens/CalendarView';
 
 const Stack = createStackNavigator();
 
@@ -61,16 +62,14 @@ export default function App() {
           <Stack.Screen name="SetLocation" component={SetLocation} />
           <Stack.Screen name="ViewMeals" component={ViewMeals} />
           <Stack.Screen name="LocationSettings" component={LocationSettings} />
-          <Stack.Screen
-            name="EnterAvailability"
-            component={EnterAvailability}
-          />
+          <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
           <Stack.Screen name="AddFriendsScreen" component={AddFriendsScreen} />
           <Stack.Screen
             name="FriendRequestsScreen"
             component={FriendRequestsScreen}
           />
           <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="CalendarView" component={CalendarView} />
         </Stack.Navigator>
       </NavigationContainer>
     </LocationProvider>
