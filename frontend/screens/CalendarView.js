@@ -16,6 +16,7 @@ import {
 import { Card, Divider } from 'react-native-paper';
 import useStore from '../store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getAvailability } from '../services/availability-api';
 
 const CalendarView = ({ navigation }) => {
   const [currentDate] = useState(new Date());
@@ -25,6 +26,7 @@ const CalendarView = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [userAvailability, setUserAvailability] = useState(null);
 
   // add meals state and fetch function
   const [meals, setMeals] = useState([]);
@@ -200,7 +202,7 @@ const CalendarView = ({ navigation }) => {
         }
       }
     },
-    [weeks, currentWeekIndex, isScrolling, fetchMeals],
+    [weeks, currentWeekIndex, isScrolling],
   );
 
   // calculate day column width
@@ -212,15 +214,20 @@ const CalendarView = ({ navigation }) => {
   }, [screenWidth]);
 
   useEffect(() => {
-    if (flatListRef.current) {
-      setTimeout(() => {
-        flatListRef.current.scrollToIndex({
-          index: 4,
-          animated: false,
-        });
-      }, 100);
+    const loadUserAvailability = async () => {
+      try {
+        const availability = await getAvailability(currentUser.idToken);
+        setUserAvailability(availability);
+      } catch (error) {
+        console.error('Error loading availability:', error);
+      }
+    };
+
+    if (currentUser) {
+      fetchMeals();
+      loadUserAvailability();
     }
-  }, []);
+  }, [currentUser]);
 
   const onScrollToIndexFailed = useCallback(() => {
     setTimeout(() => {
@@ -330,7 +337,112 @@ const CalendarView = ({ navigation }) => {
     setSelectedMeal(meal);
     setModalVisible(true);
   };
+  const getScheduleItemsForSlot = (date, hour, minute) => {
+    if (!userAvailability?.availability) return [];
 
+    const dayOfWeek = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][date.getDay()];
+    const allItems = [
+      ...userAvailability.availability.classes.map((item) => ({
+        ...item,
+        category: 'classes',
+      })),
+      ...userAvailability.availability.sporting.map((item) => ({
+        ...item,
+        category: 'sporting',
+      })),
+      ...userAvailability.availability.extracurricular.map((item) => ({
+        ...item,
+        category: 'extracurricular',
+      })),
+      ...userAvailability.availability.other.map((item) => ({
+        ...item,
+        category: 'other',
+      })),
+    ];
+
+    return allItems.filter((item) => {
+      // Check if item is active on this date
+      if (!isItemActiveOnDate(item, date, dayOfWeek)) {
+        return false;
+      }
+
+      // Check if item's time overlaps with this time slot
+      return isItemActiveAtTime(item, hour, minute);
+    });
+  };
+
+  const isItemActiveOnDate = (item, checkDate, dayOfWeek) => {
+    // Handle specific date items (from "other" category)
+    if (item.occurrenceType === 'specific') {
+      if (!item.specificDate) return false;
+      const specificDate = new Date(item.specificDate);
+      return (
+        specificDate.getFullYear() === checkDate.getFullYear() &&
+        specificDate.getMonth() === checkDate.getMonth() &&
+        specificDate.getDate() === checkDate.getDate()
+      );
+    }
+
+    // Handle weekly recurring items
+    if (!item.days || !item.days.includes(dayOfWeek)) return false;
+
+    // Check if within date range
+    if (item.startDate && checkDate < new Date(item.startDate)) return false;
+    if (item.endDate && checkDate > new Date(item.endDate)) return false;
+
+    return true;
+  };
+
+  const isItemActiveAtTime = (item, hour, minute) => {
+    if (!item.startTime || !item.endTime) return false;
+
+    const itemStart = new Date(item.startTime);
+    const itemEnd = new Date(item.endTime);
+
+    const slotTime = new Date();
+    slotTime.setHours(hour, minute, 0, 0);
+
+    const slotEnd = new Date(slotTime);
+    slotEnd.setMinutes(slotEnd.getMinutes() + 30); // 30-minute slots
+
+    // Check if the time slot overlaps with the item's time
+    return (
+      itemStart.getHours() * 60 + itemStart.getMinutes() <
+        slotEnd.getHours() * 60 + slotEnd.getMinutes() &&
+      itemEnd.getHours() * 60 + itemEnd.getMinutes() >
+        slotTime.getHours() * 60 + slotTime.getMinutes()
+    );
+  };
+
+  const getScheduleItemBackgroundColor = (category) => {
+    switch (category) {
+      case 'classes':
+        return '#2196f380';
+      case 'sporting':
+        return '#4caf5080';
+      case 'extracurricular':
+        return '#fbc02d80';
+      case 'other':
+        return '#f4433680';
+      default:
+        return '#9e9e9e50';
+    }
+  };
+
+  const getScheduleItemBorderColor = (category) => {
+    switch (category) {
+      case 'classes':
+        return '#2196f3';
+      case 'sporting':
+        return '#4caf50';
+      case 'extracurricular':
+        return '#fbc02d';
+      case 'other':
+        return '#f44336';
+      default:
+        return '#9e9e9e';
+    }
+  };
   // format date for display
   const formatDate = (dateString) => {
     try {
@@ -527,11 +639,18 @@ const CalendarView = ({ navigation }) => {
                     slot.hour,
                     slot.minute,
                   );
+                  const scheduleItems = getScheduleItemsForSlot(
+                    date,
+                    slot.hour,
+                    slot.minute,
+                  );
+
                   return (
                     <View
                       key={`slot-${index}-day-${dayIndex}`}
                       style={[styles.scheduleSlot, { width: getDayWidth() }]}
                     >
+                      {/* Render meals */}
                       {slotMeals.length > 0 &&
                         slotMeals.map((meal, mealIndex) => (
                           <TouchableOpacity
@@ -541,6 +660,8 @@ const CalendarView = ({ navigation }) => {
                               {
                                 backgroundColor: getMealBackgroundColor(meal),
                                 borderLeftColor: getMealBorderColor(meal),
+                                top: 2,
+                                height: scheduleItems.length > 0 ? 28 : 56, // Smaller if sharing space
                               },
                             ]}
                             onPress={() => handleMealClick(meal)}
@@ -552,6 +673,40 @@ const CalendarView = ({ navigation }) => {
                               {meal.mealType || ''}
                             </Text>
                           </TouchableOpacity>
+                        ))}
+
+                      {/* Render schedule items */}
+                      {scheduleItems.length > 0 &&
+                        scheduleItems.map((item, itemIndex) => (
+                          <View
+                            key={`schedule-${itemIndex}`}
+                            style={[
+                              styles.scheduleItem,
+                              {
+                                backgroundColor: getScheduleItemBackgroundColor(
+                                  item.category,
+                                ),
+                                borderLeftColor: getScheduleItemBorderColor(
+                                  item.category,
+                                ),
+                                top: slotMeals.length > 0 ? 30 : 2, // Below meals if present
+                                height: slotMeals.length > 0 ? 28 : 56,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={styles.scheduleItemName}
+                              numberOfLines={1}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text
+                              style={styles.scheduleItemCategory}
+                              numberOfLines={1}
+                            >
+                              {item.category}
+                            </Text>
+                          </View>
                         ))}
                     </View>
                   );

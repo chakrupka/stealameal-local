@@ -9,12 +9,18 @@ import {
   updateUser,
   updateUserLocation,
 } from '../services/user-api';
+import {
+  updateAvailability,
+  getAvailability,
+  getFriendAvailability,
+  checkAvailability,
+} from '../services/availability-api';
 import { signInUser, signOutUser } from '../services/firebase-auth';
 
 const createUserSlice = (set, get) => ({
   currentUser: null,
   isLoggedIn: false,
-
+  availability: null,
   friendRequests: [],
   searchResults: [],
   status: 'idle',
@@ -36,6 +42,149 @@ const createUserSlice = (set, get) => ({
     } catch (error) {
       console.error('TIMESTAMP DEBUG - Fix error:', error);
       return { success: false, error: error.message };
+    }
+  },
+
+  // Availability-related functions
+  updateUserAvailability: async (availabilityData) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    set((state) => {
+      state.userSlice.status = 'loading';
+      state.userSlice.error = null;
+    });
+
+    try {
+      const response = await updateAvailability(
+        currentUser.idToken,
+        availabilityData,
+      );
+
+      set((state) => {
+        state.userSlice.status = 'succeeded';
+        state.userSlice.availability = response.availability;
+        if (state.userSlice.currentUser) {
+          state.userSlice.currentUser.availability = response.availability;
+        }
+      });
+
+      return { success: true, availability: response.availability };
+    } catch (error) {
+      console.error('Error updating availability:', error);
+
+      set((state) => {
+        state.userSlice.status = 'failed';
+        state.userSlice.error =
+          error.message || 'Failed to update availability';
+      });
+
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to update availability',
+      };
+    }
+  },
+
+  getUserAvailability: async () => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    set((state) => {
+      state.userSlice.status = 'loading';
+      state.userSlice.error = null;
+    });
+
+    try {
+      const response = await getAvailability(currentUser.idToken);
+
+      set((state) => {
+        state.userSlice.status = 'succeeded';
+        state.userSlice.availability = response.availability;
+      });
+
+      return { success: true, availability: response.availability };
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+
+      set((state) => {
+        state.userSlice.status = 'failed';
+        state.userSlice.error = error.message || 'Failed to fetch availability';
+      });
+
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to fetch availability',
+      };
+    }
+  },
+
+  getFriendAvailability: async (friendUID) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    try {
+      const response = await getFriendAvailability(
+        currentUser.idToken,
+        friendUID,
+      );
+      return {
+        success: true,
+        availability: response.availability,
+        name: response.name,
+      };
+    } catch (error) {
+      console.error('Error fetching friend availability:', error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to fetch friend availability',
+      };
+    }
+  },
+
+  checkUsersAvailability: async (userIDs, date, startTime, endTime) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    try {
+      const response = await checkAvailability(
+        currentUser.idToken,
+        userIDs,
+        date,
+        startTime,
+        endTime,
+      );
+      return { success: true, results: response.results };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to check availability',
+      };
     }
   },
 
@@ -71,7 +220,7 @@ const createUserSlice = (set, get) => ({
       } else {
         // Otherwise use the general update endpoint
         response = await axios.patch(
-          `http://localhost:9090/api/users/${currentUser._id}`,
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${currentUser._id}`,
           userData,
           {
             headers: {
@@ -186,6 +335,8 @@ const createUserSlice = (set, get) => ({
           idToken,
         };
         state.userSlice.isLoggedIn = true;
+        // Initialize availability from user data
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -197,6 +348,7 @@ const createUserSlice = (set, get) => ({
         state.userSlice.error = error.message || 'Login failed';
         state.userSlice.isLoggedIn = false;
         state.userSlice.currentUser = null;
+        state.userSlice.availability = null;
       });
 
       return {
@@ -219,6 +371,7 @@ const createUserSlice = (set, get) => ({
         state.userSlice.currentUser = null;
         state.userSlice.isLoggedIn = false;
         state.userSlice.friendRequests = [];
+        state.userSlice.availability = null;
       });
 
       return { success: true };
@@ -251,6 +404,8 @@ const createUserSlice = (set, get) => ({
           ...userData,
           idToken: currentUser.idToken,
         };
+        // Update availability from refreshed user data
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -372,6 +527,8 @@ const createUserSlice = (set, get) => ({
           ...userData,
           idToken: idToken,
         };
+        // Update availability from refreshed user data
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -466,6 +623,9 @@ const createUserSlice = (set, get) => ({
           ...userData,
           idToken: idToken,
         };
+        if (userData.availability) {
+          state.userSlice.availability = userData.availability;
+        }
       });
       return { success: true, userData };
     } catch (error) {

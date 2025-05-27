@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
-  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -17,13 +16,20 @@ import {
   Button,
   TextInput,
   RadioButton,
+  Checkbox,
+  Divider,
+  Card,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import styles, { BOX_SHADOW } from '../styles';
+import styles from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
+import {
+  checkAvailability,
+  getFriendAvailability,
+} from '../services/availability-api';
 
 const LOCATION_OPTIONS = ['Foco', 'Collis', 'Novack', 'Fern', 'Hop'];
 
@@ -46,7 +52,6 @@ const formatTimeForApi = (date) => {
 
   const formattedHours = hours.toString().padStart(2, '0');
   const formattedMinutes = roundedMinutes.toString().padStart(2, '0');
-
   const timeString = `${formattedHours}:${formattedMinutes}`;
 
   const generateValidTimes = () => {
@@ -64,14 +69,25 @@ const formatTimeForApi = (date) => {
   const allPossibleTimes = generateValidTimes();
 
   if (!allPossibleTimes.includes(timeString)) {
+    console.warn(
+      `Unexpected time format: ${timeString}. Finding closest valid time.`,
+    );
+
+    const timeToMinutes = (timeStr) => {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const selectedTimeInMinutes = timeToMinutes(timeString);
+
     let closestTime = allPossibleTimes[0];
     let minDifference = Math.abs(
-      timeToMinutes(closestTime) - timeToMinutes(timeString),
+      timeToMinutes(closestTime) - selectedTimeInMinutes,
     );
 
     for (const validTime of allPossibleTimes) {
       const difference = Math.abs(
-        timeToMinutes(validTime) - timeToMinutes(timeString),
+        timeToMinutes(validTime) - selectedTimeInMinutes,
       );
       if (difference < minDifference) {
         minDifference = difference;
@@ -85,19 +101,19 @@ const formatTimeForApi = (date) => {
   return timeString;
 };
 
-const timeToMinutes = (timeStr) => {
-  const [h, m] = timeStr.split(':').map(Number);
-  return h * 60 + m;
-};
-
 export default function ScheduleMeal({ navigation, route }) {
+  const profilePic = route.params?.profilePic || null;
   const [friends, setFriends] = useState([]);
   const [squads, setSquads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedSquads, setSelectedSquads] = useState([]);
   const [activeTab, setActiveTab] = useState('friends');
-  const [shouldRefresh, setShouldRefresh] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [friendAvailability, setFriendAvailability] = useState({});
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [selectedFriendForSchedule, setSelectedFriendForSchedule] =
+    useState(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -111,37 +127,13 @@ export default function ScheduleMeal({ navigation, route }) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const currentUser = useStore((state) => state.userSlice.currentUser);
-  const refreshUserProfile = useStore(
-    (state) => state.userSlice.refreshUserProfile,
-  );
   const userSquads = useStore((state) => state.squadSlice.squads);
   const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
   const createMeal = useStore((state) => state.mealSlice.createMeal);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      refreshUserProfile();
-      setShouldRefresh(true);
-    });
+  const loadData = useCallback(async () => {
+    if (dataLoaded || !currentUser?.userID) return;
 
-    return unsubscribe;
-  }, [navigation, refreshUserProfile]);
-
-  useEffect(() => {
-    if (currentUser?.userID && shouldRefresh) {
-      loadData();
-    }
-  }, [currentUser, shouldRefresh]);
-
-  useEffect(() => {
-    const timeOfDay = getMealType(selectedTime.getHours());
-    const defaultName = `${timeOfDay.charAt(0).toUpperCase()}${timeOfDay.slice(
-      1,
-    )} at ${location}`;
-    setMealName(defaultName);
-  }, [selectedTime, location]);
-
-  const loadData = async () => {
     setLoading(true);
     try {
       if (userSquads.length === 0) {
@@ -169,9 +161,9 @@ export default function ScheduleMeal({ navigation, route }) {
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
-                profilePic: details.profilePic,
               };
             } catch (error) {
+              console.error('Error fetching friend details:', error);
               return {
                 id: friend.friendID,
                 name: 'Unknown Friend',
@@ -185,13 +177,80 @@ export default function ScheduleMeal({ navigation, route }) {
         setFriends(friendsData);
       }
 
-      setShouldRefresh(false);
+      setDataLoaded(true);
     } catch (error) {
+      console.error('Error loading data:', error);
       Alert.alert('Error', 'Failed to load friends and squads');
     } finally {
       setLoading(false);
     }
+  }, [currentUser, getUserSquads, userSquads, dataLoaded]);
+
+  const checkSelectedFriendsAvailability = async (date, time) => {
+    if (selectedFriends.length === 0) return;
+
+    try {
+      const mealDateTime = new Date(date);
+      mealDateTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
+
+      const endTime = new Date(mealDateTime);
+      endTime.setHours(endTime.getHours() + 1);
+
+      const friendUIDs = selectedFriends.map((item) => item.id);
+      const response = await checkAvailability(
+        currentUser.idToken,
+        friendUIDs,
+        mealDateTime.toISOString(),
+        mealDateTime.toISOString(),
+        endTime.toISOString(),
+      );
+
+      const availabilityMap = {};
+      response.results.forEach((result) => {
+        availabilityMap[result.userID] = result.isAvailable;
+      });
+
+      setFriendAvailability(availabilityMap);
+    } catch (error) {
+      console.error('Error checking availability:', error);
+    }
   };
+
+  const handleLongPressFriend = async (friend) => {
+    try {
+      setSelectedFriendForSchedule(friend);
+      const friendSchedule = await getFriendAvailability(
+        currentUser.idToken,
+        friend.id,
+      );
+      setSelectedFriendForSchedule({
+        ...friend,
+        availability: friendSchedule.availability,
+      });
+      setScheduleModalVisible(true);
+    } catch (error) {
+      console.error('Error fetching friend schedule:', error);
+      Alert.alert('Error', "Could not load friend's schedule");
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const timeOfDay = getMealType(selectedTime.getHours());
+    const defaultName = `${timeOfDay.charAt(0).toUpperCase()}${timeOfDay.slice(
+      1,
+    )} at ${location}`;
+    setMealName(defaultName);
+  }, [selectedTime, location]);
+
+  useEffect(() => {
+    if (selectedFriends.length > 0) {
+      checkSelectedFriendsAvailability(selectedDate, selectedTime);
+    }
+  }, [selectedFriends, selectedDate, selectedTime]);
 
   const toggleFriendSelection = (id, type, mongoId) => {
     setSelectedFriends((prev) => {
@@ -211,36 +270,200 @@ export default function ScheduleMeal({ navigation, route }) {
     });
   };
 
-  const renderFriendItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        localStyles.friendItem,
-        selectedFriends.some((selected) => selected.id === item.id) &&
-          localStyles.selectedItem,
-      ]}
-      onPress={() => toggleFriendSelection(item.id, item.type, item.mongoId)}
-    >
-      <View style={localStyles.avatarContainer}>
-        {!item.profilePic ? (
+  const getFriendItemStyle = (friend) => {
+    const isSelected = selectedFriends.some((item) => item.id === friend.id);
+    const isAvailable = friendAvailability[friend.id];
+
+    if (isSelected) {
+      return localStyles.selectedItem;
+    } else if (isAvailable === false) {
+      return localStyles.busyItem;
+    }
+
+    return localStyles.friendItem;
+  };
+
+  const renderScheduleModal = () => {
+    if (!selectedFriendForSchedule?.availability) return null;
+
+    const { availability } = selectedFriendForSchedule;
+    const allItems = [
+      ...availability.classes.map((item) => ({ ...item, category: 'classes' })),
+      ...availability.sporting.map((item) => ({
+        ...item,
+        category: 'sporting',
+      })),
+      ...availability.extracurricular.map((item) => ({
+        ...item,
+        category: 'extracurricular',
+      })),
+      ...availability.other.map((item) => ({ ...item, category: 'other' })),
+    ];
+
+    const formatTime = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    };
+
+    const getCategoryColor = (category) => {
+      switch (category) {
+        case 'classes':
+          return '#2196f3';
+        case 'sporting':
+          return '#4caf50';
+        case 'extracurricular':
+          return '#fbc02d';
+        case 'other':
+          return '#f44336';
+        default:
+          return '#666';
+      }
+    };
+
+    return (
+      <Modal
+        visible={scheduleModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setScheduleModalVisible(false)}
+      >
+        <View style={localStyles.modalOverlay}>
+          <View style={localStyles.scheduleModalContent}>
+            <View style={localStyles.modalHeader}>
+              <Text style={localStyles.modalTitle}>
+                {selectedFriendForSchedule.name}'s Schedule
+              </Text>
+              <TouchableOpacity onPress={() => setScheduleModalVisible(false)}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color="#5C4D7D"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Divider style={localStyles.divider} />
+
+            {allItems.length === 0 ? (
+              <View style={localStyles.emptySchedule}>
+                <Text style={localStyles.emptyText}>
+                  {selectedFriendForSchedule.name} hasn't shared their schedule
+                  yet
+                </Text>
+              </View>
+            ) : (
+              <ScrollView style={localStyles.scheduleScrollView}>
+                {allItems.map((item, index) => (
+                  <Card
+                    key={index}
+                    style={[
+                      localStyles.scheduleCard,
+                      { borderLeftColor: getCategoryColor(item.category) },
+                    ]}
+                  >
+                    <Card.Content>
+                      <Text style={localStyles.scheduleItemName}>
+                        {item.name}
+                      </Text>
+                      <Text style={localStyles.scheduleItemCategory}>
+                        {item.category.charAt(0).toUpperCase() +
+                          item.category.slice(1)}
+                      </Text>
+
+                      {item.days && item.days.length > 0 && (
+                        <Text style={localStyles.scheduleItemDetails}>
+                          Days: {item.days.join(', ')}
+                        </Text>
+                      )}
+
+                      {item.startTime && item.endTime && (
+                        <Text style={localStyles.scheduleItemDetails}>
+                          Time: {formatTime(item.startTime)} -{' '}
+                          {formatTime(item.endTime)}
+                        </Text>
+                      )}
+
+                      {item.timeBlock && (
+                        <Text style={localStyles.scheduleItemDetails}>
+                          Block: {item.timeBlock}
+                        </Text>
+                      )}
+                    </Card.Content>
+                  </Card>
+                ))}
+              </ScrollView>
+            )}
+
+            <Button
+              mode="contained"
+              style={localStyles.closeModalButton}
+              onPress={() => setScheduleModalVisible(false)}
+            >
+              Close
+            </Button>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderFriendItem = ({ item }) => {
+    const isSelected = selectedFriends.some(
+      (selected) => selected.id === item.id,
+    );
+    const isAvailable = friendAvailability[item.id];
+
+    return (
+      <TouchableOpacity
+        style={getFriendItemStyle(item)}
+        onPress={() => toggleFriendSelection(item.id, item.type, item.mongoId)}
+        onLongPress={() => handleLongPressFriend(item)}
+      >
+        <View style={localStyles.avatarContainer}>
           <Avatar.Text
             size={50}
             label={item.initials}
-            style={localStyles.avatar}
+            style={[
+              localStyles.avatar,
+              isAvailable === false && localStyles.busyAvatar,
+            ]}
           />
-        ) : (
-          <Avatar.Image
-            size={50}
-            source={{ uri: item.profilePic }}
-            style={localStyles.avatar}
-          />
-        )}
-      </View>
-      <View style={localStyles.friendInfo}>
-        <Text style={localStyles.friendName}>{item.name}</Text>
-        <Text style={localStyles.friendEmail}>{item.email}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+          {isAvailable === false && (
+            <MaterialCommunityIcons
+              name="clock-alert"
+              size={16}
+              color="#f44336"
+              style={localStyles.busyIcon}
+            />
+          )}
+        </View>
+        <View style={localStyles.friendInfo}>
+          <Text
+            style={[
+              localStyles.friendName,
+              isAvailable === false && localStyles.busyText,
+            ]}
+          >
+            {item.name}
+          </Text>
+          <Text
+            style={[
+              localStyles.friendEmail,
+              isAvailable === false && localStyles.busyText,
+            ]}
+          >
+            {item.email}
+            {isAvailable === false && ' • Busy at this time'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderSquadItem = ({ item }) => (
     <TouchableOpacity
@@ -252,6 +475,11 @@ export default function ScheduleMeal({ navigation, route }) {
     >
       <View style={localStyles.squadHeader}>
         <Text style={localStyles.squadName}>{item.squadName}</Text>
+        <Checkbox
+          status={selectedSquads.includes(item._id) ? 'checked' : 'unchecked'}
+          onPress={() => toggleSquadSelection(item._id)}
+          color="#5C4D7D"
+        />
       </View>
       <Text style={localStyles.squadMembersCount}>
         {item.members.length} members
@@ -310,7 +538,6 @@ export default function ScheduleMeal({ navigation, route }) {
       Alert.alert('Error', 'Please select at least one friend or squad');
       return;
     }
-
     setShowDetailsModal(true);
   };
 
@@ -325,6 +552,33 @@ export default function ScheduleMeal({ navigation, route }) {
       return;
     }
 
+    const unavailableFriends = selectedFriends.filter(
+      (item) => friendAvailability[item.id] === false,
+    );
+
+    if (unavailableFriends.length > 0) {
+      const friendNames = unavailableFriends.map((item) => {
+        const friend = friends.find((f) => f.id === item.id);
+        return friend ? friend.name : 'Unknown';
+      });
+
+      Alert.alert(
+        'Some friends are busy',
+        `${friendNames.join(', ')} ${
+          friendNames.length === 1 ? 'is' : 'are'
+        } busy at this time. Continue anyway?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Continue', onPress: () => proceedWithMealScheduling() },
+        ],
+      );
+      return;
+    }
+
+    proceedWithMealScheduling();
+  };
+
+  const proceedWithMealScheduling = async () => {
     try {
       setLoading(true);
 
@@ -352,23 +606,32 @@ export default function ScheduleMeal({ navigation, route }) {
         mealType: mealType,
       };
 
+      console.log(
+        'Scheduling meal with data:',
+        JSON.stringify(mealData, null, 2),
+      );
+
       const result = await createMeal(mealData);
+      console.log('Meal created:', result);
 
       setShowDetailsModal(false);
       setSelectedFriends([]);
       setSelectedSquads([]);
       setLocation(LOCATION_OPTIONS[0]);
-      setShowDatePicker(false);
       setNotes('');
 
       Alert.alert('Success', `Meal "${mealName}" scheduled successfully`, [
         {
           text: 'OK',
           onPress: () =>
-            navigation.navigate('ViewMeals', { reloadMeals: true }),
+            navigation.navigate('ViewMeals', {
+              profilePic,
+              reloadMeals: true,
+            }),
         },
       ]);
     } catch (error) {
+      console.error('Error scheduling meal:', error);
       Alert.alert(
         'Error',
         'Failed to schedule meal: ' + (error.message || 'Unknown error'),
@@ -378,22 +641,24 @@ export default function ScheduleMeal({ navigation, route }) {
     }
   };
 
-  const renderLocationOption = (locationName) => (
-    <TouchableOpacity
-      key={locationName}
-      style={localStyles.locationOption}
-      onPress={() => {
-        setLocation(locationName);
-        const timeOfDay = getMealType(selectedTime.getHours());
-        const defaultName = `${timeOfDay
-          .charAt(0)
-          .toUpperCase()}${timeOfDay.slice(1)} at ${locationName}`;
-        setMealName(defaultName);
-      }}
-    >
-      <RadioButton
-        value={locationName}
-        status={location === locationName ? 'checked' : 'unchecked'}
+  const scheduleNow = () => {
+    if (selectedFriends.length === 0 && selectedSquads.length === 0) {
+      Alert.alert('Error', 'Please select at least one friend or squad');
+      return;
+    }
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 30);
+    setSelectedDate(now);
+    setSelectedTime(now);
+    setShowDetailsModal(true);
+  };
+
+  const renderLocationOption = useCallback(
+    (locationName) => (
+      <TouchableOpacity
+        key={locationName}
+        style={localStyles.locationOption}
         onPress={() => {
           setLocation(locationName);
           const timeOfDay = getMealType(selectedTime.getHours());
@@ -402,44 +667,47 @@ export default function ScheduleMeal({ navigation, route }) {
             .toUpperCase()}${timeOfDay.slice(1)} at ${locationName}`;
           setMealName(defaultName);
         }}
-        color="#6750a4"
-      />
-      <Text style={localStyles.locationOptionText}>{locationName}</Text>
-    </TouchableOpacity>
+      >
+        <RadioButton
+          value={locationName}
+          status={location === locationName ? 'checked' : 'unchecked'}
+          onPress={() => {
+            setLocation(locationName);
+            const timeOfDay = getMealType(selectedTime.getHours());
+            const defaultName = `${timeOfDay
+              .charAt(0)
+              .toUpperCase()}${timeOfDay.slice(1)} at ${locationName}`;
+            setMealName(defaultName);
+          }}
+          color="#5C4D7D"
+        />
+        <Text style={localStyles.locationOptionText}>{locationName}</Text>
+      </TouchableOpacity>
+    ),
+    [location, selectedTime],
   );
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <TopNav navigation={navigation} title="Schedule Meal" />
-        <View style={{ height: 50 }} />
-        <View
-          style={[
-            styles.content,
-            { justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <ActivityIndicator size="large" color="#6750a4" />
-          <Text style={{ marginTop: 20 }}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav navigation={navigation} title="Schedule Meal" />
-      <View style={{ height: 50 }} />
+      <TopNav
+        navigation={navigation}
+        title="Schedule Meal"
+        profilePic={profilePic}
+      />
       <View style={localStyles.contentContainer}>
+        <View style={localStyles.headerContainer}>
+          <Text style={localStyles.headerText}>MEAL</Text>
+        </View>
+
         <Text style={localStyles.subheaderText}>
-          Select friends or squads to schedule a meal with.
+          Select friends or squads to schedule a meal with. Long press to view
+          schedules.
         </Text>
 
         <View style={localStyles.tabContainer}>
           <TouchableOpacity
             style={[
               localStyles.tab,
-              localStyles.leftTab,
               activeTab === 'friends' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('friends')}
@@ -453,11 +721,9 @@ export default function ScheduleMeal({ navigation, route }) {
               Friends
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               localStyles.tab,
-              localStyles.rightTab,
               activeTab === 'squads' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('squads')}
@@ -473,55 +739,84 @@ export default function ScheduleMeal({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        <View style={localStyles.listContainer}>
-          {activeTab === 'friends' ? (
-            <FlatList
-              data={friends}
-              renderItem={renderFriendItem}
-              keyExtractor={(item) => item.id}
-              style={localStyles.friendsList}
-              contentContainerStyle={localStyles.friendsListContent}
-              ListEmptyComponent={
-                <Text style={localStyles.emptyText}>
-                  No friends found. Add friends to schedule meals with them.
-                </Text>
-              }
-            />
-          ) : (
-            <FlatList
-              data={squads}
-              renderItem={renderSquadItem}
-              keyExtractor={(item) => item._id}
-              style={localStyles.friendsList}
-              contentContainerStyle={localStyles.friendsListContent}
-              ListEmptyComponent={
-                <Text style={localStyles.emptyText}>
-                  No squads found. Create a squad to schedule group meals.
-                </Text>
-              }
-            />
-          )}
-        </View>
         <View style={localStyles.actionButtonsContainer}>
           <TouchableOpacity
-            style={[
-              localStyles.dateTimeButton,
-              selectedFriends.length === 0 && selectedSquads.length === 0
-                ? localStyles.dtbInactive
-                : localStyles.dtbActive,
-            ]}
+            style={localStyles.dateTimeButton}
             onPress={showMealDetails}
           >
-            <Text style={localStyles.dateTimeText}>Schedule Meal</Text>
+            <Text style={localStyles.dateTimeText}>Date/Time</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              localStyles.sendButton,
+              selectedFriends.length === 0 &&
+                selectedSquads.length === 0 &&
+                localStyles.disabledButton,
+            ]}
+            disabled={
+              selectedFriends.length === 0 && selectedSquads.length === 0
+            }
+            onPress={showMealDetails}
+          >
+            <Text style={localStyles.sendText}>Send</Text>
             <MaterialCommunityIcons
               name="arrow-right"
               size={20}
-              style={localStyles.arrowRight}
+              color="#5C4D7D"
             />
           </TouchableOpacity>
         </View>
+
+        {loading ? (
+          <View style={localStyles.loadingContainer}>
+            <Text style={localStyles.loadingText}>Loading...</Text>
+          </View>
+        ) : activeTab === 'friends' ? (
+          <FlatList
+            data={friends}
+            renderItem={renderFriendItem}
+            keyExtractor={(item) => item.id}
+            style={localStyles.friendsList}
+            contentContainerStyle={localStyles.friendsListContent}
+            ListEmptyComponent={
+              <Text style={localStyles.emptyText}>
+                No friends found. Add friends to schedule meals with them.
+              </Text>
+            }
+          />
+        ) : (
+          <FlatList
+            data={squads}
+            renderItem={renderSquadItem}
+            keyExtractor={(item) => item._id}
+            style={localStyles.friendsList}
+            contentContainerStyle={localStyles.friendsListContent}
+            ListEmptyComponent={
+              <Text style={localStyles.emptyText}>
+                No squads found. Create a squad to schedule group meals.
+              </Text>
+            }
+          />
+        )}
       </View>
 
+      <View style={localStyles.bottomButton}>
+        <TouchableOpacity
+          style={[
+            localStyles.scheduleNowButton,
+            selectedFriends.length === 0 &&
+              selectedSquads.length === 0 &&
+              localStyles.disabledButton,
+          ]}
+          onPress={scheduleNow}
+          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
+        >
+          <Text style={localStyles.scheduleNowText}>Schedule Meal Now</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Android DateTimePicker */}
       {Platform.OS === 'android' && showDatePicker && (
         <DateTimePicker
           value={selectedDate}
@@ -540,6 +835,7 @@ export default function ScheduleMeal({ navigation, route }) {
         />
       )}
 
+      {/* Meal details modal */}
       <Modal
         visible={showDetailsModal}
         animationType="slide"
@@ -553,14 +849,10 @@ export default function ScheduleMeal({ navigation, route }) {
             <ScrollView style={localStyles.modalScroll}>
               <Text style={localStyles.modalLabel}>Meal Name:</Text>
               <TextInput
+                style={localStyles.textInput}
                 placeholder="Give your meal a name"
                 value={mealName}
                 onChangeText={setMealName}
-                style={localStyles.textInput}
-                contentStyle={localStyles.textInputContent}
-                outlineStyle={localStyles.textInputBorder}
-                mode="outlined"
-                dense
               />
 
               <Text style={localStyles.modalLabel}>Date:</Text>
@@ -649,16 +941,12 @@ export default function ScheduleMeal({ navigation, route }) {
 
               <Text style={localStyles.modalLabel}>Notes (optional):</Text>
               <TextInput
-                style={[localStyles.textInput, { height: 80 }]}
-                contentStyle={localStyles.textInputContent}
-                outlineStyle={localStyles.textInputBorder}
+                style={[localStyles.textInput, localStyles.textArea]}
                 placeholder="Add notes about the meal"
                 value={notes}
                 onChangeText={setNotes}
                 multiline={true}
                 numberOfLines={4}
-                mode="outlined"
-                dense
               />
 
               {selectedFriends.length > 0 && (
@@ -667,12 +955,25 @@ export default function ScheduleMeal({ navigation, route }) {
                   <View style={localStyles.selectedList}>
                     {selectedFriends.map((item) => {
                       const friendData = friends.find((f) => f.id === item.id);
+                      const isAvailable = friendAvailability[item.id];
                       return (
                         <View
                           key={item.id}
-                          style={localStyles.selectedItemChip}
+                          style={[
+                            localStyles.selectedItemChip,
+                            isAvailable === false && localStyles.busyChip,
+                          ]}
                         >
-                          <Text>{friendData ? friendData.name : item.id}</Text>
+                          <Text
+                            style={
+                              isAvailable === false
+                                ? localStyles.busyChipText
+                                : null
+                            }
+                          >
+                            {friendData ? friendData.name : item.id}
+                            {isAvailable === false && ' (Busy)'}
+                          </Text>
                         </View>
                       );
                     })}
@@ -706,16 +1007,16 @@ export default function ScheduleMeal({ navigation, route }) {
               <Button
                 mode="outlined"
                 onPress={() => setShowDetailsModal(false)}
-                style={localStyles.modalButton}
+                style={localStyles.cancelButton}
               >
                 Cancel
               </Button>
               <Button
                 mode="contained"
                 onPress={scheduleMeal}
-                style={localStyles.modalButton}
+                style={localStyles.scheduleButton}
                 loading={loading}
-                disabled={!mealName || showDatePicker || showTimePicker}
+                disabled={!mealName}
               >
                 Schedule Meal
               </Button>
@@ -723,94 +1024,102 @@ export default function ScheduleMeal({ navigation, route }) {
           </View>
         </View>
       </Modal>
+
+      {renderScheduleModal()}
     </SafeAreaView>
   );
 }
 
 const localStyles = StyleSheet.create({
   contentContainer: {
-    alignItems: 'center',
+    flex: 1,
     width: '100%',
-    minHeight: '100%',
-    gap: 5,
+    paddingTop: 5,
+  },
+  headerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: '400',
   },
   subheaderText: {
     textAlign: 'center',
     fontSize: 16,
-    marginTop: 15,
-    marginBottom: 10,
+    marginBottom: 15,
+    paddingHorizontal: 20,
   },
   tabContainer: {
     flexDirection: 'row',
-    width: '75%',
     marginBottom: 10,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#ddd',
+    paddingHorizontal: 20,
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f8f8ff',
+    backgroundColor: '#f0f0f0',
     borderWidth: 1,
     borderColor: '#ddd',
   },
-  leftTab: {
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-  },
-  rightTab: {
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
   activeTab: {
-    backgroundColor: '#e9e6ff',
+    backgroundColor: '#E8F5D9',
+    borderBottomWidth: 2,
+    borderBottomColor: '#5C4D7D',
   },
   tabText: {
     fontWeight: '500',
     color: '#555',
   },
   activeTabText: {
-    color: '#6750a4',
+    color: '#5C4D7D',
     fontWeight: 'bold',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginBottom: 10,
+    width: '100%',
   },
   dateTimeButton: {
+    backgroundColor: '#CBDBA7',
     paddingVertical: 15,
-    paddingHorizontal: 15,
-    borderRadius: 15,
-    marginTop: 5,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    flex: 1,
+    marginRight: 10,
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    gap: 5,
-  },
-  dtbInactive: {
-    backgroundColor: 'lightgray',
-    pointerEvents: 'none',
-  },
-  dtbActive: {
-    backgroundColor: '#6750a4',
-    ...BOX_SHADOW,
   },
   dateTimeText: {
     fontSize: 16,
-    color: 'white',
-    fontWeight: '500',
+    color: '#000',
   },
-  arrowRight: {
-    paddingLeft: 5,
-    color: 'white',
+  sendButton: {
+    backgroundColor: '#E8F5D9',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendText: {
+    fontSize: 16,
+    color: '#5C4D7D',
+    marginRight: 5,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   friendsList: {
+    flex: 1,
     width: '100%',
-    borderRadius: 10,
   },
   friendsListContent: {
     paddingHorizontal: 0,
@@ -818,14 +1127,21 @@ const localStyles = StyleSheet.create({
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f8ff',
+    backgroundColor: '#CBDBA7',
     paddingVertical: 10,
     paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  busyItem: {
+    backgroundColor: '#ffebee',
   },
   squadItem: {
-    backgroundColor: '#f8f8ff',
-    paddingVertical: 12,
+    backgroundColor: '#CBDBA7',
+    paddingVertical: 10,
     paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   squadHeader: {
     flexDirection: 'row',
@@ -839,16 +1155,30 @@ const localStyles = StyleSheet.create({
   squadMembersCount: {
     fontSize: 14,
     color: '#555',
-    marginVertical: 5,
+    marginTop: 5,
   },
   selectedItem: {
-    backgroundColor: '#e9e6ff',
+    backgroundColor: '#A4C67D',
   },
   avatarContainer: {
     marginRight: 15,
+    position: 'relative',
   },
   avatar: {
     backgroundColor: 'white',
+  },
+  busyAvatar: {
+    backgroundColor: '#ffcdd2',
+  },
+  busyIcon: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: 'white',
+    borderRadius: 8,
+  },
+  friendInfo: {
+    flex: 1,
   },
   friendName: {
     fontSize: 16,
@@ -857,6 +1187,9 @@ const localStyles = StyleSheet.create({
   friendEmail: {
     fontSize: 14,
     color: '#555',
+  },
+  busyText: {
+    color: '#999',
   },
   bottomButton: {
     width: '100%',
@@ -871,7 +1204,7 @@ const localStyles = StyleSheet.create({
   },
   scheduleNowText: {
     fontSize: 16,
-    color: '#6750a4',
+    color: '#5C4D7D',
   },
   modalOverlay: {
     flex: 1,
@@ -881,72 +1214,91 @@ const localStyles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 10,
     padding: 20,
     width: '90%',
-    height: '65%',
-    justifyContent: 'space-between',
+    maxHeight: '80%',
+  },
+  scheduleModalContent: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 15,
     textAlign: 'center',
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   modalScroll: {
-    maxHeight: '90%%',
+    maxHeight: 400,
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 15,
+    marginTop: 10,
     marginBottom: 5,
   },
   inputField: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
+    borderRadius: 5,
     padding: 10,
+    marginBottom: 10,
   },
   textInput: {
-    height: 40,
-  },
-  textInputContent: {
-    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
-    paddingLeft: 10,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
   },
-  textInputBorder: {
-    borderRadius: 10,
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
     marginTop: 20,
   },
-  modalButton: {
+  cancelButton: {
     flex: 1,
-    borderRadius: 15,
-    ...BOX_SHADOW,
+    marginRight: 10,
+  },
+  scheduleButton: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: '#5C4D7D',
   },
   selectedList: {
-    paddingTop: 10,
     marginBottom: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
   },
   selectedItemChip: {
-    backgroundColor: '#e9e6ff',
-    borderRadius: 10,
+    backgroundColor: '#A4C67D',
+    borderRadius: 15,
     paddingVertical: 5,
     paddingHorizontal: 10,
-    marginVertical: -5,
+    margin: 5,
+  },
+  busyChip: {
+    backgroundColor: '#ffcdd2',
+  },
+  busyChipText: {
+    color: '#999',
   },
   locationOptionsContainer: {
-    marginBottom: 5,
+    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
@@ -977,7 +1329,7 @@ const localStyles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#6750a4',
+    color: '#5C4D7D',
   },
   pickerContainer: {
     backgroundColor: 'white',
@@ -986,7 +1338,6 @@ const localStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     marginBottom: 15,
-    marginTop: 5,
   },
   pickerHeader: {
     flexDirection: 'row',
@@ -1001,18 +1352,51 @@ const localStyles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pickerCancel: {
-    color: '#6750a4',
+    color: '#5C4D7D',
     fontSize: 16,
   },
   pickerDone: {
-    color: '#6750a4',
+    color: '#5C4D7D',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  listContainer: {
-    width: '90%',
-    maxHeight: '70%',
-    borderRadius: 15,
+  picker: {
+    height: 200,
+    width: '100%',
+  },
+  divider: {
+    marginBottom: 15,
+  },
+  scheduleScrollView: {
+    flex: 1,
+    marginBottom: 15,
+  },
+  scheduleCard: {
     marginBottom: 10,
+    borderLeftWidth: 4,
+  },
+  scheduleItemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  scheduleItemCategory: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  scheduleItemDetails: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 2,
+  },
+  emptySchedule: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  closeModalButton: {
+    backgroundColor: '#5C4D7D',
   },
 });

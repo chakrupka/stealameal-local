@@ -137,6 +137,53 @@ const Profile = ({ navigation, route }) => {
             >
               <Text style={localStyles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('EnterAvailability', {
+                  profilePic: currentUser?.profilePic,
+                })
+              }
+              style={[
+                styles.profileView.button,
+                localStyles.smallButton,
+                localStyles.availabilityButton,
+              ]}
+            >
+              <View style={localStyles.buttonContent}>
+                <MaterialCommunityIcons
+                  name="calendar-clock"
+                  size={20}
+                  color="white"
+                  style={localStyles.buttonIcon}
+                />
+                <Text style={localStyles.buttonText}>Set My Schedule</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('CalendarView', {
+                  profilePic: currentUser?.profilePic,
+                })
+              }
+              style={[
+                styles.profileView.button,
+                localStyles.smallButton,
+                localStyles.calendarButton,
+              ]}
+            >
+              <View style={localStyles.buttonContent}>
+                <MaterialCommunityIcons
+                  name="calendar"
+                  size={20}
+                  color="white"
+                  style={localStyles.buttonIcon}
+                />
+                <Text style={localStyles.buttonText}>View Calendar</Text>
+              </View>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => navigation.navigate('LocationSettings')}
               style={[styles.profileView.button, localStyles.smallButton]}
@@ -225,6 +272,14 @@ const localStyles = StyleSheet.create({
     width: 'auto',
     ...BOX_SHADOW,
   },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
   buttonText: {
     fontSize: 18,
     fontWeight: 500,
@@ -239,6 +294,14 @@ const localStyles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: 'lightcoral',
+    ...BOX_SHADOW,
+  },
+  availabilityButton: {
+    backgroundColor: '#2e7d32',
+    ...BOX_SHADOW,
+  },
+  calendarButton: {
+    backgroundColor: '#1976d2',
     ...BOX_SHADOW,
   },
 });

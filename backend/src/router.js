@@ -16,9 +16,7 @@ router.get('/auth', UserHandlers.handleGetOwnedUser);
 router.get('/users', UserHandlers.handleGetUsers);
 router.get('/users/:userID', UserHandlers.handleGetUserId);
 router.patch('/users/:userID', UserHandlers.handleUpdate);
-router.patch('/users/:userID/location', UserHandlers.updateLocation);
 router.delete('/users/:userID', UserHandlers.handleDelete);
-router.post('/fix-location-timestamps', UserHandlers.fixMissingLocationTimestamps);
 
 // Friend Requests routes
 router.get('/search-users', UserHandlers.searchByEmail);
@@ -30,6 +28,15 @@ router.get(
   '/users/by-firebase-uid/:firebaseUID',
   UserHandlers.handleGetByFirebaseUid,
 );
+
+// Availability routes
+router.post('/availability', UserHandlers.updateAvailability);
+router.get('/availability', UserHandlers.getAvailability);
+router.get(
+  '/availability/friend/:friendUID',
+  UserHandlers.getFriendAvailability,
+);
+router.post('/availability/check', UserHandlers.checkAvailability);
 
 // Squads routes
 router.post('/squads', SquadHandlers.createSquad);

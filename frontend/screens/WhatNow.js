@@ -64,6 +64,7 @@ export default function WhatNow({ navigation, route }) {
     }
   };
 
+
   const mealOptions = [
     { id: 'pingFriends', label: 'Ping Friends Now', screen: 'PingFriends' },
     {

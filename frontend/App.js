@@ -17,10 +17,10 @@ import ScheduleMeal from './screens/ScheduleMeal';
 import PingFriends from './screens/PingFriends';
 import PickFriend from './screens/PickFriend';
 import MealRequests from './screens/MealRequests';
+import EnterAvailability from './screens/EnterAvailability';
 
 import BuildSquad from './screens/BuildSquad';
 import CampusMap from './screens/CampusMap';
-import EnterAvailability from './screens/EnterAvailability';
 import AddFriendsScreen from './screens/AddFriendsScreen';
 import FriendRequestsScreen from './screens/FriendRequestsScreen';
 import Profile from './screens/Profile';
@@ -50,6 +50,11 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Starter" component={Starter} />
+          <Stack.Screen
+            name="EnterAvailability"
+            component={EnterAvailability}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="CreateAccount" component={CreateAccount} />
           <Stack.Screen name="WhatNow" component={WhatNow} />
@@ -62,7 +67,7 @@ export default function App() {
           <Stack.Screen name="SetLocation" component={SetLocation} />
           <Stack.Screen name="ViewMeals" component={ViewMeals} />
           <Stack.Screen name="LocationSettings" component={LocationSettings} />
-          <Stack.Screen name="EnterAvailability" component={EnterAvailability} />
+
           <Stack.Screen name="AddFriendsScreen" component={AddFriendsScreen} />
           <Stack.Screen
             name="FriendRequestsScreen"
