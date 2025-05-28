@@ -160,6 +160,50 @@ const getAvailability = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+const checkAvailability = async (req, res) => {
+  try {
+    const { userIDs, date, startTime, endTime } = req.body;
+
+    if (!userIDs || !Array.isArray(userIDs) || userIDs.length === 0) {
+      return res.status(400).json({ error: 'userIDs array is required' });
+    }
+
+    if (!date || !startTime || !endTime) {
+      return res.status(400).json({
+        error: 'date, startTime, and endTime are required',
+      });
+    }
+
+    const users = await User.find({ userID: { $in: userIDs } });
+
+    // More detailed logging for debugging
+    console.log(
+      `Checking availability for ${users.length} users at ${startTime} - ${endTime}`,
+    );
+
+    const availabilityResults = users.map((user) => {
+      const isAvailable = user.isAvailableAt(date, startTime, endTime);
+
+      // Log the result for debugging
+      console.log(
+        `User ${user.firstName} ${user.lastName} (${user.userID}): ${
+          isAvailable ? 'AVAILABLE' : 'BUSY'
+        }`,
+      );
+
+      return {
+        userID: user.userID,
+        name: `${user.firstName} ${user.lastName}`,
+        isAvailable,
+      };
+    });
+
+    return res.json({ results: availabilityResults });
+  } catch (error) {
+    console.error('Error checking availability:', error);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 const getFriendAvailability = async (req, res) => {
   try {
@@ -198,38 +242,6 @@ const getFriendAvailability = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching friend availability:', error);
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-const checkAvailability = async (req, res) => {
-  try {
-    const { userIDs, date, startTime, endTime } = req.body;
-
-    if (!userIDs || !Array.isArray(userIDs) || userIDs.length === 0) {
-      return res.status(400).json({ error: 'userIDs array is required' });
-    }
-
-    if (!date || !startTime || !endTime) {
-      return res.status(400).json({
-        error: 'date, startTime, and endTime are required',
-      });
-    }
-
-    const users = await User.find({ userID: { $in: userIDs } });
-
-    const availabilityResults = users.map((user) => {
-      const isAvailable = user.isAvailableAt(date, startTime, endTime);
-      return {
-        userID: user.userID,
-        name: `${user.firstName} ${user.lastName}`,
-        isAvailable,
-      };
-    });
-
-    return res.json({ results: availabilityResults });
-  } catch (error) {
-    console.error('Error checking availability:', error);
     return res.status(500).json({ error: error.message });
   }
 };

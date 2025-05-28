@@ -9,6 +9,8 @@ import { LocationProvider } from './contexts/LocationContext';
 
 import Starter from './screens/Starter';
 import Login from './screens/Login';
+import StealAMeal from './screens/StealAMeal';
+
 import CreateAccount from './screens/CreateAccount';
 import SetLocation from './screens/SetLocation';
 import ViewMeals from './screens/ViewMeals';
@@ -59,6 +61,8 @@ export default function App() {
           <Stack.Screen name="CreateAccount" component={CreateAccount} />
           <Stack.Screen name="WhatNow" component={WhatNow} />
           <Stack.Screen name="ScheduleMeal" component={ScheduleMeal} />
+          <Stack.Screen name="StealAMeal" component={StealAMeal} />
+
           <Stack.Screen name="PingFriends" component={PingFriends} />
           <Stack.Screen name="PickFriend" component={PickFriend} />
           <Stack.Screen name="BuildSquad" component={BuildSquad} />

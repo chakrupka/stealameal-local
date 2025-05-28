@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as Location from 'expo-location';
 import useStore from '../store';
-import { USER_API_URL } from '../configs/api-config';
 import axios from 'axios';
 
 // we didn't have a contexts folder but online it says it is good practice so i created one

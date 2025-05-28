@@ -210,6 +210,26 @@ export default function EnterAvailability({ navigation, route }) {
     }
   };
 
+  // Helper function to validate time order
+  const validateTimeOrder = (startTime, endTime) => {
+    if (!startTime || !endTime) return true;
+    return startTime < endTime;
+  };
+
+  // Helper function to show time validation warning
+  const showTimeValidationWarning = (callback) => {
+    Alert.alert(
+      'Invalid Time Range',
+      'The end time cannot be before the start time. The end time will be automatically adjusted to match the start time.',
+      [
+        {
+          text: 'OK',
+          onPress: callback,
+        },
+      ],
+    );
+  };
+
   const toggleMinimized = (category, index) => {
     setMinimizedItems((prev) => {
       const categoryItems = [...prev[category]];
@@ -261,11 +281,49 @@ export default function EnterAvailability({ navigation, route }) {
         arraySetter((prev) =>
           prev.map((item, idx) => {
             if (idx !== pickerIndex) return item;
+
+            let updatedItem = { ...item };
+
             if (whichTime === 'start') {
-              return { ...item, startTime: tempPickerValue };
+              updatedItem.startTime = tempPickerValue;
+
+              // If end time exists and is now before or equal to start time, push it forward
+              if (
+                updatedItem.endTime &&
+                tempPickerValue >= updatedItem.endTime
+              ) {
+                const newEndTime = new Date(tempPickerValue);
+                newEndTime.setHours(newEndTime.getHours() + 1); // Add 1 hour
+                updatedItem.endTime = newEndTime;
+
+                showTimeValidationWarning(() => {
+                  console.log(
+                    'End time automatically pushed forward to maintain valid time range',
+                  );
+                });
+              }
             } else {
-              return { ...item, endTime: tempPickerValue };
+              // Setting end time
+              if (
+                updatedItem.startTime &&
+                tempPickerValue <= updatedItem.startTime
+              ) {
+                // End time is before or equal to start time - push it forward
+                const newEndTime = new Date(updatedItem.startTime);
+                newEndTime.setMinutes(newEndTime.getMinutes() + 30); // Add 30 minutes minimum
+                updatedItem.endTime = newEndTime;
+
+                showTimeValidationWarning(() => {
+                  console.log(
+                    'End time automatically pushed forward to be after start time',
+                  );
+                });
+              } else {
+                updatedItem.endTime = tempPickerValue;
+              }
             }
+
+            return updatedItem;
           }),
         );
       };
@@ -621,9 +679,20 @@ export default function EnterAvailability({ navigation, route }) {
   const renderTimeButtons = (category, index, item) => {
     if (category === 'classes') return null;
 
+    // Check if times are valid and show warning if not
+    const hasInvalidTimeOrder =
+      item.startTime &&
+      item.endTime &&
+      !validateTimeOrder(item.startTime, item.endTime);
+
     return (
       <View style={stylesLocal.timeButtonsContainer}>
         <Text style={stylesLocal.sectionLabel}>Time Range:</Text>
+        {hasInvalidTimeOrder && (
+          <Text style={stylesLocal.timeWarning}>
+            ⚠️ End time should be after start time
+          </Text>
+        )}
         <View style={stylesLocal.timeButtonsRow}>
           <Button
             mode="outlined"
@@ -1154,6 +1223,12 @@ const stylesLocal = StyleSheet.create({
   timeButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  timeWarning: {
+    color: '#f44336',
+    fontSize: 12,
+    marginBottom: 4,
+    fontStyle: 'italic',
   },
   daySelectorContainer: {
     marginHorizontal: 16,

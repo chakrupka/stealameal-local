@@ -90,6 +90,136 @@ const createMeal = async (req, res) => {
     return res.status(400).json({ error: error.message });
   }
 };
+const getOpenMeals = async (req, res) => {
+  try {
+    const authenticatedUserId = req.verifiedAuthId;
+    console.log('Fetching open meals for user:', authenticatedUserId);
+
+    const user = await User.findOne({ userID: authenticatedUserId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get friend UIDs
+    const friendUIDs = user.friendsList.map((friend) => friend.friendID);
+    console.log('User friends:', friendUIDs);
+
+    if (friendUIDs.length === 0) {
+      return res.json([]);
+    }
+
+    // Get friend MongoDB IDs
+    const friends = await User.find({ userID: { $in: friendUIDs } });
+    const friendMongoIds = friends.map((friend) => friend._id);
+
+    // Find open meals hosted by friends that haven't started yet
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const openMeals = await Meal.find({
+      host: { $in: friendMongoIds },
+      isOpenToJoin: true,
+      date: {
+        $gte: now,
+        $lte: oneWeekFromNow,
+      },
+      // Make sure current user isn't already a participant
+      'participants.userID': { $ne: user._id },
+    })
+      .populate('host', 'firstName lastName email userID')
+      .populate('participants.userID', 'firstName lastName email userID')
+      .populate('squads.squadID', 'squadName members')
+      .sort({ date: 1 });
+
+    console.log(`Found ${openMeals.length} open meals`);
+    return res.json(openMeals);
+  } catch (error) {
+    console.error('Error fetching open meals:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch open meals',
+      message: error.message,
+    });
+  }
+};
+
+const joinOpenMeal = async (req, res) => {
+  try {
+    const { mealId } = req.params;
+    const authenticatedUserId = req.verifiedAuthId;
+
+    console.log('User attempting to join meal:', {
+      mealId,
+      authenticatedUserId,
+    });
+
+    const user = await User.findOne({ userID: authenticatedUserId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const meal = await Meal.findById(mealId);
+    if (!meal) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    // Check if meal is open to join
+    if (!meal.isOpenToJoin) {
+      return res.status(400).json({
+        error: 'This meal is not open for others to join',
+      });
+    }
+
+    // Check if meal hasn't started yet
+    if (new Date(meal.date) <= new Date()) {
+      return res.status(400).json({
+        error: 'This meal has already started',
+      });
+    }
+
+    // Check if user is already a participant
+    const isAlreadyParticipant = meal.participants.some(
+      (p) => p.userID.toString() === user._id.toString(),
+    );
+
+    if (isAlreadyParticipant) {
+      return res.status(400).json({
+        error: 'You are already part of this meal',
+      });
+    }
+
+    // Check if user is the host
+    if (meal.host.toString() === user._id.toString()) {
+      return res.status(400).json({
+        error: 'You cannot join your own meal',
+      });
+    }
+
+    // Add user as confirmed participant (they chose to join)
+    meal.participants.push({
+      userID: user._id,
+      status: 'confirmed',
+    });
+
+    await meal.save();
+
+    const updatedMeal = await Meal.findById(mealId)
+      .populate('host', 'firstName lastName email userID')
+      .populate('participants.userID', 'firstName lastName email userID')
+      .populate('squads.squadID', 'squadName members');
+
+    console.log('User successfully joined meal');
+    return res.json({
+      message: 'Successfully joined the meal!',
+      meal: updatedMeal,
+    });
+  } catch (error) {
+    console.error('Error joining meal:', error);
+    return res.status(500).json({
+      error: 'Failed to join meal',
+      message: error.message,
+    });
+  }
+};
 
 const getAllMeals = async (req, res) => {
   try {
@@ -345,6 +475,8 @@ export default {
   getAllMeals,
   getMealById,
   updateMeal,
+  getOpenMeals,
+  joinOpenMeal,
   deleteMeal,
   respondToSquadInvitation,
 };

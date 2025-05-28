@@ -54,8 +54,7 @@ export default function MealRequests({ navigation }) {
                   (typeof p.userID === 'string' &&
                     p.userID === currentUser.userID)) &&
                 p.status === 'invited',
-            ) &&
-            new Date(meal.date) > new Date(),
+            ),
         );
 
         console.log('Filtered requests:', requests.length);

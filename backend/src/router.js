@@ -52,9 +52,12 @@ router.delete(
 );
 
 // Meals routes
+router.get('/meals/open', MealHandlers.getOpenMeals);
+router.post('/meals/:mealId/join', MealHandlers.joinOpenMeal);
 router.post('/meals', MealHandlers.createMeal);
 router.get('/meals', MealHandlers.getAllMeals);
 router.get('/meals/:mealID', MealHandlers.getMealById);
+
 router.patch('/meals/:mealID', MealHandlers.updateMeal);
 router.delete('/meals/:mealID', MealHandlers.deleteMeal);
 

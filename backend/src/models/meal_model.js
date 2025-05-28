@@ -12,6 +12,10 @@ const MealSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    isOpenToJoin: {
+      type: Boolean,
+      default: false,
+    },
     participants: [
       {
         userID: {
@@ -202,6 +206,7 @@ MealSchema.pre('save', async function (next) {
       }`,
     );
     console.log(`Current meal ID: ${this._id}`);
+    
 
     const conflictingMeal = await mongoose.model('Meal').findOne({
       _id: { $ne: this._id }, // Exclude this meal from the check

@@ -1,12 +1,14 @@
 import * as Auth from '../services/firebase-auth';
 import * as Api from '../services/meal-api';
+import * as StealMealApi from '../services/steal-meal-api';
 
 const createMealSlice = (set, get) => ({
   meals: [],
   selectedMeal: null,
   loading: false,
   error: null,
-
+  openMeals: [],
+  openMealsLoading: false,
   // Reset error state
   resetError: () => {
     set(
@@ -17,7 +19,96 @@ const createMealSlice = (set, get) => ({
       'meal/resetError',
     );
   },
+  getOpenMeals: async () => {
+    try {
+      set(
+        (state) => {
+          state.mealSlice.openMealsLoading = true;
+          state.mealSlice.error = null;
+        },
+        false,
+        'meal/getOpenMeals/pending',
+      );
 
+      const idToken = await Auth.getUser().getIdToken();
+      const openMeals = await StealMealApi.getOpenMeals(idToken);
+
+      set(
+        (state) => {
+          state.mealSlice.openMeals = openMeals;
+          state.mealSlice.openMealsLoading = false;
+        },
+        false,
+        'meal/getOpenMeals/fulfilled',
+      );
+
+      return openMeals;
+    } catch (err) {
+      console.error('Error fetching open meals:', err);
+
+      set(
+        (state) => {
+          state.mealSlice.openMealsLoading = false;
+          state.mealSlice.error = err.message || 'Failed to fetch open meals';
+        },
+        false,
+        'meal/getOpenMeals/rejected',
+      );
+
+      get().errorSlice?.newError?.(err);
+      throw err;
+    }
+  },
+
+  joinOpenMeal: async (mealId) => {
+    try {
+      set(
+        (state) => {
+          state.mealSlice.loading = true;
+          state.mealSlice.error = null;
+        },
+        false,
+        'meal/joinOpenMeal/pending',
+      );
+
+      const idToken = await Auth.getUser().getIdToken();
+      const result = await StealMealApi.joinMeal(idToken, mealId);
+
+      set(
+        (state) => {
+          // Remove from open meals list
+          state.mealSlice.openMeals = state.mealSlice.openMeals.filter(
+            (meal) => meal._id !== mealId,
+          );
+
+          // Add to user's meals
+          if (result.meal) {
+            state.mealSlice.meals.push(result.meal);
+          }
+
+          state.mealSlice.loading = false;
+        },
+        false,
+        'meal/joinOpenMeal/fulfilled',
+      );
+
+      return result;
+    } catch (err) {
+      console.error('Error joining meal:', err);
+
+      set(
+        (state) => {
+          state.mealSlice.loading = false;
+          state.mealSlice.error = err.message || 'Failed to join meal';
+        },
+        false,
+        'meal/joinOpenMeal/rejected',
+      );
+
+      get().errorSlice?.newError?.(err);
+      throw err;
+    }
+  },
   createMeal: async (mealData) => {
     try {
       set(

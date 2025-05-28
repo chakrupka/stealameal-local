@@ -188,130 +188,91 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  updateUserProfile: async (userData) => {
-    const { currentUser } = get().userSlice;
+  // In your user-slice.js, modify the updateUserProfile function:
 
-    if (!currentUser || !currentUser._id || !currentUser.idToken) {
-      return { success: false, error: 'Not logged in' };
-    }
+updateUserProfile: async (userData) => {
+  const { currentUser } = get().userSlice;
 
+  if (!currentUser || !currentUser._id || !currentUser.idToken) {
+    return { success: false, error: 'Not logged in' };
+  }
+
+  set((state) => {
+    state.userSlice.status = 'loading';
+    state.userSlice.error = null;
+  });
+
+  try {
+    let response;
+
+    // Always use the general update endpoint
+    response = await updateUser(
+      currentUser.idToken,
+      currentUser._id,
+      userData
+    );
+
+    console.log('TIMESTAMP DEBUG - Response from updateUser:', response);
+
+    // Update local state with the response
     set((state) => {
-      state.userSlice.status = 'loading';
-      state.userSlice.error = null;
-    });
+      state.userSlice.status = 'succeeded';
+      
+      // Carefully merge the response, ensuring locationUpdatedAt is properly handled
+      const updatedUser = {
+        ...state.userSlice.currentUser,
+        ...response,
+      };
 
-    try {
-      let response;
+      // Extra check for locationUpdatedAt
+      if (response.locationUpdatedAt) {
+        console.log(
+          'TIMESTAMP DEBUG - Store - response contains locationUpdatedAt:',
+          response.locationUpdatedAt,
+        );
 
-      // If it's a location update, use the specialized endpoint
-      if ('location' in userData && Object.keys(userData).length === 1) {
-        console.log('TIMESTAMP DEBUG - Before updateUserLocation call');
-        response = await updateUserLocation(
-          currentUser.idToken,
-          currentUser._id,
-          userData.location,
+        try {
+          // Try parsing it into a valid Date and back to ISO string
+          const date = new Date(response.locationUpdatedAt);
+          if (!isNaN(date.getTime())) {
+            // It's a valid date, store it as ISO string
+            updatedUser.locationUpdatedAt = date.toISOString();
+            console.log(
+              'TIMESTAMP DEBUG - Store - Using formatted locationUpdatedAt:',
+              updatedUser.locationUpdatedAt,
+            );
+          } else {
+            console.error(
+              'TIMESTAMP DEBUG - Store - Invalid date in response',
+            );
+          }
+        } catch (err) {
+          console.error('TIMESTAMP DEBUG - Store - Error parsing date:', err);
+        }
+      } else if (response.location) {
+        // If location was updated but no timestamp provided, set current time
+        updatedUser.locationUpdatedAt = new Date().toISOString();
+        console.log(
+          'TIMESTAMP DEBUG - Store - Location updated, setting current timestamp',
         );
-        console.log('TIMESTAMP DEBUG - After updateUserLocation call');
-        console.log('TIMESTAMP DEBUG - Response from updateUserLocation:', {
-          hasResponse: !!response,
-          hasLocationUpdatedAt: response && !!response.locationUpdatedAt,
-          locationUpdatedAtValue: response ? response.locationUpdatedAt : null,
-        });
-      } else {
-        // Otherwise use the general update endpoint
-        response = await axios.patch(
-          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${currentUser._id}`,
-          userData,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${currentUser.idToken}`,
-            },
-          },
-        );
-        response = response.data;
       }
 
-      console.log('TIMESTAMP DEBUG - Before state update');
-      console.log('TIMESTAMP DEBUG - Current state currentUser:', {
-        hasCurrentUser: !!get().userSlice.currentUser,
-        locationUpdatedAt: get().userSlice.currentUser
-          ? get().userSlice.currentUser.locationUpdatedAt
-          : null,
-      });
+      state.userSlice.currentUser = updatedUser;
+    });
 
-      // Update local state with the response
-      set((state) => {
-        console.log('TIMESTAMP DEBUG - Inside state update');
-        console.log('TIMESTAMP DEBUG - Response object:', response);
+    return { success: true, data: response };
+  } catch (error) {
+    set((state) => {
+      state.userSlice.status = 'failed';
+      state.userSlice.error = error.message || 'Failed to update profile';
+    });
 
-        state.userSlice.status = 'succeeded';
-        // Carefully merge the response, ensuring locationUpdatedAt is properly handled
-        const updatedUser = {
-          ...state.userSlice.currentUser,
-          ...response,
-        };
-
-        // Extra check for locationUpdatedAt
-        if (response.locationUpdatedAt) {
-          console.log(
-            'TIMESTAMP DEBUG - Store - response contains locationUpdatedAt:',
-            response.locationUpdatedAt,
-          );
-
-          try {
-            // Try parsing it into a valid Date and back to ISO string
-            const date = new Date(response.locationUpdatedAt);
-            if (!isNaN(date.getTime())) {
-              // It's a valid date, store it as ISO string
-              updatedUser.locationUpdatedAt = date.toISOString();
-              console.log(
-                'TIMESTAMP DEBUG - Store - Using formatted locationUpdatedAt:',
-                updatedUser.locationUpdatedAt,
-              );
-            } else {
-              console.error(
-                'TIMESTAMP DEBUG - Store - Invalid date in response',
-              );
-            }
-          } catch (err) {
-            console.error('TIMESTAMP DEBUG - Store - Error parsing date:', err);
-          }
-        } else if (response.location) {
-          console.log(
-            'TIMESTAMP DEBUG - Store - Location updated but no timestamp provided',
-          );
-        }
-
-        state.userSlice.currentUser = updatedUser;
-
-        console.log('TIMESTAMP DEBUG - After merge:', {
-          locationUpdatedAt: state.userSlice.currentUser.locationUpdatedAt,
-          location: state.userSlice.currentUser.location,
-        });
-      });
-
-      console.log('TIMESTAMP DEBUG - After state update');
-      console.log('TIMESTAMP DEBUG - Updated state currentUser:', {
-        hasCurrentUser: !!get().userSlice.currentUser,
-        locationUpdatedAt: get().userSlice.currentUser
-          ? get().userSlice.currentUser.locationUpdatedAt
-          : null,
-      });
-
-      return { success: true, data: response };
-    } catch (error) {
-      set((state) => {
-        state.userSlice.status = 'failed';
-        state.userSlice.error = error.message || 'Failed to update profile';
-      });
-
-      return {
-        success: false,
-        error: error.response?.data?.error || error.message || 'Update failed',
-      };
-    }
-  },
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Update failed',
+    };
+  }
+},
 
   login: async ({ email, password }) => {
     set((state) => {
@@ -512,22 +473,18 @@ const createUserSlice = (set, get) => ({
     try {
       await acceptFriendRequest(idToken, userID, senderID);
 
-      // Get the updated user profile from the server
       const userData = await fetchOwnUser(idToken);
 
       set((state) => {
         state.userSlice.status = 'succeeded';
-        // Remove the request from friendRequests
         state.userSlice.friendRequests = state.userSlice.friendRequests.filter(
           (request) => request.senderID !== senderID,
         );
 
-        // Update the entire user object with the fresh data
         state.userSlice.currentUser = {
           ...userData,
           idToken: idToken,
         };
-        // Update availability from refreshed user data
         state.userSlice.availability = userData.availability || null;
       });
 
