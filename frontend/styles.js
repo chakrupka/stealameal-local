@@ -651,6 +651,7 @@ export default StyleSheet.create({
     marginBottom: 15,
   },
   pickerHeader: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

@@ -299,19 +299,6 @@ export default function StealAMeal({ navigation }) {
     <SafeAreaView style={styles.container}>
       <TopNav navigation={navigation} title="Steal a Meal" />
       <View style={localStyles.content}>
-        <View style={localStyles.headerSection}>
-          <Text style={localStyles.headerTitle}>🍽️ Steal a Meal</Text>
-          <Text style={localStyles.headerSubtitle}>
-            Join open meals hosted by your friends this week
-          </Text>
-
-          {totalMeals > 0 && (
-            <Text style={localStyles.mealCounter}>
-              {totalMeals} meal{totalMeals !== 1 ? 's' : ''} available to steal
-            </Text>
-          )}
-        </View>
-
         {totalMeals > 0 ? (
           <FlatList
             data={days}
@@ -523,5 +510,6 @@ const localStyles = StyleSheet.create({
   },
   refreshButton: {
     marginTop: 16,
+    borderRadius: 15,
   },
 });

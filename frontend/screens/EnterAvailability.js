@@ -637,7 +637,7 @@ export default function EnterAvailability({ navigation, route }) {
             onPress={() =>
               openDatePicker(category, index, item.specificDate, 'specificDate')
             }
-            style={{ flex: 1, marginBottom: 8 }}
+            style={{ flex: 1, marginBottom: 8, borderRadius: 15 }}
           >
             {item.specificDate
               ? `Date: ${formatDate(item.specificDate)}`
@@ -656,7 +656,12 @@ export default function EnterAvailability({ navigation, route }) {
             onPress={() =>
               openDatePicker(category, index, item.startDate, 'startDate')
             }
-            style={{ marginRight: 8, marginBottom: 8, flex: 1 }}
+            style={{
+              marginRight: 8,
+              marginBottom: 8,
+              flex: 1,
+              borderRadius: 15,
+            }}
           >
             {item.startDate
               ? `Start: ${formatDate(item.startDate)}`
@@ -667,7 +672,7 @@ export default function EnterAvailability({ navigation, route }) {
             onPress={() =>
               openDatePicker(category, index, item.endDate, 'endDate')
             }
-            style={{ marginBottom: 8, flex: 1 }}
+            style={{ marginBottom: 8, flex: 1, borderRadius: 15 }}
           >
             {item.endDate ? `End: ${formatDate(item.endDate)}` : 'End Date'}
           </Button>
@@ -699,7 +704,12 @@ export default function EnterAvailability({ navigation, route }) {
             onPress={() =>
               openTimePicker(category, index, item.startTime, 'start')
             }
-            style={{ marginRight: 8, marginBottom: 8, flex: 1 }}
+            style={{
+              marginRight: 8,
+              marginBottom: 8,
+              flex: 1,
+              borderRadius: 15,
+            }}
           >
             {item.startTime
               ? `Start: ${formatTime(item.startTime)}`
@@ -708,7 +718,7 @@ export default function EnterAvailability({ navigation, route }) {
           <Button
             mode="outlined"
             onPress={() => openTimePicker(category, index, item.endTime, 'end')}
-            style={{ marginBottom: 8, flex: 1 }}
+            style={{ marginBottom: 8, flex: 1, borderRadius: 15 }}
           >
             {item.endTime ? `End: ${formatTime(item.endTime)}` : 'End Time'}
           </Button>
@@ -991,7 +1001,7 @@ export default function EnterAvailability({ navigation, route }) {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View>
       <TopNav
         navigation={navigation}
         title="Input Your Schedule"
@@ -999,10 +1009,11 @@ export default function EnterAvailability({ navigation, route }) {
       />
 
       <ScrollView
-        style={[
-          stylesLocal.content,
-          { paddingTop: 130, paddingLeft: 20, paddingRight: 5 },
-        ]}
+        style={stylesLocal.content}
+        contentContainerStyle={{
+          borderRadius: 15,
+          overflow: 'hidden',
+        }}
       >
         <List.Accordion
           title="Classes"
@@ -1080,7 +1091,6 @@ export default function EnterAvailability({ navigation, route }) {
           {extracurricular.map((item, index) =>
             renderItem(item, index, 'extracurricular'),
           )}
-
           <Button
             icon="plus"
             mode="contained"
@@ -1099,7 +1109,6 @@ export default function EnterAvailability({ navigation, route }) {
           left={(props) => <List.Icon {...props} icon="dots-horizontal" />}
         >
           {other.map((item, index) => renderItem(item, index, 'other'))}
-
           <Button
             icon="plus"
             mode="contained"
@@ -1110,7 +1119,8 @@ export default function EnterAvailability({ navigation, route }) {
             Add Other Activity
           </Button>
         </List.Accordion>
-
+      </ScrollView>
+      <View style={stylesLocal.buttonsContainer}>
         <Button
           mode="contained"
           onPress={() =>
@@ -1121,7 +1131,7 @@ export default function EnterAvailability({ navigation, route }) {
               other,
             })
           }
-          style={{ marginVertical: 12 }}
+          style={[stylesLocal.actionButton, { marginBottom: 0 }]}
           icon="calendar"
         >
           View Calendar
@@ -1130,12 +1140,12 @@ export default function EnterAvailability({ navigation, route }) {
         <Button
           mode="contained"
           onPress={handleSave}
-          style={{ marginVertical: 24 }}
+          style={stylesLocal.actionButton}
           disabled={loading}
         >
           {loading ? 'Saving...' : 'Save Schedule'}
         </Button>
-      </ScrollView>
+      </View>
 
       <Modal
         visible={pickerModalVisible}
@@ -1176,29 +1186,39 @@ export default function EnterAvailability({ navigation, route }) {
 }
 
 const stylesLocal = StyleSheet.create({
-  header: {
-    fontSize: 24,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
   content: {
-    flex: 1,
+    marginTop: 115,
+    width: '100%',
+    height: 'auto',
+    padding: 10,
+  },
+  buttonsContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  actionButton: {
+    marginVertical: 12,
+    borderRadius: 15,
+    padding: 2,
+    width: '100%',
   },
   itemOuterContainer: {
-    marginVertical: 8,
+    // marginVertical: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    backgroundColor: '#f9f9f9',
-    padding: 8,
+    backgroundColor: 'white',
+    paddingLeft: 20,
+    paddingRight: 20,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
-  itemContainer: {
-    marginHorizontal: 8,
-    marginVertical: 8,
+  innerAccordianContent: {
+    paddingLeft: 0,
+    backgroundColor: 'white',
+    borderBottomEndRadius: 10,
+    borderBottomStartRadius: 10,
   },
   input: {
     marginBottom: 8,
@@ -1246,7 +1266,7 @@ const stylesLocal = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 4,
+    borderRadius: 5,
     margin: 1,
   },
   daySelected: {
@@ -1260,10 +1280,16 @@ const stylesLocal = StyleSheet.create({
     color: 'white',
   },
   addButton: {
-    margin: 16,
+    margin: 10,
+    marginHorizontal: 'auto',
+    marginBottom: 20,
+    padding: 0,
+    width: '50%',
+    paddingLeft: 0,
+    borderRadius: 15,
   },
   addButtonContent: {
-    padding: 8,
+    padding: 0,
   },
   occurrenceTypeContainer: {
     marginHorizontal: 16,
@@ -1283,8 +1309,6 @@ const stylesLocal = StyleSheet.create({
     marginRight: 16,
   },
   timeBlockContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -1321,8 +1345,7 @@ const stylesLocal = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    alignItems: 'center',
   },
   card: {
     backgroundColor: '#f8f8ff',

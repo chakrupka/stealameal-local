@@ -135,7 +135,15 @@ const Profile = ({ navigation, route }) => {
               style={[styles.profileView.button, localStyles.smallButton]}
               onPress={() => setEditing(true)}
             >
-              <Text style={localStyles.buttonText}>Edit Profile</Text>
+              <View style={localStyles.buttonContent}>
+                <MaterialIcons
+                  name="edit"
+                  size={20}
+                  color="white"
+                  style={localStyles.buttonIcon}
+                />
+                <Text style={localStyles.buttonText}>Edit Profile</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -188,7 +196,15 @@ const Profile = ({ navigation, route }) => {
               onPress={() => navigation.navigate('LocationSettings')}
               style={[styles.profileView.button, localStyles.smallButton]}
             >
-              <Text style={localStyles.buttonText}>Location Settings</Text>
+              <View style={localStyles.buttonContent}>
+                <MaterialIcons
+                  name="location-on"
+                  size={20}
+                  color="white"
+                  style={localStyles.buttonIcon}
+                />
+                <Text style={localStyles.buttonText}>Location Settings</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -297,11 +313,11 @@ const localStyles = StyleSheet.create({
     ...BOX_SHADOW,
   },
   availabilityButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: '#6750a4',
     ...BOX_SHADOW,
   },
   calendarButton: {
-    backgroundColor: '#1976d2',
+    backgroundColor: '#6750a4',
     ...BOX_SHADOW,
   },
 });

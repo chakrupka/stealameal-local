@@ -23,7 +23,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import styles from '../styles';
+import styles, { BOX_SHADOW } from '../styles';
 import TopNav from '../components/TopNav';
 import useStore from '../store';
 import { fetchFriendDetails } from '../services/user-api';
@@ -98,8 +98,7 @@ const formatTimeForApi = (date) => {
   return timeString;
 };
 
-const ScheduleMeal = ({ navigation, route }) => {
-  const profilePic = route?.params?.profilePic || null;
+const ScheduleMeal = ({ navigation }) => {
   const [friends, setFriends] = useState([]);
   const [isOpenToJoin, setIsOpenToJoin] = useState(false);
   const [squads, setSquads] = useState([]);
@@ -366,6 +365,7 @@ const ScheduleMeal = ({ navigation, route }) => {
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
+                profilePic: details.profilePic,
               };
             } catch (error) {
               console.error('Error fetching friend details:', error);
@@ -757,15 +757,19 @@ const ScheduleMeal = ({ navigation, route }) => {
       >
         <View style={localStyles.friendItemContent}>
           <View style={localStyles.avatarContainer}>
-            <Avatar.Text
-              size={50}
-              label={item.initials}
-              style={[
-                localStyles.avatar,
-                isAvailable === false && localStyles.busyAvatar,
-                isAvailable === true && localStyles.availableAvatar,
-              ]}
-            />
+            {!item.profilePic ? (
+              <Avatar.Text
+                size={50}
+                label={item.initials}
+                style={localStyles.avatar}
+              />
+            ) : (
+              <Avatar.Image
+                size={50}
+                source={{ uri: item.profilePic }}
+                style={localStyles.avatar}
+              />
+            )}
             {isAvailable === false && (
               <View style={localStyles.busyIconContainer}>
                 <MaterialCommunityIcons
@@ -786,7 +790,6 @@ const ScheduleMeal = ({ navigation, route }) => {
               style={[
                 localStyles.friendName,
                 isSelected && localStyles.selectedText,
-                isAvailable === false && localStyles.busyText,
               ]}
             >
               {item.name}
@@ -795,7 +798,6 @@ const ScheduleMeal = ({ navigation, route }) => {
               style={[
                 localStyles.friendEmail,
                 isSelected && localStyles.selectedText,
-                isAvailable === false && localStyles.busyText,
               ]}
             >
               {item.email}
@@ -810,7 +812,7 @@ const ScheduleMeal = ({ navigation, route }) => {
               onPress={() =>
                 toggleFriendSelection(item.id, item.type, item.mongoId)
               }
-              color="#5C4D7D"
+              color="#fff"
             />
           </View>
         </View>
@@ -852,7 +854,7 @@ const ScheduleMeal = ({ navigation, route }) => {
           <Checkbox
             status={selectedSquads.includes(item._id) ? 'checked' : 'unchecked'}
             onPress={() => toggleSquadSelection(item._id)}
-            color="#5C4D7D"
+            color="#fff"
           />
         </View>
         <Text
@@ -868,7 +870,7 @@ const ScheduleMeal = ({ navigation, route }) => {
         {availability &&
           availability.busyMembers &&
           availability.busyMembers.length > 0 && (
-            <Text style={localStyles.busyMembersNote}>
+            <Text style={[localStyles.busyMembersNote]}>
               {getBusyMembersText(availability.busyMembers)}
             </Text>
           )}
@@ -877,112 +879,20 @@ const ScheduleMeal = ({ navigation, route }) => {
   };
 
   const handleDateChange = (event, date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-      if (date) {
-        setSelectedDate(date);
-        setTimeout(() => {
-          if (friends.length > 0) {
-            checkAllFriendsAvailability(date, selectedTime, mealEndTime);
-          }
-          if (squads.length > 0) {
-            checkSquadsAvailability(date, selectedTime, mealEndTime);
-          }
-        }, 100);
-      }
-    } else {
-      if (date) {
-        setTempDate(date);
-      }
+    if (date) {
+      setTempDate(date);
     }
   };
 
   const handleTimeChange = (event, time) => {
-    if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-      if (time) {
-        // Validate time order and auto-adjust end time if needed
-        let newEndTime = mealEndTime;
-        if (time >= mealEndTime) {
-          newEndTime = new Date(time);
-          newEndTime.setHours(newEndTime.getHours() + 1);
-          setMealEndTime(newEndTime);
-          setTempEndTime(newEndTime);
-
-          showTimeValidationWarning(() => {
-            console.log(
-              'End time automatically adjusted to maintain valid time range',
-            );
-          });
-        }
-
-        setSelectedTime(time);
-        const timeOfDay = getMealType(time.getHours());
-        const defaultName = `${timeOfDay
-          .charAt(0)
-          .toUpperCase()}${timeOfDay.slice(1)} at ${location}`;
-        setMealName(defaultName);
-
-        setTimeout(() => {
-          if (friends.length > 0) {
-            checkAllFriendsAvailability(selectedDate, time, newEndTime);
-          }
-          if (squads.length > 0) {
-            checkSquadsAvailability(selectedDate, time, newEndTime);
-          }
-        }, 100);
-      }
-    } else {
-      if (time) {
-        setTempTime(time);
-      }
+    if (time) {
+      setTempTime(time);
     }
   };
 
   const handleEndTimeChange = (event, time) => {
-    if (Platform.OS === 'android') {
-      setShowEndTimePicker(false);
-      if (time) {
-        // Validate that end time is after start time
-        if (time <= selectedTime) {
-          const adjustedEndTime = new Date(selectedTime);
-          adjustedEndTime.setHours(adjustedEndTime.getHours() + 1);
-          setMealEndTime(adjustedEndTime);
-
-          showTimeValidationWarning(() => {
-            console.log(
-              'End time automatically adjusted to be after start time',
-            );
-          });
-        } else {
-          setMealEndTime(time);
-        }
-
-        setTimeout(() => {
-          if (friends.length > 0) {
-            checkAllFriendsAvailability(
-              selectedDate,
-              selectedTime,
-              time <= selectedTime
-                ? new Date(selectedTime.getTime() + 60 * 60 * 1000)
-                : time,
-            );
-          }
-          if (squads.length > 0) {
-            checkSquadsAvailability(
-              selectedDate,
-              selectedTime,
-              time <= selectedTime
-                ? new Date(selectedTime.getTime() + 60 * 60 * 1000)
-                : time,
-            );
-          }
-        }, 100);
-      }
-    } else {
-      if (time) {
-        setTempEndTime(time);
-      }
+    if (time) {
+      setTempEndTime(time);
     }
   };
 
@@ -1162,16 +1072,8 @@ const ScheduleMeal = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Schedule Meal"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Schedule Meal" />
       <View style={localStyles.contentContainer}>
-        <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>MEAL</Text>
-        </View>
-
         <Text style={localStyles.subheaderText}>
           Select friends or squads to schedule a meal with. Long press to view
           schedules.
@@ -1181,6 +1083,7 @@ const ScheduleMeal = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.leftTab,
               activeTab === 'friends' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('friends')}
@@ -1194,9 +1097,11 @@ const ScheduleMeal = ({ navigation, route }) => {
               Friends
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.rightTab,
               activeTab === 'squads' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('squads')}
@@ -1212,139 +1117,55 @@ const ScheduleMeal = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
+        <View style={localStyles.listContainer}>
+          {activeTab === 'friends' ? (
+            <FlatList
+              data={friends}
+              renderItem={renderFriendItem}
+              keyExtractor={(item) => item.id}
+              style={localStyles.friendsList}
+              contentContainerStyle={localStyles.friendsListContent}
+              ListEmptyComponent={
+                <Text style={localStyles.emptyText}>
+                  No friends found. Add friends to schedule meals with them.
+                </Text>
+              }
+            />
+          ) : (
+            <FlatList
+              data={squads}
+              renderItem={renderSquadItem}
+              keyExtractor={(item) => item._id}
+              style={localStyles.friendsList}
+              contentContainerStyle={localStyles.friendsListContent}
+              ListEmptyComponent={
+                <Text style={localStyles.emptyText}>
+                  No squads found. Create a squad to schedule group meals.
+                </Text>
+              }
+            />
+          )}
+        </View>
+
         <View style={localStyles.actionButtonsContainer}>
           <TouchableOpacity
-            style={localStyles.dateTimeButton}
-            onPress={() => setShowDetailsModal(true)}
-          >
-            <Text style={localStyles.dateTimeText}>
-              {formatDate(selectedDate)} at {formatTime(selectedTime)} -{' '}
-              {formatTime(mealEndTime)}
-            </Text>
-            <Text style={localStyles.dateTimeSubtext}>
-              Tap to change • Checking availability
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={localStyles.refreshButton}
-            onPress={() => {
-              console.log('Manual availability check triggered');
-              if (friends.length > 0) {
-                checkAllFriendsAvailability(
-                  selectedDate,
-                  selectedTime,
-                  mealEndTime,
-                );
-              }
-              if (squads.length > 0) {
-                checkSquadsAvailability(
-                  selectedDate,
-                  selectedTime,
-                  mealEndTime,
-                );
-              }
-            }}
-          >
-            <MaterialCommunityIcons name="refresh" size={20} color="#5C4D7D" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[
-              localStyles.sendButton,
-              selectedFriends.length === 0 &&
-                selectedSquads.length === 0 &&
-                localStyles.disabledButton,
-            ]}
-            disabled={
+              localStyles.dateTimeButton,
               selectedFriends.length === 0 && selectedSquads.length === 0
-            }
+                ? localStyles.dtbInactive
+                : localStyles.dtbActive,
+            ]}
             onPress={showMealDetails}
           >
-            <Text style={localStyles.sendText}>Send</Text>
+            <Text style={localStyles.dateTimeText}>Schedule Meal</Text>
             <MaterialCommunityIcons
               name="arrow-right"
               size={20}
-              color="#5C4D7D"
+              style={localStyles.arrowRight}
             />
           </TouchableOpacity>
         </View>
-
-        {loading ? (
-          <View style={localStyles.loadingContainer}>
-            <Text style={localStyles.loadingText}>Loading...</Text>
-          </View>
-        ) : activeTab === 'friends' ? (
-          <FlatList
-            data={friends}
-            renderItem={renderFriendItem}
-            keyExtractor={(item) => item.id}
-            style={localStyles.friendsList}
-            contentContainerStyle={localStyles.friendsListContent}
-            ListEmptyComponent={
-              <Text style={localStyles.emptyText}>
-                No friends found. Add friends to schedule meals with them.
-              </Text>
-            }
-          />
-        ) : (
-          <FlatList
-            data={squads}
-            renderItem={renderSquadItem}
-            keyExtractor={(item) => item._id}
-            style={localStyles.friendsList}
-            contentContainerStyle={localStyles.friendsListContent}
-            ListEmptyComponent={
-              <Text style={localStyles.emptyText}>
-                No squads found. Create a squad to schedule group meals.
-              </Text>
-            }
-          />
-        )}
       </View>
-
-      <View style={localStyles.bottomButton}>
-        <TouchableOpacity
-          style={[
-            localStyles.scheduleNowButton,
-            selectedFriends.length === 0 &&
-              selectedSquads.length === 0 &&
-              localStyles.disabledButton,
-          ]}
-          onPress={scheduleNow}
-          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
-        >
-          <Text style={localStyles.scheduleNowText}>Schedule Meal Now</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Android DateTimePicker */}
-      {Platform.OS === 'android' && showDatePicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      )}
-
-      {Platform.OS === 'android' && showTimePicker && (
-        <DateTimePicker
-          value={selectedTime}
-          mode="time"
-          display="default"
-          onChange={handleTimeChange}
-        />
-      )}
-
-      {Platform.OS === 'android' && showEndTimePicker && (
-        <DateTimePicker
-          value={mealEndTime}
-          mode="time"
-          display="default"
-          onChange={handleEndTimeChange}
-        />
-      )}
 
       {/* Meal details modal */}
       <Modal
@@ -1384,6 +1205,7 @@ const ScheduleMeal = ({ navigation, route }) => {
                     onValueChange={setIsOpenToJoin}
                     trackColor={{ false: '#767577', true: '#81b0ff' }}
                     thumbColor={isOpenToJoin ? '#6750a4' : '#f4f3f4'}
+                    style={{ marginBottom: 5 }}
                   />
                 </View>
                 <Text style={localStyles.openToJoinDescription}>
@@ -1607,6 +1429,7 @@ const ScheduleMeal = ({ navigation, route }) => {
                 placeholder="Add notes about the meal"
                 value={notes}
                 onChangeText={setNotes}
+                mode="flat"
                 multiline={true}
                 numberOfLines={4}
               />
@@ -1669,16 +1492,16 @@ const ScheduleMeal = ({ navigation, route }) => {
               <Button
                 mode="outlined"
                 onPress={() => setShowDetailsModal(false)}
-                style={localStyles.cancelButton}
+                style={localStyles.modalButton}
               >
                 Close
               </Button>
               <Button
                 mode="contained"
                 onPress={scheduleMeal}
-                style={localStyles.scheduleButton}
+                style={localStyles.modalButton}
                 loading={loading}
-                disabled={!mealName}
+                disabled={!mealName || showDatePicker || showTimePicker}
               >
                 Schedule Meal
               </Button>
@@ -1694,144 +1517,126 @@ const ScheduleMeal = ({ navigation, route }) => {
 
 const localStyles = StyleSheet.create({
   contentContainer: {
-    flex: 1,
-    width: '100%',
-    paddingTop: 5,
-  },
-  headerContainer: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#000',
-    padding: 10,
     alignItems: 'center',
-    marginBottom: 5,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '400',
+    width: '100%',
+    minHeight: '100%',
+    marginTop: 50,
+    gap: 5,
   },
   subheaderText: {
     textAlign: 'center',
-    fontSize: 16,
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    fontSize: 14,
+    marginTop: 15,
+    width: '80%',
+    marginBottom: 10,
   },
   tabContainer: {
     flexDirection: 'row',
+    width: '75%',
     marginBottom: 10,
-    paddingHorizontal: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#ddd',
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f8ff',
     borderWidth: 1,
     borderColor: '#ddd',
   },
+  leftTab: {
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  rightTab: {
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
   activeTab: {
-    backgroundColor: '#E8F5D9',
-    borderBottomWidth: 2,
-    borderBottomColor: '#5C4D7D',
+    backgroundColor: '#e9e6ff',
   },
   tabText: {
     fontWeight: '500',
     color: '#555',
   },
   activeTabText: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontWeight: 'bold',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginBottom: 10,
-    width: '100%',
-    alignItems: 'center',
   },
   dateTimeButton: {
-    backgroundColor: '#CBDBA7',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
-  },
-  refreshButton: {
-    backgroundColor: '#E8F5D9',
     paddingVertical: 15,
     paddingHorizontal: 15,
-    borderRadius: 10,
-    marginRight: 10,
+    borderRadius: 15,
+    marginTop: 5,
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
+    width: '100%',
+    gap: 5,
+  },
+  dtbInactive: {
+    backgroundColor: 'lightgray',
+    pointerEvents: 'none',
+  },
+  dtbActive: {
+    backgroundColor: '#6750a4',
+    ...BOX_SHADOW,
   },
   dateTimeText: {
     fontSize: 16,
-    color: '#000',
-    fontWeight: 'bold',
+    color: 'white',
+    fontWeight: '500',
   },
-  dateTimeSubtext: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  sendButton: {
-    backgroundColor: '#E8F5D9',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendText: {
-    fontSize: 16,
-    color: '#5C4D7D',
-    marginRight: 5,
+  arrowRight: {
+    paddingLeft: 5,
+    color: 'white',
   },
   disabledButton: {
     opacity: 0.5,
   },
+  listContainer: {
+    width: '90%',
+    maxHeight: '70%',
+    borderRadius: 15,
+    marginBottom: 10,
+  },
   friendsList: {
-    flex: 1,
     width: '100%',
+    borderRadius: 15,
   },
   friendsListContent: {
     paddingHorizontal: 0,
   },
   friendItem: {
-    backgroundColor: '#CBDBA7',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e9e6ff',
+    paddingVertical: 5,
+    paddingHorizontal: 15,
   },
   friendItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    // paddingHorizontal: 15,
   },
   busyItem: {
     backgroundColor: '#ffebee',
-    borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
   },
   availableItem: {
-    backgroundColor: '#e8f5e8',
-    borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
-  },
-  unknownItem: {
-    backgroundColor: '#CBDBA7',
+    backgroundColor: '#e9e6ff',
   },
   squadItem: {
-    backgroundColor: '#CBDBA7',
-    paddingVertical: 10,
+    backgroundColor: '#f8f8ff',
     paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    paddingBottom: 10,
   },
   squadHeader: {
     flexDirection: 'row',
@@ -1845,7 +1650,7 @@ const localStyles = StyleSheet.create({
   squadMembersCount: {
     fontSize: 14,
     color: '#555',
-    marginTop: 5,
+    marginBottom: 2,
   },
   partiallyBusyText: {
     color: '#f57c00',
@@ -1857,11 +1662,10 @@ const localStyles = StyleSheet.create({
     fontStyle: 'italic',
   },
   selectedItem: {
-    backgroundColor: '#A4C67D',
+    backgroundColor: '#6750a4',
   },
   selectedText: {
     color: '#fff',
-    fontWeight: 'bold',
   },
   avatarContainer: {
     marginRight: 15,
@@ -1962,43 +1766,48 @@ const localStyles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    width: '90%',
+    height: '65%',
+    justifyContent: 'space-between',
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
     textAlign: 'center',
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
   modalScroll: {
-    maxHeight: 400,
+    maxHeight: '90%%',
   },
   modalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: 15,
     marginBottom: 5,
   },
   inputField: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 10,
     padding: 10,
-    marginBottom: 10,
   },
   textInput: {
+    height: 40,
+  },
+  textInputContent: {
+    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingLeft: 10,
+  },
+  textInputBorder: {
+    borderRadius: 10,
   },
   textArea: {
-    height: 100,
     textAlignVertical: 'top',
   },
   timeWarning: {
@@ -2010,28 +1819,27 @@ const localStyles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
     marginTop: 20,
   },
-  cancelButton: {
+  modalButton: {
     flex: 1,
-    marginRight: 10,
-  },
-  scheduleButton: {
-    flex: 1,
-    marginLeft: 10,
-    backgroundColor: '#5C4D7D',
+    borderRadius: 15,
+    ...BOX_SHADOW,
   },
   selectedList: {
+    paddingTop: 10,
     marginBottom: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 10,
   },
   selectedItemChip: {
-    backgroundColor: '#A4C67D',
-    borderRadius: 15,
+    backgroundColor: '#e9e6ff',
+    borderRadius: 10,
     paddingVertical: 5,
     paddingHorizontal: 10,
-    margin: 5,
+    marginVertical: -5,
   },
   busyChip: {
     backgroundColor: '#ffcdd2',
@@ -2079,6 +1887,7 @@ const localStyles = StyleSheet.create({
     borderTopColor: '#e0e0e0',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    marginTop: 5,
     marginBottom: 15,
   },
   pickerHeader: {

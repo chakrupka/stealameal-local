@@ -31,8 +31,7 @@ import {
   getFriendAvailability,
 } from '../services/availability-api';
 
-export default function PingFriends({ navigation, route }) {
-  const profilePic = route.params?.profilePic || null;
+export default function PingFriends({ navigation }) {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedSquads, setSelectedSquads] = useState([]);
   const [groupedFriends, setGroupedFriends] = useState([]);
@@ -70,20 +69,6 @@ export default function PingFriends({ navigation, route }) {
     } catch (error) {
       console.error('Error calculating time ago:', error);
       return 'Unknown';
-    }
-  };
-
-  // Helper function to determine if location is stale
-  const isLocationStale = (dateString) => {
-    if (!dateString) return true;
-
-    try {
-      const locationTime = new Date(dateString);
-      const now = new Date();
-      const diffHours = (now - locationTime) / (1000 * 60 * 60);
-      return diffHours > 24; // Consider stale if older than 24 hours
-    } catch (error) {
-      return true;
     }
   };
 
@@ -129,6 +114,7 @@ export default function PingFriends({ navigation, route }) {
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
+                profilePic: details.profilePic,
               };
             } catch (error) {
               console.error(`Error fetching friend ${friend.friendID}:`, error);
@@ -608,9 +594,10 @@ export default function PingFriends({ navigation, route }) {
             )}
 
             <Button
-              mode="contained"
+              mode="outlined"
               style={localStyles.closeModalButton}
               onPress={() => setScheduleModalVisible(false)}
+              textColor="white"
             >
               Close
             </Button>
@@ -706,7 +693,6 @@ export default function PingFriends({ navigation, route }) {
     const isBusy = isAvailable === false;
     const isSelected = selectedFriends.includes(item.friendID);
     const timeAgo = getTimeAgo(item.locationUpdatedAt);
-    const locationStale = isLocationStale(item.locationUpdatedAt);
 
     // Enhanced description with location update time
     const getDescription = () => {
@@ -733,35 +719,25 @@ export default function PingFriends({ navigation, route }) {
           description={getDescription()}
           left={(props) => (
             <View style={localStyles.avatarWrapper}>
-              <Avatar.Text
-                size={40}
-                label={item.initials}
-                style={[
-                  localStyles.avatar,
-                  isBusy && localStyles.busyAvatar,
-                  isSelected && localStyles.selectedAvatar,
-                ]}
-              />
+              {!item.profilePic ? (
+                <Avatar.Text
+                  size={50}
+                  label={item.initials}
+                  style={localStyles.avatar}
+                />
+              ) : (
+                <Avatar.Image
+                  size={50}
+                  source={{ uri: item.profilePic }}
+                  style={localStyles.avatar}
+                />
+              )}
               {/* Status indicators */}
               <View style={localStyles.statusIndicators}>
                 {isBusy && (
                   <View style={localStyles.busyIconContainer}>
                     <MaterialCommunityIcons
                       name="clock-alert"
-                      size={12}
-                      color="#fff"
-                    />
-                  </View>
-                )}
-                {locationStale && (
-                  <View
-                    style={[
-                      localStyles.locationStaleContainer,
-                      isBusy && { top: 18 },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="map-marker-question"
                       size={12}
                       color="#fff"
                     />
@@ -775,21 +751,22 @@ export default function PingFriends({ navigation, route }) {
               <Checkbox
                 status={isSelected ? 'checked' : 'unchecked'}
                 onPress={() => toggleFriendSelection(item.friendID)}
+                color="white"
               />
             </View>
           )}
           style={[
             localStyles.listItem,
-            isSelected && localStyles.selectedItem,
             isBusy && localStyles.busyItem,
+            isSelected && localStyles.selectedItem,
           ]}
           titleStyle={{
             color: isSelected ? '#fff' : isBusy ? '#d32f2f' : '#000',
-            fontWeight: isBusy ? 'bold' : 'normal',
           }}
           descriptionStyle={{
-            color: isSelected ? '#fff' : isBusy ? '#d32f2f' : '#666',
+            color: isSelected ? '#fff' : isBusy ? '#d32f2f' : '#000',
             fontSize: 12,
+            marginBottom: -10,
           }}
         />
       </TouchableOpacity>
@@ -843,6 +820,7 @@ export default function PingFriends({ navigation, route }) {
           <Checkbox
             status={isSelected ? 'checked' : 'unchecked'}
             onPress={() => toggleSquadSelection(item._id)}
+            color="black"
           />
         )}
         onPress={() => toggleSquadSelection(item._id)}
@@ -865,11 +843,7 @@ export default function PingFriends({ navigation, route }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -886,11 +860,7 @@ export default function PingFriends({ navigation, route }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -913,15 +883,8 @@ export default function PingFriends({ navigation, route }) {
   if (hasNoData) {
     return (
       <SafeAreaView style={styles.container}>
-        <TopNav
-          navigation={navigation}
-          title="Ping Friends"
-          profilePic={profilePic}
-        />
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View style={localStyles.contentContainer}>
-          <View style={localStyles.headerContainer}>
-            <Text style={localStyles.headerText}>PING FRIENDS</Text>
-          </View>
           <Text style={localStyles.subheaderText}>
             Select friends or squads to ping.
           </Text>
@@ -944,17 +907,9 @@ export default function PingFriends({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        navigation={navigation}
-        title="Ping Friends"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Ping Friends" />
 
       <View style={localStyles.contentContainer}>
-        <View style={localStyles.headerContainer}>
-          <Text style={localStyles.headerText}>PING FRIENDS</Text>
-        </View>
-
         <Text style={localStyles.subheaderText}>
           Select friends or squads to ping. Long press to view schedules.
         </Text>
@@ -963,6 +918,7 @@ export default function PingFriends({ navigation, route }) {
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.leftTab,
               activeTab === 'friends' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('friends')}
@@ -976,9 +932,11 @@ export default function PingFriends({ navigation, route }) {
               Friends
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               localStyles.tab,
+              localStyles.rightTab,
               activeTab === 'squads' && localStyles.activeTab,
             ]}
             onPress={() => setActiveTab('squads')}
@@ -993,7 +951,6 @@ export default function PingFriends({ navigation, route }) {
             </Text>
           </TouchableOpacity>
         </View>
-
         <View style={localStyles.listContainer}>
           {activeTab === 'friends' ? (
             groupedFriends.length > 0 ? (
@@ -1043,24 +1000,20 @@ export default function PingFriends({ navigation, route }) {
           )}
         </View>
       </View>
-
-      <View style={localStyles.bottomContainer}>
-        <TouchableOpacity
-          style={[
-            localStyles.pingButton,
-            selectedFriends.length === 0 && selectedSquads.length === 0
-              ? { opacity: 0.5 }
-              : {},
-          ]}
-          onPress={handleSendPing}
-          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
-        >
-          <Text style={localStyles.pingButtonLabel}>
-            Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
+      <TouchableOpacity
+        style={[
+          localStyles.pingButton,
+          selectedFriends.length === 0 && selectedSquads.length === 0
+            ? { opacity: 0.5 }
+            : {},
+        ]}
+        onPress={handleSendPing}
+        disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
+      >
+        <Text style={localStyles.pingButtonLabel}>
+          Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
+        </Text>
+      </TouchableOpacity>
       {renderScheduleModal()}
     </SafeAreaView>
   );
@@ -1068,57 +1021,58 @@ export default function PingFriends({ navigation, route }) {
 
 const localStyles = StyleSheet.create({
   contentContainer: {
-    flex: 1,
-    width: '100%',
-    paddingTop: 5,
-  },
-  headerContainer: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#000',
-    padding: 10,
     alignItems: 'center',
-    marginBottom: 5,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '400',
+    width: '100%',
+    marginTop: 50,
+    gap: 5,
   },
   subheaderText: {
     textAlign: 'center',
-    fontSize: 16,
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    fontSize: 14,
+    marginTop: 15,
+    width: '80%',
+    marginBottom: 10,
   },
   tabContainer: {
     flexDirection: 'row',
+    width: '100%',
     marginBottom: 10,
-    paddingHorizontal: 20,
+    borderRadius: 10,
+    paddingHorizontal: '12.5%',
+    overflow: 'hidden',
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f8ff',
     borderWidth: 1,
     borderColor: '#ddd',
   },
+  leftTab: {
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  rightTab: {
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
   activeTab: {
-    backgroundColor: '#E8F5D9',
-    borderBottomWidth: 2,
-    borderBottomColor: '#5C4D7D',
+    backgroundColor: '#e9e6ff',
   },
   tabText: {
     fontWeight: '500',
     color: '#555',
   },
   activeTabText: {
-    color: '#5C4D7D',
+    color: '#6750a4',
     fontWeight: 'bold',
   },
   listContainer: {
-    flex: 1,
-    width: '100%',
+    width: '90%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   sectionHeader: {
     paddingHorizontal: 15,
@@ -1128,13 +1082,14 @@ const localStyles = StyleSheet.create({
     fontSize: 16,
   },
   listItem: {
-    paddingLeft: 0,
-    paddingRight: 16,
-    paddingVertical: 8,
-    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+    paddingBottom: 15,
+    backgroundColor: '#e9e6ff',
   },
   selectedItem: {
-    backgroundColor: '#A4C67D',
+    backgroundColor: '#6750a4',
   },
   busyItem: {
     backgroundColor: '#ffebee',
@@ -1148,8 +1103,8 @@ const localStyles = StyleSheet.create({
   },
   busyIconContainer: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -52,
+    right: -12,
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -1169,17 +1124,12 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  bottomContainer: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#CBDBA7',
-    alignItems: 'center',
-  },
   pingButton: {
-    width: '100%',
+    width: '90%',
     height: 50,
-    backgroundColor: '#5C4D7D',
-    borderRadius: 25,
+    marginTop: 15,
+    backgroundColor: '#6750a4',
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1301,7 +1251,8 @@ const localStyles = StyleSheet.create({
     marginTop: 10,
   },
   closeModalButton: {
-    backgroundColor: '#5C4D7D',
     marginTop: 10,
+    backgroundColor: '#6750a4',
+    borderRadius: 15,
   },
 });
