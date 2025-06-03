@@ -189,6 +189,36 @@ export const acceptFriendRequest = async (idToken, receiverID, senderID) => {
     throw error;
   }
 };
+export const declineFriendRequest = async (idToken, receiverID, senderID) => {
+  console.log('API: Declining friend request with params:', {
+    receiverID,
+    senderID,
+  });
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/decline-friend-request`,
+      {
+        receiverID,
+        senderID,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    console.log('API: Friend request decline response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      'API: Error declining friend request:',
+      error.response ? error.response.data : error.message,
+    );
+    throw error;
+  }
+};
 export const fetchFriendDetails = async (idToken, friendID) => {
   try {
     const response = await axios.get(
