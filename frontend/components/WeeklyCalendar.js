@@ -1,21 +1,18 @@
-import React from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
-import { Text } from "react-native-paper";
-import styles from "../styles";
+import React from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
+import styles from '../styles';
 
-// Displays a weekly calendar with color-coded activities
 const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
-  // Colors for each category
   const categoryColors = {
-    classes: "#4285F4", // Blue
-    sporting: "#EA4335", // Red
-    extracurricular: "#FBBC05", // Yellow
-    other: "#34A853", // Green
+    classes: '#4285F4', // Blue
+    sporting: '#EA4335', // Red
+    extracurricular: '#FBBC05', // Yellow
+    other: '#34A853', // Green
   };
 
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Generate time slots from 7 AM to 10 PM
   const timeSlots = Array.from({ length: 16 }, (_, i) => {
     const hour = i + 7;
     if (hour === 12) return `${hour} PM`;
@@ -29,24 +26,21 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
     return hours - 7 + minutes / 60;
   };
 
-  // Associate each activity with a category flag
   const allActivities = [
-    ...classes.map((item) => ({ ...item, category: "classes" })),
-    ...sporting.map((item) => ({ ...item, category: "sporting" })),
+    ...classes.map((item) => ({ ...item, category: 'classes' })),
+    ...sporting.map((item) => ({ ...item, category: 'sporting' })),
     ...extracurricular.map((item) => ({
       ...item,
-      category: "extracurricular",
+      category: 'extracurricular',
     })),
-    ...other.map((item) => ({ ...item, category: "other" })),
+    ...other.map((item) => ({ ...item, category: 'other' })),
   ];
 
-  // Assign each activity to specific days -- idea for making 10,11,12 vs 10A,2A classes
   const activitiesWithDays = allActivities.map((activity, index) => {
     const days = index % 2 === 0 ? [2, 4, 6] : [3, 5];
     return { ...activity, days };
   });
 
-  // Render events on the calendar
   const renderEvents = () => {
     return activitiesWithDays.map((activity, activityIndex) => {
       if (!activity.startTime || !activity.endTime || !activity.name)
@@ -64,8 +58,8 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
               backgroundColor: categoryColors[activity.category],
               top: startPos * 60 + 30,
               height: height,
-              left: day * 14.28 + 1 + "%",
-              width: "13.28%",
+              left: day * 14.28 + 1 + '%',
+              width: '13.28%',
               opacity: 0.8,
             },
           ]}
@@ -79,12 +73,11 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
     });
   };
 
-  // format time - can probs just make this global
   const formatTime = (date) => {
-    if (!date) return "";
+    if (!date) return '';
     const hours = date.getHours();
     const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
+    const ampm = hours >= 12 ? 'PM' : 'AM';
     const hours12 = hours % 12 || 12;
     const minStr = minutes < 10 ? `0${minutes}` : minutes;
     return `${hours12}:${minStr} ${ampm}`;
@@ -92,7 +85,6 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
 
   return (
     <View style={localStyles.container}>
-      {/* Legend */}
       <View style={localStyles.legend}>
         <Text style={[localStyles.legendTitle, styles.subheader]}>
           Activities:
@@ -107,7 +99,6 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
         ))}
       </View>
 
-      {/* Calendar Header */}
       <View style={localStyles.header}>
         <View style={localStyles.timeColumn}>
           <Text style={localStyles.headerText}>Time</Text>
@@ -119,7 +110,6 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
         ))}
       </View>
 
-      {/* Calendar Body */}
       <ScrollView style={localStyles.calendarBody}>
         <View style={localStyles.timeSlotContainer}>
           {timeSlots.map((time) => (
@@ -138,27 +128,27 @@ const WeeklyCalendar = ({ classes, sporting, extracurricular, other }) => {
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     marginTop: 20,
     marginBottom: 30,
   },
   legend: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     padding: 10,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: '#f8f8f8',
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    alignItems: "center",
+    borderBottomColor: '#e0e0e0',
+    alignItems: 'center',
   },
   legendTitle: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginRight: 10,
     fontSize: 14,
   },
   legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: 12,
     marginVertical: 2,
   },
@@ -172,29 +162,29 @@ const localStyles = StyleSheet.create({
     fontSize: 12,
   },
   header: {
-    flexDirection: "row",
-    backgroundColor: "#f0f0f0",
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: '#ddd',
   },
   timeColumn: {
-    width: "12%",
+    width: '12%',
     padding: 8,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: "#ddd",
+    borderRightColor: '#ddd',
   },
   dayColumn: {
     flex: 1,
     padding: 8,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: "#ddd",
+    borderRightColor: '#ddd',
   },
   headerText: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 12,
   },
   calendarBody: {
@@ -202,42 +192,42 @@ const localStyles = StyleSheet.create({
     height: 500,
   },
   timeSlotContainer: {
-    position: "relative",
+    position: 'relative',
     paddingBottom: 20,
   },
   timeSlot: {
-    flexDirection: "row",
+    flexDirection: 'row',
     height: 60,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: '#eee',
   },
   timeText: {
-    width: "12%",
+    width: '12%',
     fontSize: 10,
-    textAlign: "center",
+    textAlign: 'center',
     paddingTop: 5,
-    color: "#666",
+    color: '#666',
   },
   timeSlotRow: {
     flex: 1,
     borderLeftWidth: 1,
-    borderLeftColor: "#eee",
+    borderLeftColor: '#eee',
   },
   event: {
-    position: "absolute",
+    position: 'absolute',
     borderRadius: 4,
     padding: 4,
-    overflow: "hidden",
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   eventText: {
-    color: "white",
-    fontWeight: "bold",
+    color: 'white',
+    fontWeight: 'bold',
     fontSize: 10,
   },
   eventTime: {
-    color: "white",
+    color: 'white',
     fontSize: 8,
   },
 });

@@ -463,7 +463,26 @@ export default StyleSheet.create({
     width: '90%',
     top: SPACING.xxxl,
   },
-
+  scheduleItem: {
+    position: 'absolute',
+    left: 1,
+    right: 1,
+    borderRadius: 4,
+    padding: 4,
+    justifyContent: 'center',
+    borderLeftWidth: 3,
+    elevation: 1,
+  },
+  scheduleItemName: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  scheduleItemCategory: {
+    fontSize: 7,
+    color: '#666',
+    textTransform: 'capitalize',
+  },
   starterRaccoonImage: {
     position: 'absolute',
     width: 102,
@@ -632,6 +651,7 @@ export default StyleSheet.create({
     marginBottom: 15,
   },
   pickerHeader: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

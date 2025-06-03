@@ -7,7 +7,6 @@ const SquadSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    // Store Firebase UIDs as strings
     members: [
       {
         type: String,

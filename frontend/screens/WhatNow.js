@@ -64,8 +64,11 @@ export default function WhatNow({ navigation, route }) {
     }
   };
 
+
   const mealOptions = [
     { id: 'pingFriends', label: 'Ping Friends Now', screen: 'PingFriends' },
+    { id: 'StealAMeal', label: 'Steal a Meal', screen: 'StealAMeal' },
+
     {
       id: 'scheduleMeal',
       label: 'Schedule in Advance',
@@ -155,7 +158,6 @@ export default function WhatNow({ navigation, route }) {
           )}
         </Card>
 
-        {/* Friends Category */}
         <Card style={localStyles.categoryCard}>
           <TouchableOpacity
             onPress={() => toggleCategory('friends')}

@@ -180,12 +180,14 @@ export default function LocationUpdate({ navigation }) {
 
     setLoadingFriends(true);
     try {
-      // Get all users from the API using environment-aware config
-      const usersResponse = await axios.get(`${USER_API_URL}/users`, {
-        headers: {
-          Authorization: `Bearer ${currentUser.idToken}`,
+      const usersResponse = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`,
+        {
+          headers: {
+            Authorization: `Bearer ${currentUser.idToken}`,
+          },
         },
-      });
+      );
 
       if (usersResponse.status === 200) {
         const users = usersResponse.data;

@@ -8,36 +8,30 @@ import {
   SafeAreaView,
   StyleSheet,
   Alert,
+  Modal,
+  ScrollView,
 } from 'react-native';
-import { Button, List, Checkbox, Text, Avatar } from 'react-native-paper';
+import {
+  Button,
+  List,
+  Checkbox,
+  Text,
+  Avatar,
+  Card,
+  Divider,
+} from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useStore from '../store';
-import styles, { BOX_SHADOW } from '../styles';
+import styles from '../styles';
 import TopNav from '../components/TopNav';
 import { fetchFriendDetails } from '../services/user-api';
 import { sendPing } from '../services/ping-api';
+import {
+  checkAvailability,
+  getFriendAvailability,
+} from '../services/availability-api';
 
-// Utility function to format time since location update
-const formatTimeSince = (date) => {
-  if (!date) return 'Never';
-
-  const now = new Date();
-  const diffInMs = now - date;
-  const diffInMins = Math.floor(diffInMs / 60000);
-
-  if (diffInMins < 1) return 'Just now';
-  if (diffInMins === 1) return '1 minute ago';
-  if (diffInMins < 60) return `${diffInMins} minutes ago`;
-
-  const diffInHours = Math.floor(diffInMins / 60);
-  if (diffInHours === 1) return '1 hour ago';
-  if (diffInHours < 24) return `${diffInHours} hours ago`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays === 1) return '1 day ago';
-  return `${diffInDays} days ago`;
-};
-
-export default function PingFriends({ navigation, route }) {
+export default function PingFriends({ navigation }) {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [selectedSquads, setSelectedSquads] = useState([]);
   const [groupedFriends, setGroupedFriends] = useState([]);
@@ -45,78 +39,58 @@ export default function PingFriends({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('friends');
-  const [shouldRefresh, setShouldRefresh] = useState(true);
+  const [friendAvailability, setFriendAvailability] = useState({});
+  const [squadAvailability, setSquadAvailability] = useState({});
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [selectedFriendForSchedule, setSelectedFriendForSchedule] =
+    useState(null);
 
   const currentUser = useStore((state) => state.userSlice.currentUser);
-  const refreshUserProfile = useStore(
-    (state) => state.userSlice.refreshUserProfile,
-  );
-  const userSquads = useStore((state) => state.squadSlice.squads);
   const getUserSquads = useStore((state) => state.squadSlice.getUserSquads);
   const idToken = currentUser?.idToken;
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      refreshUserProfile();
-      setShouldRefresh(true);
-    });
-
-    return unsubscribe;
-  }, [navigation, refreshUserProfile]);
-
-  useEffect(() => {
-    if (currentUser?.userID && shouldRefresh) {
-      loadData();
-    }
-  }, [currentUser, shouldRefresh]);
-
-  // Add a function to fix all timestamps in the database
-  const fixAllTimestamps = async () => {
-    if (!currentUser?.idToken) return;
+  // Helper function to calculate time ago
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return 'Never updated';
 
     try {
-      const response = await fetch(
-        'http://localhost:9090/api/fix-location-timestamps',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${currentUser.idToken}`,
-          },
-        },
-      );
+      const locationTime = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - locationTime;
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('TIMESTAMP DEBUG - Fix result:', result);
-        alert(`Fix applied! ${result.details?.usersFixed || 0} users updated.`);
-
-        // Reload data
-        await loadData();
-      } else {
-        console.error('Error fixing timestamps:', await response.text());
-      }
-    } catch (err) {
-      console.error('Error calling fix endpoint:', err);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return 'Over a week ago';
+    } catch (error) {
+      console.error('Error calculating time ago:', error);
+      return 'Unknown';
     }
   };
 
-  const loadData = async () => {
+  const loadInitialData = useCallback(async () => {
+    if (!currentUser?.userID || !idToken) {
+      setError('User not properly authenticated');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      if (userSquads.length === 0) {
-        const fetchedSquads = await getUserSquads(currentUser.userID);
-        setSquads(fetchedSquads || []);
-      } else {
-        setSquads(userSquads);
-      }
+      const squadPromise = getUserSquads(currentUser.userID).catch((err) => {
+        console.error('Error loading squads:', err);
+        return [];
+      });
 
-      if (!currentUser.friendsList || currentUser.friendsList.length === 0) {
-        setGroupedFriends([{ title: 'No Location', data: [] }]);
-      } else {
-        const friendsWithDetails = await Promise.all(
+      let friendsPromise = Promise.resolve([]);
+      if (currentUser.friendsList && currentUser.friendsList.length > 0) {
+        friendsPromise = Promise.all(
           currentUser.friendsList.map(async (friend) => {
             try {
               const details = await fetchFriendDetails(
@@ -124,196 +98,48 @@ export default function PingFriends({ navigation, route }) {
                 friend.friendID,
               );
 
-              // Debug logging
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - Friend details:',
-                JSON.stringify(details, null, 2),
-              );
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt raw:',
-                details.locationUpdatedAt,
-              );
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt type:',
-                typeof details.locationUpdatedAt,
-              );
-
-              // Check if locationUpdatedAt exists
-              let locationUpdatedAt = null;
-              let isTimestampInferred = false;
-
-              // Logging extra details to understand the exact data received
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - Full details JSON:',
-                JSON.stringify(details),
-              );
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - Object.keys(details):',
-                Object.keys(details),
-              );
-
-              // Check all possible timestamp fields
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - ALL timestamp fields:',
-                {
-                  locationUpdatedAt: details.locationUpdatedAt,
-                  updatedAt: details.updatedAt,
-                  createdAt: details.createdAt,
-                  hasLocationUpdatedAt:
-                    'locationUpdatedAt' in details &&
-                    details.locationUpdatedAt !== null,
-                  hasUpdatedAt:
-                    'updatedAt' in details && details.updatedAt !== null,
-                  hasCreatedAt:
-                    'createdAt' in details && details.createdAt !== null,
-                },
-              );
-
-              // If locationUpdatedAt is missing but updatedAt exists, use updatedAt as fallback
-              if (!details.locationUpdatedAt && details.updatedAt) {
-                console.log(
-                  'TIMESTAMP DEBUG - PingFriends - Using updatedAt as fallback:',
-                  details.updatedAt,
-                );
-                details.locationUpdatedAt = details.updatedAt;
-              }
-
-              // Check if any usable timestamp property exists and has a value
-              const hasLocationUpdatedAt =
-                'locationUpdatedAt' in details &&
-                details.locationUpdatedAt !== null &&
-                details.locationUpdatedAt !== undefined;
-              console.log(
-                'TIMESTAMP DEBUG - PingFriends - hasLocationUpdatedAt:',
-                hasLocationUpdatedAt,
-              );
-
-              if (hasLocationUpdatedAt) {
-                try {
-                  // Use the existing timestamp
-                  locationUpdatedAt = new Date(details.locationUpdatedAt);
-                  console.log(
-                    'TIMESTAMP DEBUG - PingFriends - Parsed locationUpdatedAt:',
-                    locationUpdatedAt,
-                  );
-                  console.log(
-                    'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt.toString():',
-                    locationUpdatedAt.toString(),
-                  );
-                  console.log(
-                    'TIMESTAMP DEBUG - PingFriends - locationUpdatedAt.getTime():',
-                    locationUpdatedAt.getTime(),
-                  );
-
-                  // Make sure it's a valid date (not NaN)
-                  const isValidDate = !isNaN(locationUpdatedAt.getTime());
-                  console.log(
-                    'TIMESTAMP DEBUG - PingFriends - isValidDate:',
-                    isValidDate,
-                  );
-
-                  if (!isValidDate) {
-                    console.error(
-                      'TIMESTAMP DEBUG - PingFriends - Invalid date from locationUpdatedAt',
-                    );
-                    locationUpdatedAt = null;
-                    isTimestampInferred = true;
-                  } else {
-                    console.log(
-                      'TIMESTAMP DEBUG - PingFriends - Valid date from locationUpdatedAt:',
-                      locationUpdatedAt,
-                    );
-                    isTimestampInferred = false;
-                  }
-                } catch (err) {
-                  console.error(
-                    'TIMESTAMP DEBUG - PingFriends - Error parsing date:',
-                    err,
-                  );
-                  locationUpdatedAt = null;
-                  isTimestampInferred = true;
-                }
-              } else {
-                // No timestamp available
-                console.log(
-                  'TIMESTAMP DEBUG - PingFriends - No locationUpdatedAt timestamp available',
-                );
-                locationUpdatedAt = null;
-                isTimestampInferred = true;
-              }
-
-              console.log(
-                'TIMESTAMP DEBUG - Final locationUpdatedAt:',
-                locationUpdatedAt,
-              );
-              console.log(
-                'TIMESTAMP DEBUG - isTimestampInferred:',
-                isTimestampInferred,
-              );
-
-              // Format the time since update
-              const lastUpdated = locationUpdatedAt
-                ? formatTimeSince(locationUpdatedAt)
-                : 'Never';
-
-              console.log('Formatted lastUpdated:', lastUpdated);
-
-              // Check if location is expired (more than 2 hours old)
-              let isLocationExpired = true;
-
-              if (locationUpdatedAt) {
-                const ageInMinutes =
-                  (new Date() - locationUpdatedAt) / (1000 * 60);
-                console.log(
-                  `Location age: ${ageInMinutes.toFixed(2)} minutes (${(
-                    ageInMinutes / 60
-                  ).toFixed(2)} hours)`,
-                );
-                // Location expires after 90 minutes (1.5 hours)
-                isLocationExpired = ageInMinutes >= 90;
-              } else {
-                // If we don't have a timestamp but have a location, mark as unknown age
-                isLocationExpired =
-                  !details.location ||
-                  details.location === 'No Location' ||
-                  details.location === 'ghost';
-              }
-
-              console.log('Is location expired:', isLocationExpired);
+              console.log('Friend details for', friend.friendID, ':', {
+                location: details.location,
+                locationUpdatedAt: details.locationUpdatedAt,
+              });
 
               return {
                 friendID: friend.friendID,
                 name: `${details.firstName} ${details.lastName}`.trim(),
                 email: details.email,
                 location: details.location || 'No Location',
+                locationUpdatedAt: details.locationUpdatedAt,
                 locationAvailable: friend.locationAvailable || false,
                 mongoId: details._id,
                 initials: `${details.firstName.charAt(
                   0,
                 )}${details.lastName.charAt(0)}`.toUpperCase(),
                 profilePic: details.profilePic,
-                locationUpdatedAt: locationUpdatedAt,
-                lastUpdated: lastUpdated,
-                isLocationExpired: isLocationExpired,
-                isTimestampInferred: isTimestampInferred,
               };
             } catch (error) {
+              console.error(`Error fetching friend ${friend.friendID}:`, error);
               return {
                 friendID: friend.friendID,
                 name: `Friend ${friend.friendID.substring(0, 5)}`,
                 email: 'Unknown',
                 location: 'No Location',
+                locationUpdatedAt: null,
                 locationAvailable: false,
                 initials: '??',
-                profilePic: null,
-                lastUpdated: 'Never',
-                isLocationExpired: true,
-                isTimestampInferred: true,
               };
             }
           }),
         );
+      }
 
+      const [fetchedSquads, friendsWithDetails] = await Promise.all([
+        squadPromise,
+        friendsPromise,
+      ]);
+
+      setSquads(fetchedSquads || []);
+
+      if (friendsWithDetails && friendsWithDetails.length > 0) {
         const friendsByLocation = {};
         friendsWithDetails.forEach((friend) => {
           if (!friendsByLocation[friend.location]) {
@@ -328,14 +154,457 @@ export default function PingFriends({ navigation, route }) {
         }));
 
         setGroupedFriends(sections);
+      } else {
+        setGroupedFriends([]);
       }
-
-      setShouldRefresh(false);
     } catch (error) {
-      setError('Failed to load. Please try again.');
+      console.error('Error loading initial data:', error);
+      setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
+  }, [currentUser?.userID, idToken, getUserSquads, currentUser?.friendsList]);
+
+  const checkFriendsAvailability = useCallback(async () => {
+    if (!idToken || groupedFriends.length === 0) return;
+
+    try {
+      const now = new Date();
+      // Check availability for the next 30 minutes for more accurate "right now" status
+      const startTime = new Date(now);
+      const endTime = new Date(now.getTime() + 30 * 60 * 1000);
+
+      const allFriends = groupedFriends.flatMap((section) => section.data);
+      const friendUIDs = allFriends.map((f) => f.friendID);
+
+      if (friendUIDs.length === 0) return;
+
+      console.log('Checking availability for friends:', friendUIDs);
+
+      const response = await checkAvailability(
+        idToken,
+        friendUIDs,
+        now.toISOString(),
+        startTime.toISOString(),
+        endTime.toISOString(),
+      );
+
+      console.log('Availability response:', response);
+
+      // Initialize all friends as available by default
+      const availabilityMap = {};
+      allFriends.forEach((friend) => {
+        availabilityMap[friend.friendID] = true;
+      });
+
+      // Mark as unavailable if explicitly returned as false
+      if (response?.results) {
+        response.results.forEach((result) => {
+          if (result.isAvailable === false) {
+            availabilityMap[result.userID] = false;
+            console.log(`${result.name || result.userID} is busy right now`);
+          }
+        });
+      }
+
+      setFriendAvailability(availabilityMap);
+    } catch (error) {
+      console.error('Error checking friend availability:', error);
+      // On error, default everyone to available
+      const allFriends = groupedFriends.flatMap((section) => section.data);
+      const availabilityMap = {};
+      allFriends.forEach((friend) => {
+        availabilityMap[friend.friendID] = true;
+      });
+      setFriendAvailability(availabilityMap);
+    }
+  }, [idToken, groupedFriends]);
+
+  const checkSquadsAvailability = useCallback(async () => {
+    if (!idToken || squads.length === 0) return;
+
+    try {
+      const now = new Date();
+      // Check availability for the next 30 minutes
+      const startTime = new Date(now);
+      const endTime = new Date(now.getTime() + 30 * 60 * 1000);
+
+      const squadAvailabilityMap = {};
+
+      for (const squad of squads) {
+        if (squad.members && squad.members.length > 0) {
+          try {
+            const memberUIDs = squad.members.map(
+              (member) => member.userID || member,
+            );
+
+            const response = await checkAvailability(
+              idToken,
+              memberUIDs,
+              now.toISOString(),
+              startTime.toISOString(),
+              endTime.toISOString(),
+            );
+
+            // Count available members
+            let availableCount = 0;
+            const busyMembers = [];
+
+            if (response?.results) {
+              response.results.forEach((result) => {
+                if (result.isAvailable !== false) {
+                  availableCount++;
+                } else {
+                  busyMembers.push(result.name || 'Unknown');
+                }
+              });
+            } else {
+              availableCount = squad.members.length;
+            }
+
+            squadAvailabilityMap[squad._id] = {
+              available: availableCount,
+              total: squad.members.length,
+              busyMembers: busyMembers,
+            };
+          } catch (error) {
+            console.error(`Error checking squad ${squad.squadName}:`, error);
+            squadAvailabilityMap[squad._id] = {
+              available: squad.members.length,
+              total: squad.members.length,
+              busyMembers: [],
+            };
+          }
+        } else {
+          squadAvailabilityMap[squad._id] = {
+            available: 0,
+            total: 0,
+            busyMembers: [],
+          };
+        }
+      }
+
+      setSquadAvailability(squadAvailabilityMap);
+    } catch (error) {
+      console.error('Error checking squad availability:', error);
+      const squadAvailabilityMap = {};
+      squads.forEach((squad) => {
+        squadAvailabilityMap[squad._id] = {
+          available: squad.members?.length || 0,
+          total: squad.members?.length || 0,
+          busyMembers: [],
+        };
+      });
+      setSquadAvailability(squadAvailabilityMap);
+    }
+  }, [idToken, squads]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    checkFriendsAvailability();
+    checkSquadsAvailability();
+
+    // Check availability every 2 minutes
+    const interval = setInterval(() => {
+      checkFriendsAvailability();
+      checkSquadsAvailability();
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [loading, checkFriendsAvailability, checkSquadsAvailability]);
+
+  const handleLongPressFriend = async (friend) => {
+    try {
+      console.log('Fetching schedule for friend:', friend.friendID);
+      const friendSchedule = await getFriendAvailability(
+        idToken,
+        friend.friendID,
+      );
+      console.log('Friend schedule response:', friendSchedule);
+
+      setSelectedFriendForSchedule({
+        ...friend,
+        availability: friendSchedule.availability,
+      });
+      setScheduleModalVisible(true);
+    } catch (error) {
+      console.error('Error fetching friend schedule:', error);
+      Alert.alert('Error', "Could not load friend's schedule");
+    }
+  };
+
+  const renderScheduleModal = () => {
+    if (!selectedFriendForSchedule?.availability) {
+      console.log('No availability data found');
+      return null;
+    }
+
+    const { availability } = selectedFriendForSchedule;
+    console.log(
+      'Full availability object:',
+      JSON.stringify(availability, null, 2),
+    );
+
+    // More robust safe array function with better debugging
+    const safeArray = (arr, categoryName) => {
+      console.log(`Processing ${categoryName}:`, arr);
+
+      if (!arr) {
+        console.log(`${categoryName} is null/undefined`);
+        return [];
+      }
+
+      if (Array.isArray(arr)) {
+        console.log(`${categoryName} is array with ${arr.length} items`);
+        return arr;
+      }
+
+      // Handle case where it might be an object with array-like properties
+      if (typeof arr === 'object') {
+        if (arr.length !== undefined) {
+          console.log(
+            `${categoryName} is array-like object with length ${arr.length}`,
+          );
+          return Array.from(arr);
+        }
+
+        // If it's an object but not array-like, try to extract values
+        const values = Object.values(arr);
+        if (values.length > 0 && Array.isArray(values[0])) {
+          console.log(`${categoryName} contains nested arrays`);
+          return values.flat();
+        }
+      }
+
+      console.log(`${categoryName} is not processable:`, typeof arr);
+      return [];
+    };
+
+    // Process each category with debugging
+    const classItems = safeArray(availability.classes, 'classes').map(
+      (item) => ({
+        ...item,
+        category: 'classes',
+      }),
+    );
+
+    const sportingItems = safeArray(availability.sporting, 'sporting').map(
+      (item) => ({
+        ...item,
+        category: 'sporting',
+      }),
+    );
+
+    const extraItems = safeArray(
+      availability.extracurricular,
+      'extracurricular',
+    ).map((item) => ({
+      ...item,
+      category: 'extracurricular',
+    }));
+
+    const otherItems = safeArray(availability.other, 'other').map((item) => ({
+      ...item,
+      category: 'other',
+    }));
+
+    const allItems = [
+      ...classItems,
+      ...sportingItems,
+      ...extraItems,
+      ...otherItems,
+    ];
+
+    console.log('Processed items:', {
+      classes: classItems.length,
+      sporting: sportingItems.length,
+      extracurricular: extraItems.length,
+      other: otherItems.length,
+      total: allItems.length,
+    });
+
+    const formatTime = (dateString) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          console.log('Invalid date:', dateString);
+          return '';
+        }
+        return date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+      } catch (error) {
+        console.error('Error formatting time:', error);
+        return '';
+      }
+    };
+
+    const getCategoryColor = (category) => {
+      switch (category) {
+        case 'classes':
+          return '#2196f3';
+        case 'sporting':
+          return '#4caf50';
+        case 'extracurricular':
+          return '#fbc02d';
+        case 'other':
+          return '#f44336';
+        default:
+          return '#666';
+      }
+    };
+
+    // Create a weekly schedule grid
+    const daysOfWeek = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const dayAbbreviations = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
+
+    // Group items by day
+    const scheduleByDay = {};
+    daysOfWeek.forEach((day) => {
+      scheduleByDay[day] = [];
+    });
+
+    allItems.forEach((item) => {
+      console.log('Processing item:', item.name, 'Days:', item.days);
+
+      if (item.days && Array.isArray(item.days)) {
+        item.days.forEach((dayAbbr) => {
+          const dayIndex = dayAbbreviations.indexOf(dayAbbr);
+          if (dayIndex !== -1) {
+            const fullDayName = daysOfWeek[dayIndex];
+            scheduleByDay[fullDayName].push(item);
+            console.log(`Added ${item.name} to ${fullDayName}`);
+          } else {
+            console.log(`Unknown day abbreviation: ${dayAbbr}`);
+          }
+        });
+      } else {
+        console.log(`Item ${item.name} has no valid days array:`, item.days);
+      }
+    });
+
+    // Sort items within each day by start time
+    Object.keys(scheduleByDay).forEach((day) => {
+      scheduleByDay[day].sort((a, b) => {
+        if (!a.startTime || !b.startTime) return 0;
+        return new Date(a.startTime) - new Date(b.startTime);
+      });
+    });
+
+    console.log('Final schedule by day:', scheduleByDay);
+
+    return (
+      <Modal
+        visible={scheduleModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setScheduleModalVisible(false)}
+      >
+        <View style={localStyles.modalOverlay}>
+          <View style={localStyles.scheduleModalContent}>
+            <View style={localStyles.modalHeader}>
+              <Text style={localStyles.modalTitle}>
+                {selectedFriendForSchedule.name}'s Weekly Schedule
+              </Text>
+              <TouchableOpacity onPress={() => setScheduleModalVisible(false)}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color="#5C4D7D"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Divider style={localStyles.divider} />
+
+            {allItems.length === 0 ? (
+              <View style={localStyles.emptySchedule}>
+                <Text style={localStyles.emptyText}>
+                  {selectedFriendForSchedule.name} hasn't shared their schedule
+                  yet
+                </Text>
+              </View>
+            ) : (
+              <ScrollView style={localStyles.scheduleScrollView}>
+                {daysOfWeek.map((day, dayIndex) => {
+                  const dayActivities = scheduleByDay[day] || [];
+
+                  return (
+                    <View key={day} style={localStyles.dayContainer}>
+                      <Text style={localStyles.dayHeader}>
+                        {day} ({dayActivities.length})
+                      </Text>
+                      {dayActivities.length === 0 ? (
+                        <Text style={localStyles.noDayActivities}>Free</Text>
+                      ) : (
+                        dayActivities.map((item, itemIndex) => (
+                          <View
+                            key={`${day}-${itemIndex}`}
+                            style={[
+                              localStyles.condensedScheduleItem,
+                              {
+                                borderLeftColor: getCategoryColor(
+                                  item.category,
+                                ),
+                              },
+                            ]}
+                          >
+                            <View style={localStyles.scheduleItemRow}>
+                              <Text style={localStyles.condensedItemName}>
+                                {item.name || 'Unnamed Activity'}
+                              </Text>
+                              <Text style={localStyles.condensedItemTime}>
+                                {item.startTime && item.endTime
+                                  ? `${formatTime(
+                                      item.startTime,
+                                    )} - ${formatTime(item.endTime)}`
+                                  : item.timeBlock || 'No time specified'}
+                              </Text>
+                            </View>
+                            <Text style={localStyles.condensedItemCategory}>
+                              {item.category?.charAt(0).toUpperCase() +
+                                item.category?.slice(1) || 'Unknown'}
+                            </Text>
+                          </View>
+                        ))
+                      )}
+                      {dayIndex < daysOfWeek.length - 1 && (
+                        <View style={localStyles.dayDivider} />
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            <Button
+              mode="outlined"
+              style={localStyles.closeModalButton}
+              onPress={() => setScheduleModalVisible(false)}
+              textColor="white"
+            >
+              Close
+            </Button>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   const toggleFriendSelection = (friendID) => {
@@ -409,6 +678,7 @@ export default function PingFriends({ navigation, route }) {
         message: `Ping sent to ${displayNames}!`,
       });
     } catch (error) {
+      console.error('Error sending ping:', error);
       Alert.alert(
         'Error',
         'Failed to send ping: ' + (error.message || 'Please try again'),
@@ -418,95 +688,162 @@ export default function PingFriends({ navigation, route }) {
     }
   };
 
-  const renderFriendItem = ({ item }) => (
-    <View style={{ overflow: 'visible' }}>
-      <List.Item
-        title={item.name}
-        description={() => (
-          <View style={{ overflow: 'visible' }}>
-            <Text>{item.email}</Text>
+  const renderFriendItem = ({ item }) => {
+    const isAvailable = friendAvailability[item.friendID];
+    const isBusy = isAvailable === false;
+    const isSelected = selectedFriends.includes(item.friendID);
+    const timeAgo = getTimeAgo(item.locationUpdatedAt);
 
-            {item.location &&
-            item.location !== 'No Location' &&
-            item.location !== 'ghost' ? (
-              item.locationUpdatedAt ? (
-                !item.isLocationExpired ? (
-                  <Text style={localStyles.locationTime}>
-                    Last updated: {item.lastUpdated}
-                  </Text>
-                ) : (
-                  <Text style={localStyles.expiredLocation}>
-                    Location expired ({item.lastUpdated})
-                  </Text>
-                )
-              ) : (
-                <Text style={localStyles.unknownTime}>
-                  Location available (unknown update time)
-                </Text>
-              )
-            ) : (
-              <Text style={localStyles.noLocation}>No location shared</Text>
-            )}
-          </View>
-        )}
-        left={() =>
-          !item.profilePic ? (
-            <Avatar.Text
-              size={40}
-              label={item.initials}
-              style={localStyles.avatar}
-            />
-          ) : (
-            <Avatar.Image
-              size={40}
-              source={{ uri: item.profilePic }}
-              style={localStyles.avatar}
-            />
-          )
-        }
-        right={() => (
-          <Checkbox
-            status={
-              selectedFriends.includes(item.friendID) ? 'checked' : 'unchecked'
-            }
-            onPress={() => toggleFriendSelection(item.friendID)}
-          />
-        )}
+    // Enhanced description with location update time
+    const getDescription = () => {
+      let description = item.email;
+      if (item.location && item.location !== 'No Location') {
+        description += ` • ${item.location}`;
+      }
+      if (item.locationUpdatedAt) {
+        description += ` • ${timeAgo}`;
+      }
+      if (isBusy) {
+        description += ' • Currently busy';
+      }
+      return description;
+    };
+
+    return (
+      <TouchableOpacity
         onPress={() => toggleFriendSelection(item.friendID)}
-        style={[
-          localStyles.listItem,
-          selectedFriends.includes(item.friendID)
-            ? localStyles.selectedItem
-            : {},
-        ]}
-      />
-    </View>
-  );
+        onLongPress={() => handleLongPressFriend(item)}
+      >
+        <List.Item
+          title={item.name}
+          description={getDescription()}
+          left={(props) => (
+            <View style={localStyles.avatarWrapper}>
+              {!item.profilePic ? (
+                <Avatar.Text
+                  size={50}
+                  label={item.initials}
+                  style={localStyles.avatar}
+                />
+              ) : (
+                <Avatar.Image
+                  size={50}
+                  source={{ uri: item.profilePic }}
+                  style={localStyles.avatar}
+                />
+              )}
+              {/* Status indicators */}
+              <View style={localStyles.statusIndicators}>
+                {isBusy && (
+                  <View style={localStyles.busyIconContainer}>
+                    <MaterialCommunityIcons
+                      name="clock-alert"
+                      size={12}
+                      color="#fff"
+                    />
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+          right={() => (
+            <View style={localStyles.rightContainer}>
+              <Checkbox
+                status={isSelected ? 'checked' : 'unchecked'}
+                onPress={() => toggleFriendSelection(item.friendID)}
+                color="white"
+              />
+            </View>
+          )}
+          style={[
+            localStyles.listItem,
+            isBusy && localStyles.busyItem,
+            isSelected && localStyles.selectedItem,
+          ]}
+          titleStyle={{
+            color: isSelected ? '#fff' : isBusy ? '#d32f2f' : '#000',
+          }}
+          descriptionStyle={{
+            color: isSelected ? '#fff' : isBusy ? '#d32f2f' : '#000',
+            fontSize: 12,
+            marginBottom: -10,
+          }}
+        />
+      </TouchableOpacity>
+    );
+  };
 
-  const renderSquadItem = ({ item }) => (
-    <View style={{ overflow: 'visible' }}>
+  const renderSquadItem = ({ item }) => {
+    const availability = squadAvailability[item._id];
+    const isSelected = selectedSquads.includes(item._id);
+
+    const getAvailabilityText = () => {
+      if (!availability) {
+        return `${item.members?.length || 0} members`;
+      }
+
+      let text = `${availability.available}/${availability.total} available now`;
+
+      if (availability.busyMembers && availability.busyMembers.length > 0) {
+        const busyCount = availability.busyMembers.length;
+        if (busyCount === 1) {
+          text += ` • ${availability.busyMembers[0]} is busy`;
+        } else if (busyCount <= 3) {
+          text += ` • ${availability.busyMembers.join(', ')} are busy`;
+        } else {
+          text += ` • ${busyCount} members are busy`;
+        }
+      }
+
+      return text;
+    };
+
+    return (
       <List.Item
         title={item.squadName}
-        description={`${item.members.length} members`}
-        left={() => <List.Icon icon="account-group" />}
+        description={getAvailabilityText()}
+        left={() => (
+          <MaterialCommunityIcons
+            name="account-group"
+            size={24}
+            color={
+              isSelected
+                ? '#fff'
+                : availability && availability.available < availability.total
+                ? '#f57c00'
+                : '#666'
+            }
+            style={{ marginLeft: 16, marginRight: 8 }}
+          />
+        )}
         right={() => (
           <Checkbox
-            status={selectedSquads.includes(item._id) ? 'checked' : 'unchecked'}
+            status={isSelected ? 'checked' : 'unchecked'}
             onPress={() => toggleSquadSelection(item._id)}
+            color="black"
           />
         )}
         onPress={() => toggleSquadSelection(item._id)}
-        style={[
-          localStyles.listItem,
-          selectedSquads.includes(item._id) ? localStyles.selectedItem : {},
-        ]}
+        style={[localStyles.listItem, isSelected && localStyles.selectedItem]}
+        titleStyle={{
+          color: isSelected ? '#fff' : '#000',
+        }}
+        descriptionStyle={{
+          color: isSelected
+            ? '#fff'
+            : availability && availability.available < availability.total
+            ? '#f57c00'
+            : '#666',
+          fontSize: 12,
+        }}
       />
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
+        <TopNav navigation={navigation} title="Ping Friends" />
         <View
           style={[
             styles.content,
@@ -531,32 +868,26 @@ export default function PingFriends({ navigation, route }) {
           ]}
         >
           <Text style={{ color: 'red', marginBottom: 20 }}>{error}</Text>
-          <Button
-            mode="contained"
-            onPress={() => {
-              setShouldRefresh(true);
-            }}
-          >
-            Retry
+          <Button mode="contained" onPress={() => navigation.goBack()}>
+            Go Back
           </Button>
         </View>
       </SafeAreaView>
     );
   }
 
-  if (
+  const hasNoData =
     (!currentUser?.friendsList || currentUser.friendsList.length === 0) &&
-    (!squads || squads.length === 0)
-  ) {
+    (!squads || squads.length === 0);
+
+  if (hasNoData) {
     return (
       <SafeAreaView style={styles.container}>
         <TopNav navigation={navigation} title="Ping Friends" />
-        <View style={{ height: 50 }} />
         <View style={localStyles.contentContainer}>
           <Text style={localStyles.subheaderText}>
             Select friends or squads to ping.
           </Text>
-
           <View style={localStyles.emptyContainer}>
             <Text style={localStyles.emptyText}>
               You don't have any friends or squads yet. Add some first!
@@ -577,11 +908,10 @@ export default function PingFriends({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <TopNav navigation={navigation} title="Ping Friends" />
-      <View style={{ height: 50 }} />
 
       <View style={localStyles.contentContainer}>
         <Text style={localStyles.subheaderText}>
-          Select friends or squads to ping.
+          Select friends or squads to ping. Long press to view schedules.
         </Text>
 
         <View style={localStyles.tabContainer}>
@@ -621,81 +951,86 @@ export default function PingFriends({ navigation, route }) {
             </Text>
           </TouchableOpacity>
         </View>
-
         <View style={localStyles.listContainer}>
           {activeTab === 'friends' ? (
             groupedFriends.length > 0 ? (
-              <View style={{ overflow: 'visible', flex: 1 }}>
-                <SectionList
-                  contentContainerStyle={{ overflow: 'visible' }}
-                  sections={groupedFriends}
-                  keyExtractor={(item, index) =>
-                    item.friendID || `friend-${index}`
-                  }
-                  renderSectionHeader={({ section: { title } }) => (
-                    <Text style={localStyles.sectionHeader}>{title}</Text>
-                  )}
-                  renderItem={renderFriendItem}
-                  ListEmptyComponent={
-                    <View style={{ padding: 20, alignItems: 'center' }}>
-                      <Text>No friends available</Text>
-                    </View>
-                  }
-                />
-              </View>
+              <SectionList
+                sections={groupedFriends}
+                keyExtractor={(item, index) =>
+                  item.friendID || `friend-${index}`
+                }
+                renderSectionHeader={({ section: { title } }) => (
+                  <Text style={localStyles.sectionHeader}>{title}</Text>
+                )}
+                renderItem={renderFriendItem}
+              />
             ) : (
               <View style={localStyles.emptyContainer}>
                 <Text style={localStyles.emptyText}>
                   You don't have any friends yet. Add some friends first!
                 </Text>
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate('AddFriendsScreen')}
+                  style={{ marginTop: 10 }}
+                >
+                  Add Friends
+                </Button>
               </View>
             )
+          ) : squads.length > 0 ? (
+            <FlatList
+              data={squads}
+              renderItem={renderSquadItem}
+              keyExtractor={(item) => item._id}
+            />
           ) : (
-            <View style={{ overflow: 'visible', flex: 1 }}>
-              <FlatList
-                contentContainerStyle={{ overflow: 'visible' }}
-                data={squads}
-                renderItem={renderSquadItem}
-                keyExtractor={(item) => item._id}
-                ListEmptyComponent={
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text>No squads available</Text>
-                  </View>
-                }
-              />
+            <View style={localStyles.emptyContainer}>
+              <Text style={localStyles.emptyText}>
+                You don't have any squads yet. Create a squad first!
+              </Text>
+              <Button
+                mode="contained"
+                onPress={() => navigation.navigate('CreateSquadScreen')}
+                style={{ marginTop: 10 }}
+              >
+                Create Squad
+              </Button>
             </View>
           )}
         </View>
       </View>
-
-      <View style={localStyles.bottomContainer}>
-        <Button
-          mode="contained"
-          disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
-          style={localStyles.pingButton}
-          onPress={handleSendPing}
-          labelStyle={{ fontSize: 16 }}
-        >
+      <TouchableOpacity
+        style={[
+          localStyles.pingButton,
+          selectedFriends.length === 0 && selectedSquads.length === 0
+            ? { opacity: 0.5 }
+            : {},
+        ]}
+        onPress={handleSendPing}
+        disabled={selectedFriends.length === 0 && selectedSquads.length === 0}
+      >
+        <Text style={localStyles.pingButtonLabel}>
           Ping Selected {activeTab === 'friends' ? 'Friends' : 'Squads'}
-        </Button>
-      </View>
+        </Text>
+      </TouchableOpacity>
+      {renderScheduleModal()}
     </SafeAreaView>
   );
 }
 
 const localStyles = StyleSheet.create({
   contentContainer: {
-    flex: 1,
-    width: '100%',
-    paddingTop: 5,
     alignItems: 'center',
-    marginBottom: 15,
+    width: '100%',
+    marginTop: 50,
     gap: 5,
   },
   subheaderText: {
     textAlign: 'center',
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 14,
+    marginTop: 15,
+    width: '80%',
     marginBottom: 10,
   },
   tabContainer: {
@@ -733,31 +1068,11 @@ const localStyles = StyleSheet.create({
     color: '#6750a4',
     fontWeight: 'bold',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingHorizontal: 25,
-    paddingVertical: 5,
-    backgroundColor: 'white',
-    zIndex: 1,
-  },
   listContainer: {
-    flex: 1,
     width: '90%',
-    overflow: 'visible',
-  },
-  sendButton: {
-    width: 100,
-    height: 52,
-    borderRadius: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  sendText: {
-    color: '#096A2E',
-    marginRight: 3,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   sectionHeader: {
     paddingHorizontal: 15,
@@ -769,16 +1084,59 @@ const localStyles = StyleSheet.create({
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f8f8ff',
-  },
-  selectedItem: {
+    paddingHorizontal: 5,
+    paddingBottom: 15,
     backgroundColor: '#e9e6ff',
   },
+  selectedItem: {
+    backgroundColor: '#6750a4',
+  },
+  busyItem: {
+    backgroundColor: '#ffebee',
+  },
+  avatarWrapper: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+    marginRight: 16,
+    marginLeft: 8,
+  },
+  busyIconContainer: {
+    position: 'absolute',
+    top: -52,
+    right: -12,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#f44336',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  avatar: {
+    backgroundColor: '#CBDBA7',
+  },
+  busyAvatar: {
+    backgroundColor: '#ffcdd2',
+  },
+  rightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   pingButton: {
+    width: '90%',
+    height: 50,
+    marginTop: 15,
+    backgroundColor: '#6750a4',
     borderRadius: 15,
-    padding: 5,
-    ...BOX_SHADOW,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pingButtonLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,
@@ -791,29 +1149,110 @@ const localStyles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  avatar: {
-    backgroundColor: '#CBDBA7',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  locationTime: {
-    fontSize: 12,
-    color: '#096A2E',
-    marginTop: 2,
+  scheduleModalContent: {
+    width: '92%',
+    maxHeight: '85%',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  expiredLocation: {
-    fontSize: 12,
-    color: '#dd6b55',
-    marginTop: 2,
-    fontStyle: 'italic',
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
   },
-  noLocation: {
-    fontSize: 12,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#5C4D7D',
+    flex: 1,
+    marginRight: 10,
+  },
+  divider: {
+    marginBottom: 15,
+    backgroundColor: '#E8F5D9',
+  },
+  scheduleScrollView: {
+    maxHeight: 400,
+    marginBottom: 15,
+  },
+  emptySchedule: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  dayContainer: {
+    marginBottom: 15,
+  },
+  dayHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#5C4D7D',
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8F5D9',
+  },
+  noDayActivities: {
+    fontSize: 14,
     color: '#999',
-    marginTop: 2,
     fontStyle: 'italic',
+    paddingLeft: 10,
   },
-  unknownTime: {
+  condensedScheduleItem: {
+    backgroundColor: '#f9f9f9',
+    borderLeftWidth: 4,
+    borderRadius: 6,
+    padding: 12,
+    marginVertical: 4,
+  },
+  scheduleItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  condensedItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+    marginRight: 10,
+  },
+  condensedItemTime: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  condensedItemCategory: {
     fontSize: 12,
-    color: '#8e5ba1', // Purple shade
-    marginTop: 2,
+    color: '#888',
+    textTransform: 'capitalize',
+  },
+  dayDivider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginTop: 10,
+  },
+  closeModalButton: {
+    marginTop: 10,
+    backgroundColor: '#6750a4',
+    borderRadius: 15,
   },
 });

@@ -9,12 +9,18 @@ import {
   updateUser,
   updateUserLocation,
 } from '../services/user-api';
+import {
+  updateAvailability,
+  getAvailability,
+  getFriendAvailability,
+  checkAvailability,
+} from '../services/availability-api';
 import { signInUser, signOutUser } from '../services/firebase-auth';
 
 const createUserSlice = (set, get) => ({
   currentUser: null,
   isLoggedIn: false,
-
+  availability: null,
   friendRequests: [],
   searchResults: [],
   status: 'idle',
@@ -39,10 +45,11 @@ const createUserSlice = (set, get) => ({
     }
   },
 
-  updateUserProfile: async (userData) => {
+  // Availability-related functions
+  updateUserAvailability: async (availabilityData) => {
     const { currentUser } = get().userSlice;
 
-    if (!currentUser || !currentUser._id || !currentUser.idToken) {
+    if (!currentUser || !currentUser.idToken) {
       return { success: false, error: 'Not logged in' };
     }
 
@@ -52,117 +59,220 @@ const createUserSlice = (set, get) => ({
     });
 
     try {
-      let response;
+      const response = await updateAvailability(
+        currentUser.idToken,
+        availabilityData,
+      );
 
-      // If it's a location update, use the specialized endpoint
-      if ('location' in userData && Object.keys(userData).length === 1) {
-        console.log('TIMESTAMP DEBUG - Before updateUserLocation call');
-        response = await updateUserLocation(
-          currentUser.idToken,
-          currentUser._id,
-          userData.location,
-        );
-        console.log('TIMESTAMP DEBUG - After updateUserLocation call');
-        console.log('TIMESTAMP DEBUG - Response from updateUserLocation:', {
-          hasResponse: !!response,
-          hasLocationUpdatedAt: response && !!response.locationUpdatedAt,
-          locationUpdatedAtValue: response ? response.locationUpdatedAt : null,
-        });
-      } else {
-        // Otherwise use the general update endpoint
-        response = await axios.patch(
-          `http://localhost:9090/api/users/${currentUser._id}`,
-          userData,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${currentUser.idToken}`,
-            },
-          },
-        );
-        response = response.data;
-      }
-
-      console.log('TIMESTAMP DEBUG - Before state update');
-      console.log('TIMESTAMP DEBUG - Current state currentUser:', {
-        hasCurrentUser: !!get().userSlice.currentUser,
-        locationUpdatedAt: get().userSlice.currentUser
-          ? get().userSlice.currentUser.locationUpdatedAt
-          : null,
-      });
-
-      // Update local state with the response
       set((state) => {
-        console.log('TIMESTAMP DEBUG - Inside state update');
-        console.log('TIMESTAMP DEBUG - Response object:', response);
-
         state.userSlice.status = 'succeeded';
-        // Carefully merge the response, ensuring locationUpdatedAt is properly handled
-        const updatedUser = {
-          ...state.userSlice.currentUser,
-          ...response,
-        };
-
-        // Extra check for locationUpdatedAt
-        if (response.locationUpdatedAt) {
-          console.log(
-            'TIMESTAMP DEBUG - Store - response contains locationUpdatedAt:',
-            response.locationUpdatedAt,
-          );
-
-          try {
-            // Try parsing it into a valid Date and back to ISO string
-            const date = new Date(response.locationUpdatedAt);
-            if (!isNaN(date.getTime())) {
-              // It's a valid date, store it as ISO string
-              updatedUser.locationUpdatedAt = date.toISOString();
-              console.log(
-                'TIMESTAMP DEBUG - Store - Using formatted locationUpdatedAt:',
-                updatedUser.locationUpdatedAt,
-              );
-            } else {
-              console.error(
-                'TIMESTAMP DEBUG - Store - Invalid date in response',
-              );
-            }
-          } catch (err) {
-            console.error('TIMESTAMP DEBUG - Store - Error parsing date:', err);
-          }
-        } else if (response.location) {
-          console.log(
-            'TIMESTAMP DEBUG - Store - Location updated but no timestamp provided',
-          );
+        state.userSlice.availability = response.availability;
+        if (state.userSlice.currentUser) {
+          state.userSlice.currentUser.availability = response.availability;
         }
-
-        state.userSlice.currentUser = updatedUser;
-
-        console.log('TIMESTAMP DEBUG - After merge:', {
-          locationUpdatedAt: state.userSlice.currentUser.locationUpdatedAt,
-          location: state.userSlice.currentUser.location,
-        });
       });
 
-      console.log('TIMESTAMP DEBUG - After state update');
-      console.log('TIMESTAMP DEBUG - Updated state currentUser:', {
-        hasCurrentUser: !!get().userSlice.currentUser,
-        locationUpdatedAt: get().userSlice.currentUser
-          ? get().userSlice.currentUser.locationUpdatedAt
-          : null,
-      });
-
-      return { success: true, data: response };
+      return { success: true, availability: response.availability };
     } catch (error) {
+      console.error('Error updating availability:', error);
+
       set((state) => {
         state.userSlice.status = 'failed';
-        state.userSlice.error = error.message || 'Failed to update profile';
+        state.userSlice.error =
+          error.message || 'Failed to update availability';
       });
 
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Update failed',
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to update availability',
       };
     }
   },
+
+  getUserAvailability: async () => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    set((state) => {
+      state.userSlice.status = 'loading';
+      state.userSlice.error = null;
+    });
+
+    try {
+      const response = await getAvailability(currentUser.idToken);
+
+      set((state) => {
+        state.userSlice.status = 'succeeded';
+        state.userSlice.availability = response.availability;
+      });
+
+      return { success: true, availability: response.availability };
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+
+      set((state) => {
+        state.userSlice.status = 'failed';
+        state.userSlice.error = error.message || 'Failed to fetch availability';
+      });
+
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to fetch availability',
+      };
+    }
+  },
+
+  getFriendAvailability: async (friendUID) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    try {
+      const response = await getFriendAvailability(
+        currentUser.idToken,
+        friendUID,
+      );
+      return {
+        success: true,
+        availability: response.availability,
+        name: response.name,
+      };
+    } catch (error) {
+      console.error('Error fetching friend availability:', error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to fetch friend availability',
+      };
+    }
+  },
+
+  checkUsersAvailability: async (userIDs, date, startTime, endTime) => {
+    const { currentUser } = get().userSlice;
+
+    if (!currentUser || !currentUser.idToken) {
+      return { success: false, error: 'Not logged in' };
+    }
+
+    try {
+      const response = await checkAvailability(
+        currentUser.idToken,
+        userIDs,
+        date,
+        startTime,
+        endTime,
+      );
+      return { success: true, results: response.results };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.error ||
+          error.message ||
+          'Failed to check availability',
+      };
+    }
+  },
+
+  // In your user-slice.js, modify the updateUserProfile function:
+
+updateUserProfile: async (userData) => {
+  const { currentUser } = get().userSlice;
+
+  if (!currentUser || !currentUser._id || !currentUser.idToken) {
+    return { success: false, error: 'Not logged in' };
+  }
+
+  set((state) => {
+    state.userSlice.status = 'loading';
+    state.userSlice.error = null;
+  });
+
+  try {
+    let response;
+
+    // Always use the general update endpoint
+    response = await updateUser(
+      currentUser.idToken,
+      currentUser._id,
+      userData
+    );
+
+    console.log('TIMESTAMP DEBUG - Response from updateUser:', response);
+
+    // Update local state with the response
+    set((state) => {
+      state.userSlice.status = 'succeeded';
+      
+      // Carefully merge the response, ensuring locationUpdatedAt is properly handled
+      const updatedUser = {
+        ...state.userSlice.currentUser,
+        ...response,
+      };
+
+      // Extra check for locationUpdatedAt
+      if (response.locationUpdatedAt) {
+        console.log(
+          'TIMESTAMP DEBUG - Store - response contains locationUpdatedAt:',
+          response.locationUpdatedAt,
+        );
+
+        try {
+          // Try parsing it into a valid Date and back to ISO string
+          const date = new Date(response.locationUpdatedAt);
+          if (!isNaN(date.getTime())) {
+            // It's a valid date, store it as ISO string
+            updatedUser.locationUpdatedAt = date.toISOString();
+            console.log(
+              'TIMESTAMP DEBUG - Store - Using formatted locationUpdatedAt:',
+              updatedUser.locationUpdatedAt,
+            );
+          } else {
+            console.error(
+              'TIMESTAMP DEBUG - Store - Invalid date in response',
+            );
+          }
+        } catch (err) {
+          console.error('TIMESTAMP DEBUG - Store - Error parsing date:', err);
+        }
+      } else if (response.location) {
+        // If location was updated but no timestamp provided, set current time
+        updatedUser.locationUpdatedAt = new Date().toISOString();
+        console.log(
+          'TIMESTAMP DEBUG - Store - Location updated, setting current timestamp',
+        );
+      }
+
+      state.userSlice.currentUser = updatedUser;
+    });
+
+    return { success: true, data: response };
+  } catch (error) {
+    set((state) => {
+      state.userSlice.status = 'failed';
+      state.userSlice.error = error.message || 'Failed to update profile';
+    });
+
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Update failed',
+    };
+  }
+},
 
   login: async ({ email, password }) => {
     set((state) => {
@@ -186,6 +296,8 @@ const createUserSlice = (set, get) => ({
           idToken,
         };
         state.userSlice.isLoggedIn = true;
+        // Initialize availability from user data
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -197,6 +309,7 @@ const createUserSlice = (set, get) => ({
         state.userSlice.error = error.message || 'Login failed';
         state.userSlice.isLoggedIn = false;
         state.userSlice.currentUser = null;
+        state.userSlice.availability = null;
       });
 
       return {
@@ -219,6 +332,7 @@ const createUserSlice = (set, get) => ({
         state.userSlice.currentUser = null;
         state.userSlice.isLoggedIn = false;
         state.userSlice.friendRequests = [];
+        state.userSlice.availability = null;
       });
 
       return { success: true };
@@ -251,6 +365,8 @@ const createUserSlice = (set, get) => ({
           ...userData,
           idToken: currentUser.idToken,
         };
+        // Update availability from refreshed user data
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -357,21 +473,19 @@ const createUserSlice = (set, get) => ({
     try {
       await acceptFriendRequest(idToken, userID, senderID);
 
-      // Get the updated user profile from the server
       const userData = await fetchOwnUser(idToken);
 
       set((state) => {
         state.userSlice.status = 'succeeded';
-        // Remove the request from friendRequests
         state.userSlice.friendRequests = state.userSlice.friendRequests.filter(
           (request) => request.senderID !== senderID,
         );
 
-        // Update the entire user object with the fresh data
         state.userSlice.currentUser = {
           ...userData,
           idToken: idToken,
         };
+        state.userSlice.availability = userData.availability || null;
       });
 
       return { success: true };
@@ -466,6 +580,9 @@ const createUserSlice = (set, get) => ({
           ...userData,
           idToken: idToken,
         };
+        if (userData.availability) {
+          state.userSlice.availability = userData.availability;
+        }
       });
       return { success: true, userData };
     } catch (error) {
