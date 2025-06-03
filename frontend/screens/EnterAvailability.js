@@ -926,7 +926,11 @@ export default function EnterAvailability({ navigation, route }) {
             <Button
               mode="contained"
               onPress={() => openTimeBlockSelector(index)}
-              style={{ marginHorizontal: 16, marginVertical: 8 }}
+              style={{
+                marginHorizontal: 16,
+                marginVertical: 8,
+                borderRadius: 15,
+              }}
             >
               {item.timeBlock ? `${item.timeBlock}` : 'Select Time Block'}
             </Button>
@@ -1002,11 +1006,7 @@ export default function EnterAvailability({ navigation, route }) {
 
   return (
     <View>
-      <TopNav
-        navigation={navigation}
-        title="Input Your Schedule"
-        profilePic={profilePic}
-      />
+      <TopNav navigation={navigation} title="Input Your Schedule" />
 
       <ScrollView
         style={stylesLocal.content}
@@ -1031,14 +1031,15 @@ export default function EnterAvailability({ navigation, route }) {
               <ScrollView style={stylesLocal.timeBlockScroll}>
                 <View style={stylesLocal.timeBlockGrid}>
                   {sortedTimeBlocks().map((key) => (
-                    <Chip
+                    <Button
                       key={key}
                       mode="outlined"
                       onPress={() => applyTimeBlock(key)}
-                      style={stylesLocal.timeBlockChip}
+                      style={{ borderRadius: 15, marginVertical: 4 }}
+                      contentStyle={stylesLocal.timeBlockChip}
                     >
                       {key}: {TIME_BLOCKS[key].schedule}
-                    </Chip>
+                    </Button>
                   ))}
                 </View>
               </ScrollView>
@@ -1046,6 +1047,7 @@ export default function EnterAvailability({ navigation, route }) {
                 mode="outlined"
                 onPress={() => setShowTimeBlocks(false)}
                 style={stylesLocal.closeButton}
+                labelStyle={{ color: 'white' }}
               >
                 Close
               </Button>
@@ -1309,14 +1311,10 @@ const stylesLocal = StyleSheet.create({
     marginRight: 16,
   },
   timeBlockContainer: {
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    paddingLeft: 0,
+    marginHorizontal: 'auto',
+    marginVertical: 15,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   timeBlockTitle: {
     fontSize: 18,
@@ -1331,12 +1329,12 @@ const stylesLocal = StyleSheet.create({
     flexDirection: 'column',
   },
   timeBlockChip: {
-    margin: 4,
-    height: 44,
     justifyContent: 'center',
   },
   closeButton: {
     marginTop: 8,
+    borderRadius: 15,
+    backgroundColor: '#6750a4',
   },
   modalOverlay: {
     flex: 1,

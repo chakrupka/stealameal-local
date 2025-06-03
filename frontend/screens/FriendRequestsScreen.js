@@ -212,6 +212,7 @@ const FriendRequestsScreen = ({ navigation, route }) => {
             </Text>
             <Button
               mode="outlined"
+              style={{ borderRadius: 15, marginTop: 20 }}
               onPress={() => {
                 if (idToken && userID) {
                   fetchFriendRequests({ idToken, userID });
